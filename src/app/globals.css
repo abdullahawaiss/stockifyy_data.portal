@@ -50,6 +50,13 @@ body {
 /* Table responsive wrapper */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
+/* PortalNav — CSS-only hover dropdowns (no JS required) */
+.nav-dropdown { display: none; }
+.nav-group:hover .nav-dropdown { display: block; }
+.nav-group:hover .nav-trigger { color: var(--gold) !important; background: rgba(212,175,55,0.08) !important; }
+.nav-link:hover { color: var(--gold) !important; }
+.shariah-link:hover { background: #D1FAE5 !important; color: #065F46 !important; }
+
 /* Portal specific utilities */
 .change-positive { color: var(--positive); }
 .change-negative { color: var(--negative); }
