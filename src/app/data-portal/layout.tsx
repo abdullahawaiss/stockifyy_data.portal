@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PortalNav from "@/components/portal/PortalNav";
 import PortalFooter from "@/components/portal/PortalFooter";
 import { getSession } from "@/lib/auth";
+import ChatbotLoader from "@/components/chatbot/ChatbotLoader";
 
 export const metadata: Metadata = {
   title: { default: "Data Portal", template: "%s | Stockifyy Data Portal" },
@@ -17,6 +18,8 @@ export default async function DataPortalLayout({ children }: { children: React.R
       <PortalNav isAdmin={isAdmin} />
       <main className="flex-1">{children}</main>
       <PortalFooter />
+      {/* AI chatbot — available on every portal page, lazy-loaded after hydration */}
+      <ChatbotLoader />
     </div>
   );
 }
