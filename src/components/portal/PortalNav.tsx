@@ -69,7 +69,8 @@ function LiveClock() {
 
   useEffect(() => {
     setNow(new Date());
-    const id = setInterval(() => setNow(new Date()), 1000);
+    // Update every minute — seconds shown but only refreshed on the minute boundary
+    const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
 
