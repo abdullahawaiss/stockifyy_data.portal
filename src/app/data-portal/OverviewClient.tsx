@@ -61,16 +61,20 @@ function fmtNum(n: number, d = 2) { return n.toLocaleString("en-PK", { minimumFr
 function fmtVol(v: number) { return v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v.toLocaleString(); }
 
 /* ── Market status ──────────────────────────────── */
+// Checks status every 30s — open/close only changes at 9:30 and 15:30 PKT.
+// No need to re-render the whole page every second for a clock (PortalNav has LiveClock).
 function useMarketStatus() {
-  const [s, setS] = useState({ open: false, label: "—", time: "" });
+  const [s, setS] = useState({ open: false, label: "—" });
   useEffect(() => {
-    function tick() {
+    function check() {
       const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
       const d = pkt.getDay(), mins = pkt.getHours() * 60 + pkt.getMinutes();
       const open = d >= 1 && d <= 5 && mins >= 570 && mins < 930;
-      setS({ open, label: open ? "Market Open" : "Market Closed", time: pkt.toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }) });
+      setS(prev => (prev.open === open ? prev : { open, label: open ? "Market Open" : "Market Closed" }));
     }
-    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
+    check();
+    const id = setInterval(check, 30_000);
+    return () => clearInterval(id);
   }, []);
   return s;
 }
@@ -148,15 +152,6 @@ export default function OverviewClient() {
 
   return (
     <div>
-      <style>{`
-        @keyframes heroUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes heroPop { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
-        .h1{animation:heroUp 0.5s ease both 0.05s}
-        .h2{animation:heroUp 0.5s ease both 0.15s}
-        .h3{animation:heroUp 0.5s ease both 0.25s}
-        .h4{animation:heroPop 0.5s ease both 0.35s}
-      `}</style>
-
       {/* ── HERO ─────────────────────────────────── */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg,#07111F 0%,#0D2137 60%,#07111F 100%)" }}>
         <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
@@ -174,8 +169,6 @@ export default function OverviewClient() {
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: mkt.open ? "#4ADE80" : "#F87171", boxShadow: mkt.open ? "0 0 6px #4ADE80" : "none", display: "inline-block" }}/>
                   {mkt.label}
                 </span>
-                <span className="text-[10px] sm:text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{mkt.time} PKT</span>
-                <span className="text-[10px] sm:text-xs hidden sm:inline" style={{ color: "rgba(255,255,255,0.4)" }}>·</span>
                 <span className="text-[10px] sm:text-xs hidden sm:inline" style={{ color: "rgba(255,255,255,0.4)" }}>
                   {new Date().toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" })}
                 </span>

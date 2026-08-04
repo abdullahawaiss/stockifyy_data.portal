@@ -92,6 +92,39 @@ body {
 }
 .ticker-track:hover { animation-play-state: paused; }
 
+/* Shariah page animations */
+@keyframes sHeroUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sHeroFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes cardPop {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.sh1 { animation: sHeroUp 0.5s ease both 0.05s; }
+.sh2 { animation: sHeroUp 0.5s ease both 0.17s; }
+.sh3 { animation: sHeroFade 0.5s ease both 0.27s; }
+.sh4 { animation: sHeroUp 0.5s ease both 0.38s; }
+.sh5 { animation: sHeroUp 0.5s ease both 0.48s; }
+
+/* Hero animations (OverviewClient) */
+@keyframes heroUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.h1 { animation: heroUp  0.5s ease both 0.05s; }
+.h2 { animation: heroUp  0.5s ease both 0.15s; }
+.h3 { animation: heroUp  0.5s ease both 0.25s; }
+.h4 { animation: heroPop 0.5s ease both 0.35s; }
+
 /* Loading skeleton */
 @keyframes shimmer {
   0% { background-position: -200% 0; }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import PortalNav from "@/components/portal/PortalNav";
-import DemoBanner from "@/components/portal/DemoBanner";
 import PortalFooter from "@/components/portal/PortalFooter";
 import { getSession } from "@/lib/auth";
 

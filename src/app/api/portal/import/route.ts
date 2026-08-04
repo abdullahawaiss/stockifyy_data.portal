@@ -50,6 +50,12 @@ export async function POST(req: NextRequest) {
     const errors: string[] = [];
 
     if (importType === "daily_stock_prices") {
+      // FIX: Pre-load all company symbols once → eliminates N+1 DB queries.
+      // Before: 1 SELECT per CSV row. A 200-row file = 200 sequential DB round-trips.
+      // After: 1 SELECT total, O(1) Map lookup per row.
+      const allCompanies = await db.select({ id: companies.id, symbol: companies.symbol }).from(companies);
+      const companyMap = new Map(allCompanies.map(c => [c.symbol, c.id]));
+
       const CHUNK = 200;
       for (let i = 0; i < records.length; i += CHUNK) {
         const chunk = records.slice(i, i + CHUNK);
@@ -59,11 +65,11 @@ export async function POST(req: NextRequest) {
           const dateStr = row.date ?? row.Date ?? row.trading_date ?? "";
           if (!symbol || !dateStr) { errors.push(`Row ${i + processed}: missing symbol or date`); continue; }
 
-          const [co] = await db.select({ id: companies.id }).from(companies).where(eq(companies.symbol, symbol)).limit(1);
-          if (!co) { errors.push(`Row ${i + processed}: unknown symbol ${symbol}`); continue; }
+          const companyId = companyMap.get(symbol);
+          if (!companyId) { errors.push(`Row ${i + processed}: unknown symbol ${symbol}`); continue; }
 
           inserts.push({
-            companyId: co.id,
+            companyId,
             symbol,
             tradingDate: dateStr,
             open: row.open ?? row.Open ?? null,

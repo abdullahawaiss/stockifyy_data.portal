@@ -109,16 +109,7 @@ export default function ShariahClient() {
 
   return (
     <div>
-      <style>{`
-        @keyframes sHeroUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes sHeroFade { from { opacity:0; } to { opacity:1; } }
-        .sh1 { animation: sHeroUp 0.5s ease both 0.05s; }
-        .sh2 { animation: sHeroUp 0.5s ease both 0.17s; }
-        .sh3 { animation: sHeroUp 0.5s ease both 0.28s; }
-        .sh4 { animation: sHeroUp 0.5s ease both 0.38s; }
-        .sh5 { animation: sHeroUp 0.5s ease both 0.48s; }
-        @keyframes cardPop { from { opacity:0; transform:scale(0.94) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
-      `}</style>
+
 
       {/* ── HERO ─────────────────────────────────────── */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg,#1A1200 0%,#2C1E00 35%,#07111F 100%)", borderBottom: "2px solid rgba(212,175,55,0.3)" }}>
