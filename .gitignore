@@ -47,3 +47,18 @@ next-env.d.ts
 # Uploads / temporary data
 uploads/
 tmp/
+
+# Claude Code session files — never commit
+.claude.json
+.claude.json.backup
+.claude/
+
+# Drizzle migrations snapshot (generated — do not commit)
+# drizzle/ snapshot files are OK to commit; only exclude local overrides
+
+# Quarantined dead code — for review only
+_quarantine/
+
+# Dev performance/audit docs (optional — remove if you want them in repo)
+# PERFORMANCE_BASELINE.md
+# PERFORMANCE_RESULTS.md

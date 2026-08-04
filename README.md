@@ -2,34 +2,57 @@
 
 Pakistan Stock Exchange financial data portal built with Next.js 16, PostgreSQL, and Drizzle ORM.
 
-## Quick Start
+## Quick Start (Local)
 
 ### Prerequisites
 - Node.js 20+
-- Docker Desktop (for PostgreSQL, Redis, MinIO)
-- npm or pnpm
+- Docker Desktop (for local PostgreSQL)
+- npm
 
-### One-command setup
+### Setup
 ```bash
 npm install
-docker compose up -d
+cp .env.example .env.local   # then fill in your values
+docker compose up -d postgres
 npm run db:migrate
 npm run db:seed
 npm run aggregate:weekly
 npm run dev
 ```
 
-Open: http://localhost:3000/data-portal
+Open: http://localhost:3001/data-portal
 
-### Demo Credentials
-- Admin: `admin@stockifyy.com` / `admin123`
-- Analyst: `demo@stockifyy.com` / `demo123`
+> **Warning — demo credentials:** The seed script creates `admin@stockifyy.com / admin123` and `demo@stockifyy.com / demo123`. **Change these before going live.**
+
+## Production Deployment
+
+### 1. Environment variables (required)
+
+Copy `.env.example` and set all values on your hosting platform (Vercel, Railway, Render, etc.):
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (SSL included by the provider) |
+| `JWT_SECRET` | 64-byte random secret — `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` |
+| `SESSION_COOKIE_NAME` | Name of the auth cookie (e.g. `sid`) |
+| `NODE_ENV` | Must be `production` |
+| `NEXT_PUBLIC_APP_URL` | Your public domain, e.g. `https://data.stockifyy.com` |
+
+### 2. Run migrations on the production database
+```bash
+DATABASE_URL=<prod-url> NODE_ENV=production npm run db:migrate
+```
+
+### 3. Build and start
+```bash
+npm run build
+npm start          # listens on port 3000
+```
 
 ## Key Routes
 
 | Route | Description |
 |-------|-------------|
-| `/` | Main website homepage |
 | `/data-portal` | Market overview dashboard |
 | `/data-portal/daily` | Daily market data |
 | `/data-portal/weekly` | Weekly aggregated data |
@@ -38,10 +61,6 @@ Open: http://localhost:3000/data-portal
 | `/data-portal/companies` | Company directory |
 | `/data-portal/company/[symbol]` | Company profile |
 | `/data-portal/screener` | Stock screener |
-| `/data-portal/historical-data` | Historical data |
-| `/data-portal/announcements` | Company announcements |
-| `/data-portal/research` | Research reports |
-| `/data-portal/downloads` | Data downloads |
 | `/data-portal/admin` | Admin panel (staff only) |
 | `/data-portal/admin/import` | Data import centre |
 | `/data-portal/admin/login` | Staff login |
@@ -49,16 +68,12 @@ Open: http://localhost:3000/data-portal
 ## Scripts
 
 ```bash
-npm run dev           # Start development server
-npm run build         # Production build
-npm run db:migrate    # Run database migrations
-npm run db:seed       # Seed demo data
-npm run aggregate:weekly  # Generate weekly records from daily data
-npm test              # Run tests
+npm run dev               # Dev server on port 3001
+npm run build             # Production build
+npm start                 # Production server on port 3000
+npm run db:generate       # Generate Drizzle migration files from schema
+npm run db:migrate        # Apply pending migrations
+npm run db:seed           # Seed demo data
+npm run aggregate:weekly  # Aggregate daily → weekly records
+npm test                  # Run test suite
 ```
-
-## Important Notes
-
-- All data is **demo data** until authorised market data is imported
-- Production requires PostgreSQL, Redis, and S3-compatible object storage
-- See docs/ for architecture, deployment, and integration guides
