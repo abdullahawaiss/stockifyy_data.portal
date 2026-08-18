@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getPsxRows } from "@/lib/psx-live";
 import { db } from "@/db";
 import { dailyStockPrices, dailyIndexValues, indices } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -26,30 +26,57 @@ export async function GET() {
     return NextResponse.json(_cache.data);
   }
 
-  // Try DB first
+  // Try DB first — use latest available trading date (not just today)
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const latestStockDate = await db
+      .select({ d: sql<string>`max(${dailyStockPrices.tradingDate})` })
+      .from(dailyStockPrices);
+    const latestIndexDate = await db
+      .select({ d: sql<string>`max(${dailyIndexValues.tradingDate})` })
+      .from(dailyIndexValues);
+
+    const stockDate  = latestStockDate[0]?.d;
+    const indexDate  = latestIndexDate[0]?.d;
+
     const [dbStocks, dbIndices] = await Promise.all([
-      db.select({
+      stockDate ? db.select({
         symbol: dailyStockPrices.symbol,
         close: dailyStockPrices.close,
         change: dailyStockPrices.priceChange,
         pct: dailyStockPrices.percentageChange,
         vol: dailyStockPrices.volume,
-      }).from(dailyStockPrices).where(eq(dailyStockPrices.tradingDate, today)),
-      db.select({
+      }).from(dailyStockPrices).where(eq(dailyStockPrices.tradingDate, stockDate)) : Promise.resolve([]),
+
+      indexDate ? db.select({
         code: dailyIndexValues.indexCode,
         close: dailyIndexValues.close,
         change: dailyIndexValues.change,
         pct: dailyIndexValues.percentageChange,
+        vol: dailyIndexValues.volume,
       }).from(dailyIndexValues)
-        .leftJoin(indices, eq(dailyIndexValues.indexId, indices.id))
-        .where(eq(dailyIndexValues.tradingDate, today))
-        .orderBy(desc(dailyIndexValues.close)),
+        .where(eq(dailyIndexValues.tradingDate, indexDate))
+        .orderBy(desc(dailyIndexValues.close)) : Promise.resolve([]),
     ]);
 
     if (dbStocks.length > 50) {
       const summary = buildSummary(dbStocks, dbIndices, "db");
+      _cache = { data: summary, ts: now };
+      return NextResponse.json(summary);
+    }
+
+    // Even if stocks are sparse, return indices from DB if we have them
+    if (dbIndices.length > 0) {
+      const live = await getPsxRows();
+      const liveRows = live ? live.rows.map(r => ({
+        symbol: r.symbol, name: r.companyName, sector: r.sectorName,
+        close: parseFloat(r.close) || 0, change: parseFloat(r.priceChange) || 0,
+        pct: parseFloat(r.percentageChange) || 0, vol: parseInt(r.volume) || 0,
+      })) : [];
+      const summary = buildSummary(
+        liveRows.length > 0 ? liveRows.map(r => ({ symbol: r.symbol, close: r.close, change: r.change, pct: r.pct, vol: r.vol })) : dbStocks,
+        dbIndices,
+        "db"
+      );
       _cache = { data: summary, ts: now };
       return NextResponse.json(summary);
     }
@@ -73,7 +100,7 @@ export async function GET() {
     vol: parseInt(r.volume) || 0,
   }));
 
-  const summary = buildSummaryFromLive(rows);
+  const summary = await buildSummaryFromLiveWithIndices(rows);
   _cache = { data: summary, ts: now };
   return NextResponse.json(summary);
 }
@@ -94,13 +121,39 @@ function buildSummary(stocks: any[], dbIndices: any[], source: "db" | "live"): M
     close: parseFloat(String(i.close)) || 0,
     change: parseFloat(String(i.change)) || 0,
     pct: parseFloat(String(i.pct)) || 0,
-    vol: 0,
+    vol: parseFloat(String(i.vol)) || 0,
   })).filter(i => i.code);
 
   return { ...deriveDashboard(rows), indices: idxRows, updatedAt: new Date().toISOString(), source };
 }
 
-function buildSummaryFromLive(rows: { symbol: string; name: string; sector: string; close: number; change: number; pct: number; vol: number }[]): MarketSummary {
+async function buildSummaryFromLiveWithIndices(rows: { symbol: string; name: string; sector: string; close: number; change: number; pct: number; vol: number }[]): Promise<MarketSummary> {
+  // Try to get latest index values from DB even during live scrape fallback
+  try {
+    const latestIndexDate = await db
+      .select({ d: sql<string>`max(${dailyIndexValues.tradingDate})` })
+      .from(dailyIndexValues);
+    const indexDate = latestIndexDate[0]?.d;
+    if (indexDate) {
+      const dbIndices = await db.select({
+        code: dailyIndexValues.indexCode,
+        close: dailyIndexValues.close,
+        change: dailyIndexValues.change,
+        pct: dailyIndexValues.percentageChange,
+        vol: dailyIndexValues.volume,
+      }).from(dailyIndexValues)
+        .where(eq(dailyIndexValues.tradingDate, indexDate))
+        .orderBy(desc(dailyIndexValues.close));
+      const idxRows = dbIndices.map((i: Record<string, unknown>) => ({
+        code: String(i.code ?? ""),
+        close: parseFloat(String(i.close)) || 0,
+        change: parseFloat(String(i.change)) || 0,
+        pct: parseFloat(String(i.pct)) || 0,
+        vol: parseFloat(String(i.vol)) || 0,
+      })).filter(i => i.code);
+      return { ...deriveDashboard(rows), indices: idxRows, updatedAt: new Date().toISOString(), source: "live" };
+    }
+  } catch { /* ignore */ }
   return { ...deriveDashboard(rows), indices: [], updatedAt: new Date().toISOString(), source: "live" };
 }
 
