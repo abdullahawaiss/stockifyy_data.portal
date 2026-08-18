@@ -14,179 +14,114 @@ export default function PublicNotice() {
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        onClick={() => setOpen(false)}
-        style={{
-          position: "fixed", inset: 0, zIndex: 9998,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(3px)",
-          WebkitBackdropFilter: "blur(3px)",
-          animation: "pnFade .2s ease",
-        }}
-      />
+      <div onClick={() => setOpen(false)} style={{
+        position: "fixed", inset: 0, zIndex: 9998,
+        background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)",
+        animation: "pnFade .2s ease",
+      }} />
 
-      {/* Modal wrapper */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "12px",
-        pointerEvents: "none",
+        padding: "12px", pointerEvents: "none",
       }}>
         <div style={{
           pointerEvents: "all",
-          width: "100%", maxWidth: 560,
+          width: "100%", maxWidth: 500,
           background: "#FDFAF5",
           borderRadius: 8,
-          boxShadow: "0 4px 24px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06)",
+          boxShadow: "0 4px 24px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.06)",
           overflow: "hidden",
           animation: "pnUp .3s cubic-bezier(.22,.68,0,1.15)",
         }}>
 
-          {/* Gold gradient bar */}
-          <div style={{ height: 4, background: "linear-gradient(90deg, #986300 0%, #FEA500 50%, #986300 100%)" }} />
+          {/* Gold bar */}
+          <div style={{ height: 3, background: "linear-gradient(90deg,#986300,#FEA500 50%,#986300)" }} />
 
-          {/* ── Header ── */}
+          {/* Header */}
           <div style={{
-            background: "#FDFAF5",
-            padding: "14px 18px 13px",
+            background: "#FDFAF5", padding: "10px 16px",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             borderBottom: "1px solid #EDE8DE",
           }}>
-            <Image
-              src="/stockifyy-logo.svg"
-              alt="Stockifyy"
-              width={130}
-              height={37}
-              priority
-              style={{ display: "block", height: 37, width: "auto" }}
-            />
-            <button
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-              style={{
-                width: 28, height: 28, borderRadius: "50%",
-                border: "1.5px solid #DDD8CC",
-                background: "#F3EFE7",
-                color: "#7A7268", fontSize: 12, fontWeight: 700,
-                cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >✕</button>
+            <Image src="/stockifyy-logo.svg" alt="Stockifyy" width={110} height={31} priority
+              style={{ display: "block", height: 31, width: "auto" }} />
+            <button onClick={() => setOpen(false)} aria-label="Close" style={{
+              width: 26, height: 26, borderRadius: "50%",
+              border: "1.5px solid #DDD8CC", background: "#F3EFE7",
+              color: "#7A7268", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>✕</button>
           </div>
 
-          {/* ── Body ── */}
-          <div style={{ padding: "18px 22px 0", background: "#FDFAF5" }}>
+          {/* Body */}
+          <div style={{ padding: "14px 18px 0" }}>
 
-            {/* PUBLIC NOTICE */}
             <div style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: 26, fontWeight: 900,
-              color: "#1C1A17",
-              letterSpacing: "-0.3px",
-              marginBottom: 4,
-            }}>
-              PUBLIC NOTICE
-            </div>
+              fontFamily: "Georgia,'Times New Roman',serif",
+              fontSize: 22, fontWeight: 900, color: "#1C1A17",
+              letterSpacing: "-0.3px", marginBottom: 3,
+            }}>PUBLIC NOTICE</div>
 
-            {/* Gold subtitle */}
             <div style={{
-              fontSize: 11, fontWeight: 800,
-              color: "#986300",
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              marginBottom: 14,
-              lineHeight: 1.4,
-            }}>
-              Stockifyy — 100% Shariah-Compliant &amp; Riba-Free Advisory Platform
-            </div>
+              fontSize: 9.5, fontWeight: 800, color: "#986300",
+              letterSpacing: "0.07em", textTransform: "uppercase",
+              marginBottom: 10, lineHeight: 1.4,
+            }}>Stockifyy — 100% Shariah-Compliant &amp; Riba-Free Platform</div>
 
-            {/* Para 1 — Shariah */}
-            <p style={{ fontSize: 13, color: "#2C2A26", lineHeight: 1.75, marginBottom: 10, fontWeight: 500 }}>
-              It is hereby notified that Stockifyy is an <strong>SECP-licensed</strong> financial
-              advisory operating strictly under Islamic finance principles. Our platform does{" "}
-              <strong>not</strong> promote, facilitate, or earn from any interest-based (Riba)
-              activity, margin financing, or non-Shariah-compliant instruments.
+            {/* Para 1 */}
+            <p style={{ fontSize: 12, color: "#2C2A26", lineHeight: 1.65, marginBottom: 8, fontWeight: 500 }}>
+              Stockifyy is an <strong>SECP-licensed</strong> advisory operating strictly under Islamic finance principles.
+              We do <strong>not</strong> promote any interest-based (Riba), margin financing, or non-Shariah instruments.
+              All investment opportunities are screened against recognised Shariah criteria.
             </p>
 
-            {/* Para 2 — Scam warning (from SECP notice) */}
+            {/* Scam warning — compact */}
             <div style={{
-              background: "#FFF8ED",
-              border: "1px solid #F0D080",
-              borderLeft: "3px solid #C98A00",
-              borderRadius: "0 6px 6px 0",
-              padding: "10px 13px",
-              marginBottom: 10,
+              background: "#FFF8ED", border: "1px solid #F0D080",
+              borderLeft: "3px solid #C98A00", borderRadius: "0 5px 5px 0",
+              padding: "8px 11px", marginBottom: 8,
             }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: "#986300", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>
-                ⚠ Caution — Online Investment &amp; Trading Scams
+              <div style={{ fontSize: 9.5, fontWeight: 800, color: "#986300", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+                ⚠ Caution — Online Scams
               </div>
-              <p style={{ fontSize: 12.5, color: "#3A2E00", lineHeight: 1.72, margin: 0, fontWeight: 500 }}>
-                Investors are urged to remain vigilant. Fraudsters are exploiting social media platforms
-                (WhatsApp, Facebook, Instagram) and falsely associating themselves with Stockifyy's name,
-                logo, and identity to lure individuals into unauthorized investment schemes.
+              <p style={{ fontSize: 11.5, color: "#3A2E00", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+                Fraudsters are misusing Stockifyy's name and logo on WhatsApp, Facebook &amp; Instagram.
+                We have <strong>no affiliation</strong> with any unofficial groups or personal accounts.
+                All official communication is only through <strong>www.stockifyy.com</strong>.
               </p>
             </div>
 
-            {/* Para 3 — official channels */}
-            <p style={{ fontSize: 13, color: "#2C2A26", lineHeight: 1.75, marginBottom: 10, fontWeight: 500 }}>
-              <strong>Stockifyy has no affiliation</strong> with any unofficial WhatsApp groups, Facebook
-              pages, or personal accounts claiming to represent us. All official communication is done
-              exclusively through <strong>www.stockifyy.com</strong> and verified representatives only.
+            {/* Para 2 */}
+            <p style={{ fontSize: 12, color: "#2C2A26", lineHeight: 1.65, marginBottom: 12, fontWeight: 500 }}>
+              Stockifyy provides <strong>advisory services only</strong> — we do not hold or trade client funds.
+              For investment decisions, always consult a certified Shariah financial advisor.
             </p>
 
-            {/* Para 4 — advisory only */}
-            <p style={{ fontSize: 13, color: "#2C2A26", lineHeight: 1.75, marginBottom: 14, fontWeight: 500 }}>
-              Every investment opportunity on this platform is evaluated against recognised Shariah
-              screening criteria. Stockifyy provides <strong>advisory services only</strong> — it does
-              not hold or trade client funds. For investments, always consult a certified Shariah advisor.
-            </p>
+            <div style={{ height: 1, background: "#EDE8DE", marginBottom: 10 }} />
 
-            {/* Divider */}
-            <div style={{ height: 1, background: "#EDE8DE", marginBottom: 12 }} />
+            {/* Footer */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, paddingBottom: 14 }}>
+              <a href="https://www.stockifyy.com" target="_blank" rel="noopener noreferrer" style={{
+                fontSize: 11, fontWeight: 700, color: "#986300",
+                textDecoration: "none", letterSpacing: "0.01em", flexShrink: 0,
+              }}>www.stockifyy.com</a>
 
-            {/* Footer row — website left, button right */}
-            <div style={{
-              display: "flex", alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              paddingBottom: 18,
-            }}>
-              <a
-                href="https://www.stockifyy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: 11.5, fontWeight: 700,
-                  color: "#986300",
-                  textDecoration: "none",
-                  letterSpacing: "0.02em",
-                  flexShrink: 0,
-                }}
-              >
-                www.stockifyy.com
-              </a>
-
-              <button
-                onClick={() => setOpen(false)}
-                style={{
-                  flex: 1, padding: "10px 0",
-                  background: "linear-gradient(135deg, #986300 0%, #C98A00 50%, #986300 100%)",
-                  color: "#fff", border: "none", borderRadius: 5,
-                  fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  letterSpacing: "0.02em",
-                }}
-              >
-                I Understand &amp; Continue
-              </button>
+              <button onClick={() => setOpen(false)} style={{
+                flex: 1, padding: "9px 0",
+                background: "linear-gradient(135deg,#986300,#C98A00 50%,#986300)",
+                color: "#fff", border: "none", borderRadius: 5,
+                fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+              }}>I Understand &amp; Continue</button>
             </div>
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes pnFade { from { opacity:0 } to { opacity:1 } }
-        @keyframes pnUp   { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:none } }
+        @keyframes pnFade { from{opacity:0} to{opacity:1} }
+        @keyframes pnUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
       `}</style>
     </>
   );
