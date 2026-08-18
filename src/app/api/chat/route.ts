@@ -157,17 +157,16 @@ function addDisclaimer(text: string, userMessage: string): string {
   return text;
 }
 
-// Fetch live PSX index data to inject into system prompt
+// Fetch live PSX index data — max 2s, non-blocking
 async function fetchLivePSXContext(): Promise<string> {
   try {
     const res = await fetch("https://dps.psx.com.pk/indices", {
       headers: { "Accept": "application/json", "User-Agent": "StockifyAI/1.0" },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(2000),
     });
     if (!res.ok) return "";
     const data = await res.json();
     if (!Array.isArray(data)) return "";
-
     const lines = data.slice(0, 12).map((idx: Record<string, unknown>) => {
       const name = idx.index_name ?? idx.name ?? idx.symbol ?? "?";
       const val = idx.current ?? idx.last ?? idx.close ?? "N/A";
@@ -176,12 +175,39 @@ async function fetchLivePSXContext(): Promise<string> {
       const sign = Number(chg) >= 0 ? "▲" : "▼";
       return `  ${name}: ${val} ${chg ? `${sign}${chg} (${pct}%)` : ""}`;
     }).join("\n");
-
     const now = new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
-    return `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\nLIVE PSX DATA (as of ${now} PKT)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${lines}\n(Source: PSX DPS live feed)`;
+    return `\n\nLIVE PSX DATA (${now} PKT):\n${lines}`;
   } catch {
     return "";
   }
+}
+
+// Call Groq with auto-retry on 429
+async function callGroq(apiKey: string, messages: object[], retries = 2): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "groq/compound-mini",
+        messages,
+        temperature: 0.7,
+        max_tokens: 600,
+        top_p: 0.9,
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (res.status !== 429) return res;
+    // Wait 1s then retry
+    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+  }
+  // Final attempt
+  return fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: "groq/compound-mini", messages, temperature: 0.7, max_tokens: 600 }),
+    signal: AbortSignal.timeout(25_000),
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -231,31 +257,10 @@ export async function POST(req: NextRequest) {
   ];
 
   try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "groq/compound-mini",
-        messages: groqMessages,
-        temperature: 0.7,
-        max_tokens: 1024,
-        top_p: 0.9,
-      }),
-      signal: AbortSignal.timeout(25_000),
-    });
+    const groqRes = await callGroq(apiKey, groqMessages);
 
     if (!groqRes.ok) {
-      const status = groqRes.status;
-      if (status === 429) {
-        return NextResponse.json(
-          { error: "AI assistant par filhal zyada requests aa rahi hain. Thori dair baad dobara try karein." },
-          { status: 429 }
-        );
-      }
-      throw new Error(`Groq API error ${status}`);
+      throw new Error(`Groq API error ${groqRes.status}`);
     }
 
     const data = await groqRes.json();
