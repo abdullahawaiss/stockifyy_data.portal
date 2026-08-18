@@ -9,9 +9,8 @@ import PageAnimations from "./_components/PageAnimations";
 import GlobalSearch from "./_components/GlobalSearch";
 import PublicNotice from "./_components/PublicNotice";
 
-const GainersSection       = dynamic(() => import("./_components/GainersLosersSection"));
-const LosersSection        = dynamic(() => import("./_components/GainersLosersSection"));
-const MarketPerformers     = dynamic(() => import("./_components/MarketPerformers"));
+import GainersLosersSection from "./_components/GainersLosersSection";
+import MarketPerformers from "./_components/MarketPerformers";
 const AnnouncementsSection = dynamic(() => import("./_components/AnnouncementsSection"));
 
 export const metadata: Metadata = { title: "Market Overview" };
@@ -40,10 +39,10 @@ export default async function DataPortalPage() {
 
         <div style={{ display: "flex", gap: 12, alignItems: "stretch", width: "100%" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <GainersSection gainersOnly initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
+            <GainersLosersSection gainersOnly initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <LosersSection losersOnly initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
+            <GainersLosersSection losersOnly initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
           </div>
           <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
             <MarketPerformers initialData={data} />
