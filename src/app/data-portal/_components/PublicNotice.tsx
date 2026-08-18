@@ -43,18 +43,18 @@ export default function PublicNotice() {
           animation: "pnUp .3s cubic-bezier(.22,.68,0,1.15)",
         }}>
 
-          {/* Gold gradient bar — logo color */}
+          {/* Gold gradient bar */}
           <div style={{
             height: 4,
             background: "linear-gradient(90deg, #986300 0%, #FEA500 50%, #986300 100%)",
           }} />
 
-          {/* ── Light header with actual logo ── */}
+          {/* ── Header ── */}
           <div style={{
-            background: "#fff",
+            background: "#FDFAF5",
             padding: "14px 18px 13px",
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            borderBottom: "1px solid #F0EDEA",
+            borderBottom: "1px solid #EDE8DE",
           }}>
             <Image
               src="/stockifyy-logo.svg"
@@ -64,15 +64,14 @@ export default function PublicNotice() {
               priority
               style={{ display: "block", height: 37, width: "auto" }}
             />
-
             <button
               onClick={() => setOpen(false)}
               aria-label="Close"
               style={{
                 width: 28, height: 28, borderRadius: "50%",
-                border: "1.5px solid #D1CBC0",
-                background: "#F7F4F0",
-                color: "#6B6560", fontSize: 12, fontWeight: 700,
+                border: "1.5px solid #DDD8CC",
+                background: "#F3EFE7",
+                color: "#7A7268", fontSize: 12, fontWeight: 700,
                 cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
@@ -80,13 +79,13 @@ export default function PublicNotice() {
           </div>
 
           {/* ── Body ── */}
-          <div style={{ padding: "20px 22px 22px", background: "#fff" }}>
+          <div style={{ padding: "20px 22px 22px", background: "#FDFAF5" }}>
 
-            {/* PUBLIC NOTICE heading like SCS */}
+            {/* PUBLIC NOTICE */}
             <div style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               fontSize: 27, fontWeight: 900,
-              color: "#0B3D2A",
+              color: "#1C1A17",
               letterSpacing: "-0.3px",
               marginBottom: 5,
             }}>
@@ -106,7 +105,7 @@ export default function PublicNotice() {
             </div>
 
             {/* Body paragraphs */}
-            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
+            <p style={{ fontSize: 13.5, color: "#2C2A26", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
               It is hereby notified to all users and the general public that Stockifyy
               is an <strong>SECP-licensed</strong> financial advisory operating strictly under
               Islamic finance principles. Our platform does <strong>not</strong> promote,
@@ -114,28 +113,28 @@ export default function PublicNotice() {
               financing, or non-Shariah-compliant instruments.
             </p>
 
-            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
+            <p style={{ fontSize: 13.5, color: "#2C2A26", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
               Every investment opportunity advised on this platform is evaluated against
               recognised Shariah screening criteria, ensuring your portfolio remains
               aligned with your values. All market data displayed is sourced directly
               and exclusively from the Pakistan Stock Exchange (PSX).
             </p>
 
-            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 20, fontWeight: 500 }}>
+            <p style={{ fontSize: 13.5, color: "#2C2A26", lineHeight: 1.78, marginBottom: 20, fontWeight: 500 }}>
               Stockifyy provides <strong>advisory services only</strong> — it does not
               hold, manage, or trade client funds directly. For any investment decisions,
               we strongly recommend consulting with a certified Shariah financial advisor.
             </p>
 
             {/* Divider */}
-            <div style={{ height: 1, background: "#F0EDEA", marginBottom: 16 }} />
+            <div style={{ height: 1, background: "#EDE8DE", marginBottom: 16 }} />
 
-            {/* CTA — dark green, full width like SCS */}
+            {/* CTA — gold/amber, no green */}
             <button
               onClick={() => setOpen(false)}
               style={{
                 width: "100%", padding: "11px 0",
-                background: "#0B3D2A",
+                background: "linear-gradient(135deg, #986300 0%, #C98A00 50%, #986300 100%)",
                 color: "#fff", border: "none", borderRadius: 5,
                 fontSize: 13.5, fontWeight: 700, cursor: "pointer",
                 letterSpacing: "0.02em",
