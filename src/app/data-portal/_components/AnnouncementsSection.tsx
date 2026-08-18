@@ -5,17 +5,51 @@ import { TYPE_COLORS } from "../_data";
 // ── types ──
 type Category = "Board Meetings" | "Payouts" | "Insider Transactions" | "Result Announcements" | "Dividend Payout";
 
+interface AnnouncementRow {
+  id: number; symbol: string | null; announcementType: string; title: string;
+  content: string | null; announcementDate: string; fileUrl: string | null;
+}
+
 interface SimpleRow {
   symbol: string; title: string; heldDate: string; postingDate: string; cat: Category;
   detail?: { agenda?: string; venue?: string; eps?: string; dividend?: string; period?: string; shares?: string; type?: string; note?: string };
 }
 
-// Fake rows removed — data comes from /api/portal/announcements
-const SIMPLE_ROWS: SimpleRow[] = [];
+function catOf(type: string): Category {
+  const t = type.toLowerCase();
+  if (t.includes("board") || t.includes("director") || t.includes("meeting")) return "Board Meetings";
+  if (t.includes("dividend") && t.includes("payout")) return "Dividend Payout";
+  if (t.includes("dividend")) return "Dividend Payout";
+  if (t.includes("result") || t.includes("financial") || t.includes("eps") || t.includes("earning")) return "Result Announcements";
+  if (t.includes("insider") || t.includes("director") || t.includes("substantial")) return "Insider Transactions";
+  return "Payouts";
+}
+
+function toSimpleRow(a: AnnouncementRow): SimpleRow {
+  const d = new Date(a.announcementDate);
+  const fmt = (dt: Date) => `${String(dt.getDate()).padStart(2,"0")}-${String(dt.getMonth()+1).padStart(2,"0")}-${dt.getFullYear()}`;
+  return {
+    symbol: a.symbol ?? "—",
+    title:  a.title,
+    heldDate:    fmt(d),
+    postingDate: fmt(d),
+    cat: catOf(a.announcementType),
+  };
+}
+
+function toBoardRow(a: AnnouncementRow) {
+  const d = new Date(a.announcementDate);
+  const fmt = (dt: Date) => `${String(dt.getDate()).padStart(2,"0")}-${String(dt.getMonth()+1).padStart(2,"0")}-${dt.getFullYear()}`;
+  return {
+    symbol: a.symbol ?? "—",
+    purpose: a.title,
+    scheduledDate: fmt(d),
+    time: "—",
+    periodEnded: "",
+  };
+}
+
 const CATS: Category[] = ["Board Meetings","Payouts","Insider Transactions","Result Announcements","Dividend Payout"];
-const CAT_COUNTS: Record<Category, number> = {
-  "Board Meetings": 0, "Payouts": 0, "Insider Transactions": 0, "Result Announcements": 0, "Dividend Payout": 0,
-};
 
 // ── helpers ──
 function parseDate(ddmmyyyy: string) {
@@ -91,16 +125,15 @@ function Chip({label,value,accent}:{label:string;value:string;accent?:boolean}) 
 }
 
 // ── BOARD MEETINGS tab ──
-function BoardMeetingsTab({search}:{search:string}) {
+function BoardMeetingsTab({search, data}:{search:string; data: ReturnType<typeof toBoardRow>[]}) {
   const [mounted, setMounted] = useState(false);
   const [,setTick] = useState(0);
   useEffect(()=>{ setMounted(true); const id=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(id);},[]);
   const [expanded,setExpanded] = useState<number|null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = useMemo(()=>([] as any[]).filter((m: any)=>
+  const rows = useMemo(()=>data.filter((m)=>
     !search||m.symbol?.toLowerCase().includes(search.toLowerCase())||m.purpose?.toLowerCase().includes(search.toLowerCase())
-  ),[search]);
+  ),[search, data]);
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -180,12 +213,12 @@ function BoardMeetingsTab({search}:{search:string}) {
 }
 
 // ── RESULT ANNOUNCEMENTS tab ──
-function ResultAnnouncementsTab({search}:{search:string}) {
+function ResultAnnouncementsTab({search, data}:{search:string; data: SimpleRow[]}) {
   const [expanded,setExpanded] = useState<number|null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = useMemo(()=>([] as any[]).filter((r: any)=>
-    !search||r.symbol?.toLowerCase().includes(search.toLowerCase())||r.period?.toLowerCase().includes(search.toLowerCase())
-  ),[search]);
+  const rows = useMemo(()=>data.filter((r)=>
+    !search||r.symbol?.toLowerCase().includes(search.toLowerCase())||r.title?.toLowerCase().includes(search.toLowerCase())
+  ).map(r => ({ symbol: r.symbol, period: r.heldDate, eps: null as string|null, payout: null as string|null, announced: r.heldDate }))
+  ,[search, data]);
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -251,11 +284,11 @@ function ResultAnnouncementsTab({search}:{search:string}) {
 }
 
 // ── DIVIDEND PAYOUT tab ──
-function DividendPayoutTab({search}:{search:string}) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = useMemo(()=>([] as any[]).filter((d: any)=>
+function DividendPayoutTab({search, data}:{search:string; data: SimpleRow[]}) {
+  const rows = useMemo(()=>data.filter((d)=>
     !search||d.symbol.toLowerCase().includes(search.toLowerCase())
-  ),[search]);
+  ).map(d => ({ symbol: d.symbol, type: "Dividend", amount: "—", exDate: d.heldDate, payDate: d.heldDate, yield: "—" }))
+  ,[search, data]);
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -302,12 +335,12 @@ function DividendPayoutTab({search}:{search:string}) {
 }
 
 // ── SIMPLE rows tab (Payouts / Insider Transactions) ──
-function SimpleTab({cat,search}:{cat:Category;search:string}) {
+function SimpleTab({cat,search,data}:{cat:Category;search:string;data:SimpleRow[]}) {
   const [expanded,setExpanded] = useState<number|null>(null);
-  const rows = useMemo(()=>SIMPLE_ROWS
+  const rows = useMemo(()=>data
     .filter(a=>a.cat===cat)
     .filter(a=>!search||a.symbol.toLowerCase().includes(search.toLowerCase())||a.title.toLowerCase().includes(search.toLowerCase()))
-  ,[cat,search]);
+  ,[cat,search,data]);
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -371,6 +404,30 @@ function SimpleTab({cat,search}:{cat:Category;search:string}) {
 export default function AnnouncementsSection() {
   const [cat, setCat]       = useState<Category>("Board Meetings");
   const [search, setSearch] = useState("");
+  const [allRows, setAllRows] = useState<AnnouncementRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/portal/announcements?limit=50")
+      .then(r => r.json())
+      .then(d => setAllRows(d.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const simpleRows = useMemo(() => allRows.map(toSimpleRow), [allRows]);
+  const boardRows  = useMemo(() => allRows.filter(a => catOf(a.announcementType) === "Board Meetings").map(toBoardRow), [allRows]);
+  const counts: Record<Category, number> = useMemo(() => ({
+    "Board Meetings":       allRows.filter(a => catOf(a.announcementType) === "Board Meetings").length,
+    "Payouts":              allRows.filter(a => catOf(a.announcementType) === "Payouts").length,
+    "Insider Transactions": allRows.filter(a => catOf(a.announcementType) === "Insider Transactions").length,
+    "Result Announcements": allRows.filter(a => catOf(a.announcementType) === "Result Announcements").length,
+    "Dividend Payout":      allRows.filter(a => catOf(a.announcementType) === "Dividend Payout").length,
+  }), [allRows]);
+
+  const today = new Date();
+  const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+  const dateRange = `${weekAgo.getDate()} ${weekAgo.toLocaleString("en",{month:"short"})} – ${today.getDate()} ${today.toLocaleString("en",{month:"short"})} ${today.getFullYear()}`;
 
   return (
     <div>
@@ -378,7 +435,7 @@ export default function AnnouncementsSection() {
         <h2 className="text-base font-black" style={{color:"var(--navy)"}}>PSX Announcements</h2>
         <div className="flex-1 h-px" style={{background:"var(--border)"}}/>
         <span className="text-[10px] font-semibold px-2 py-1 rounded" style={{background:"var(--navy-tint)",color:"var(--text-muted)"}}>
-          04 Aug – 11 Aug 2026
+          {dateRange}
         </span>
       </div>
 
@@ -392,13 +449,15 @@ export default function AnnouncementsSection() {
                 className="px-3 py-3 text-sm font-semibold whitespace-nowrap transition-all"
                 style={{
                   color:cat===c?"var(--navy)":"var(--text-muted)",
-                  borderBottom:cat===c?"2px solid var(--navy)":"2px solid transparent",
                   background:"transparent",
+                  border:"none",
+                  borderBottom:cat===c?"2px solid var(--navy)":"2px solid transparent",
+                  cursor:"pointer",
                 }}>
                 {c}
                 <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                   style={{background:cat===c?"var(--navy-tint)":"transparent",color:"var(--text-muted)"}}>
-                  {CAT_COUNTS[c]}
+                  {loading ? "…" : counts[c]}
                 </span>
               </button>
             ))}
@@ -416,11 +475,24 @@ export default function AnnouncementsSection() {
           </div>
         </div>
 
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="px-4 py-8 flex flex-col gap-3">
+            {Array.from({length:5}).map((_,i)=>(
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0"/>
+                <div className="flex-1 h-4 bg-gray-100 rounded"/>
+                <div className="w-20 h-4 bg-gray-100 rounded"/>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Tab content */}
-        {cat==="Board Meetings"       && <BoardMeetingsTab      search={search}/>}
-        {cat==="Result Announcements" && <ResultAnnouncementsTab search={search}/>}
-        {cat==="Dividend Payout"      && <DividendPayoutTab     search={search}/>}
-        {(cat==="Payouts"||cat==="Insider Transactions") && <SimpleTab cat={cat} search={search}/>}
+        {!loading && cat==="Board Meetings"       && <BoardMeetingsTab      search={search} data={boardRows}/>}
+        {!loading && cat==="Result Announcements" && <ResultAnnouncementsTab search={search} data={simpleRows.filter(r=>r.cat==="Result Announcements")}/>}
+        {!loading && cat==="Dividend Payout"      && <DividendPayoutTab     search={search} data={simpleRows.filter(r=>r.cat==="Dividend Payout")}/>}
+        {!loading && (cat==="Payouts"||cat==="Insider Transactions") && <SimpleTab cat={cat} search={search} data={simpleRows}/>}
       </div>
     </div>
   );
