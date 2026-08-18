@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 if (!process.env.JWT_SECRET) {
@@ -47,17 +47,21 @@ export async function getSession(): Promise<SessionUser | null> {
     }
 
     const sessionId = payload.sessionId as string;
-    const [session] = await db
-      .select({ userId: sessions.userId, expiresAt: sessions.expiresAt })
+    // Single JOIN query replaces the previous 2 sequential round-trips
+    const [row] = await db
+      .select({
+        expiresAt: sessions.expiresAt,
+        id:        users.id,
+        email:     users.email,
+        fullName:  users.fullName,
+        role:      users.role,
+        isActive:  users.isActive,
+      })
       .from(sessions)
-      .where(eq(sessions.id, sessionId));
-    if (!session || session.expiresAt < new Date()) return null;
-    const [user] = await db
-      .select({ id: users.id, email: users.email, fullName: users.fullName, role: users.role, isActive: users.isActive })
-      .from(users)
-      .where(eq(users.id, session.userId));
-    if (!user || !user.isActive) return null;
-    return { id: user.id, email: user.email, fullName: user.fullName, role: user.role };
+      .innerJoin(users, eq(sessions.userId, users.id))
+      .where(and(eq(sessions.id, sessionId), gt(sessions.expiresAt, new Date())));
+    if (!row || !row.isActive) return null;
+    return { id: row.id, email: row.email, fullName: row.fullName, role: row.role };
   } catch {
     return null;
   }

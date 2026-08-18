@@ -1,6 +1,6 @@
 /**
- * Shared market data fetcher — called directly by server components (no HTTP round-trip).
- * The API route also calls this so the in-memory cache is shared.
+ * Shared market data fetcher — called by server components and API routes.
+ * In-memory cache keeps hot data instantly available within the same process.
  */
 import { db } from "@/db";
 import { dailyStockPrices, dailyIndexValues, companyAnnouncements } from "@/db/schema/market";
@@ -21,50 +21,93 @@ export interface MarketSummary {
 let _cache: { data: MarketSummary; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
+// Background PSX warming — fires and never blocks the caller
+let _psxPending = false;
+function warmPsxBackground() {
+  if (_psxPending) return;
+  _psxPending = true;
+  Promise.all([getPsxRows(), getPsxIndices()])
+    .finally(() => { _psxPending = false; });
+}
+
 export async function getMarketSummary(): Promise<MarketSummary> {
-  const now = Date.now();
-  if (_cache && now - _cache.ts < CACHE_TTL) return _cache.data;
+  const t0 = Date.now();
+  const now = t0;
+
+  if (_cache && now - _cache.ts < CACHE_TTL) {
+    console.log(`[market-data] cache hit (${Date.now() - t0}ms)`);
+    return _cache.data;
+  }
 
   try {
-    const [latestStock, latestIndex] = await Promise.all([
-      db.select({ d: sql<string>`max(${dailyStockPrices.tradingDate})` }).from(dailyStockPrices),
-      db.select({ d: sql<string>`max(${dailyIndexValues.tradingDate})` }).from(dailyIndexValues),
-    ]);
-    const stockDate = latestStock[0]?.d;
-    const indexDate = latestIndex[0]?.d;
-
+    // ── Single round-trip: fetch latest stocks + latest indices in parallel
+    //    Each query uses a subquery so we skip the separate "max(date)" round-trip.
     const [dbStocks, dbIndices] = await Promise.all([
-      stockDate
-        ? db.select({ symbol: dailyStockPrices.symbol, close: dailyStockPrices.close, change: dailyStockPrices.priceChange, pct: dailyStockPrices.percentageChange, vol: dailyStockPrices.volume })
-            .from(dailyStockPrices).where(eq(dailyStockPrices.tradingDate, stockDate))
-        : Promise.resolve([]),
-      indexDate
-        ? db.select({ code: dailyIndexValues.indexCode, close: dailyIndexValues.close, change: dailyIndexValues.change, pct: dailyIndexValues.percentageChange, vol: dailyIndexValues.volume })
-            .from(dailyIndexValues).where(eq(dailyIndexValues.tradingDate, indexDate)).orderBy(desc(dailyIndexValues.close))
-        : Promise.resolve([]),
+      db.select({
+          symbol: dailyStockPrices.symbol,
+          close:  dailyStockPrices.close,
+          change: dailyStockPrices.priceChange,
+          pct:    dailyStockPrices.percentageChange,
+          vol:    dailyStockPrices.volume,
+        })
+        .from(dailyStockPrices)
+        .where(eq(
+          dailyStockPrices.tradingDate,
+          sql<string>`(SELECT max(trading_date) FROM daily_stock_prices)`,
+        )),
+      db.select({
+          code:   dailyIndexValues.indexCode,
+          close:  dailyIndexValues.close,
+          change: dailyIndexValues.change,
+          pct:    dailyIndexValues.percentageChange,
+          vol:    dailyIndexValues.volume,
+        })
+        .from(dailyIndexValues)
+        .where(eq(
+          dailyIndexValues.tradingDate,
+          sql<string>`(SELECT max(trading_date) FROM daily_index_values)`,
+        ))
+        .orderBy(desc(dailyIndexValues.close)),
     ]);
+    console.log(`[market-data] DB queries done (${Date.now() - t0}ms) — stocks:${dbStocks.length} indices:${dbIndices.length}`);
 
     const idxRows = toIdxRows(dbIndices);
 
     if (dbStocks.length > 50) {
-      const summary = build(toStockRows(dbStocks), idxRows.length > 0 ? idxRows : await getPsxIndices(), "db");
+      // Enough stock data from DB — build summary immediately
+      const summary = build(toStockRows(dbStocks), idxRows.length > 0 ? idxRows : [], "db");
+      console.log(`[market-data] built from DB (${Date.now() - t0}ms)`);
+      // Warm PSX cache in background so next 60s refresh is faster
+      warmPsxBackground();
       return cache(summary, now);
     }
 
     if (idxRows.length > 0) {
+      // Indices from DB, stocks from PSX live
+      const t1 = Date.now();
       const live = await getPsxRows();
+      console.log(`[market-data] PSX rows (${Date.now() - t1}ms)`);
       const liveStocks = live ? live.rows.map(toRowFromPsx) : toStockRows(dbStocks);
       const summary = build(liveStocks, idxRows, "db");
+      console.log(`[market-data] built from DB+PSX (${Date.now() - t0}ms)`);
       return cache(summary, now);
     }
-  } catch { /* fall through */ }
 
-  // Full live fallback
-  const live = await getPsxRows();
-  const liveRows = live ? live.rows.map(toRowFromPsx) : [];
-  const psxIdx = await getPsxIndices();
-  const summary = build(liveRows, psxIdx, "live");
-  return cache(summary, now);
+    // ── Full live fallback
+    console.warn(`[market-data] no DB data — falling back to full PSX scrape`);
+    const t1 = Date.now();
+    const [live, psxIdx] = await Promise.all([getPsxRows(), getPsxIndices()]);
+    console.log(`[market-data] PSX fallback done (${Date.now() - t1}ms)`);
+    const liveRows = live ? live.rows.map(toRowFromPsx) : [];
+    const summary = build(liveRows, psxIdx, "live");
+    console.log(`[market-data] built from PSX-only (${Date.now() - t0}ms)`);
+    return cache(summary, now);
+  } catch (err) {
+    console.error(`[market-data] error (${Date.now() - t0}ms)`, err);
+    // Return stale cache rather than crashing
+    if (_cache) return _cache.data;
+    throw err;
+  }
 }
 
 function cache(data: MarketSummary, ts: number) {
@@ -85,12 +128,28 @@ function toIdxRows(raw: any[]) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toStockRows(raw: any[]) {
-  return raw.map(s => ({ symbol: String(s.symbol), name: String(s.symbol), sector: "Unknown", close: parseFloat(String(s.close)) || 0, change: parseFloat(String(s.change)) || 0, pct: parseFloat(String(s.pct)) || 0, vol: parseInt(String(s.vol)) || 0 }));
+  return raw.map(s => ({
+    symbol: String(s.symbol),
+    name:   String(s.symbol),
+    sector: "Unknown",
+    close:  parseFloat(String(s.close))  || 0,
+    change: parseFloat(String(s.change)) || 0,
+    pct:    parseFloat(String(s.pct))    || 0,
+    vol:    parseInt(String(s.vol))      || 0,
+  }));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toRowFromPsx(r: any) {
-  return { symbol: r.symbol, name: r.companyName, sector: r.sectorName, close: parseFloat(r.close) || 0, change: parseFloat(r.priceChange) || 0, pct: parseFloat(r.percentageChange) || 0, vol: parseInt(r.volume) || 0 };
+  return {
+    symbol: r.symbol,
+    name:   r.companyName,
+    sector: r.sectorName,
+    close:  parseFloat(r.close)             || 0,
+    change: parseFloat(r.priceChange)       || 0,
+    pct:    parseFloat(r.percentageChange)  || 0,
+    vol:    parseInt(r.volume)              || 0,
+  };
 }
 
 function build(
@@ -99,9 +158,12 @@ function build(
   source: "db" | "live"
 ): MarketSummary {
   const sorted = stocks.filter(r => r.close > 0);
-  const gainers = [...sorted].filter(r => r.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 10).map(r => ({ symbol: r.symbol, name: r.name, close: r.close, change: r.change, pct: r.pct, vol: r.vol }));
-  const losers  = [...sorted].filter(r => r.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 10).map(r => ({ symbol: r.symbol, name: r.name, close: r.close, change: r.change, pct: r.pct, vol: r.vol }));
-  const volume  = [...sorted].sort((a, b) => b.vol - a.vol).slice(0, 10).map(r => ({ symbol: r.symbol, name: r.name, close: r.close, pct: r.pct, vol: r.vol }));
+  const gainers = [...sorted].filter(r => r.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 10)
+    .map(r => ({ symbol: r.symbol, name: r.name, close: r.close, change: r.change, pct: r.pct, vol: r.vol }));
+  const losers = [...sorted].filter(r => r.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 10)
+    .map(r => ({ symbol: r.symbol, name: r.name, close: r.close, change: r.change, pct: r.pct, vol: r.vol }));
+  const volume = [...sorted].sort((a, b) => b.vol - a.vol).slice(0, 10)
+    .map(r => ({ symbol: r.symbol, name: r.name, close: r.close, pct: r.pct, vol: r.vol }));
   const advances  = sorted.filter(r => r.pct > 0).length;
   const declines  = sorted.filter(r => r.pct < 0).length;
   const unchanged = sorted.filter(r => r.pct === 0).length;
@@ -112,9 +174,14 @@ function build(
     if (!sectorMap.has(r.sector)) sectorMap.set(r.sector, []);
     sectorMap.get(r.sector)!.push(r.pct);
   }
-  const sectors = [...sectorMap.entries()].map(([name, pcts]) => ({ name, pct: +(pcts.reduce((a, b) => a + b, 0) / pcts.length).toFixed(2), count: pcts.length })).sort((a, b) => b.count - a.count).slice(0, 12);
+  const sectors = [...sectorMap.entries()]
+    .map(([name, pcts]) => ({ name, pct: +(pcts.reduce((a, b) => a + b, 0) / pcts.length).toFixed(2), count: pcts.length }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
   return { indices, gainers, losers, volume, breadth, sectors, updatedAt: new Date().toISOString(), source };
 }
+
+// ── Announcements ─────────────────────────────────────────────────────────
 
 export interface AnnouncementItem {
   id: number;
@@ -127,29 +194,34 @@ export interface AnnouncementItem {
 }
 
 let _annCache: { data: AnnouncementItem[]; ts: number } | null = null;
+const ANN_TTL = 120_000;
 
 export async function getAnnouncements(limit = 30): Promise<AnnouncementItem[]> {
   const now = Date.now();
-  if (_annCache && now - _annCache.ts < 120_000) return _annCache.data;
+  if (_annCache && now - _annCache.ts < ANN_TTL) return _annCache.data;
+
+  const t0 = Date.now();
   try {
     const rows = await db
       .select({
-        id: companyAnnouncements.id,
-        symbol: companyAnnouncements.symbol,
+        id:               companyAnnouncements.id,
+        symbol:           companyAnnouncements.symbol,
         announcementType: companyAnnouncements.announcementType,
-        title: companyAnnouncements.title,
-        content: companyAnnouncements.content,
+        title:            companyAnnouncements.title,
+        content:          companyAnnouncements.content,
         announcementDate: companyAnnouncements.announcementDate,
-        fileUrl: companyAnnouncements.fileUrl,
+        fileUrl:          companyAnnouncements.fileUrl,
       })
       .from(companyAnnouncements)
       .where(eq(companyAnnouncements.isPublic, true))
       .orderBy(desc(companyAnnouncements.announcementDate))
       .limit(limit);
+    console.log(`[market-data] announcements query (${Date.now() - t0}ms) rows:${rows.length}`);
     const data = rows as AnnouncementItem[];
     _annCache = { data, ts: now };
     return data;
   } catch {
+    console.warn(`[market-data] announcements query failed (${Date.now() - t0}ms), using cache`);
     return _annCache?.data ?? [];
   }
 }
