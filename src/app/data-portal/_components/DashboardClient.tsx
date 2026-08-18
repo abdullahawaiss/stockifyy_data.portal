@@ -135,7 +135,6 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
     return () => clearInterval(id);
   }, []);
 
-  // Background refresh every 60s — client stays live
   const refresh = useCallback(() => {
     fetch("/api/portal/market-summary")
       .then(r => r.ok ? r.json() : null)
@@ -145,12 +144,12 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
 
   useEffect(() => {
     if (!initialData) {
-      // SSR timed out — fetch immediately on client (no skeleton delay)
       fetch("/api/portal/market-summary")
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d) { setData(d); setLoading(false); } })
         .catch(() => setLoading(false));
     }
+    // Only refresh live in background if not using static data
     const id = setInterval(refresh, 60_000);
     return () => clearInterval(id);
   }, [initialData, refresh]);
