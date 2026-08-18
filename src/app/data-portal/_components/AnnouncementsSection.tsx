@@ -51,6 +51,39 @@ function toBoardRow(a: AnnouncementRow) {
 
 const CATS: Category[] = ["Board Meetings","Payouts","Insider Transactions","Result Announcements","Dividend Payout"];
 
+// Category icons (SVG paths)
+const CAT_ICONS: Record<Category, React.ReactNode> = {
+  "Board Meetings": (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{display:"inline",marginRight:4,verticalAlign:"middle"}}>
+      <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+      <path d="M6 2v4M14 2v4M2 9h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  ),
+  "Payouts": (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{display:"inline",marginRight:4,verticalAlign:"middle"}}>
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.6"/>
+      <path d="M10 6v8M7.5 8.5C7.5 7.4 8.6 7 10 7s2.5.4 2.5 1.5-1 1.5-2.5 1.5-2.5.5-2.5 1.5S8.6 13 10 13s2.5-.4 2.5-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  "Insider Transactions": (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{display:"inline",marginRight:4,verticalAlign:"middle"}}>
+      <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.6"/>
+      <path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  ),
+  "Result Announcements": (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{display:"inline",marginRight:4,verticalAlign:"middle"}}>
+      <path d="M4 10l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+    </svg>
+  ),
+  "Dividend Payout": (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{display:"inline",marginRight:4,verticalAlign:"middle"}}>
+      <path d="M10 3v14M4 7l6-4 6 4M4 13l6 4 6-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+};
+
 // ── helpers ──
 function parseDate(ddmmyyyy: string) {
   const [d,m,y] = ddmmyyyy.split("-").map(Number);
@@ -401,19 +434,20 @@ function SimpleTab({cat,search,data}:{cat:Category;search:string;data:SimpleRow[
 }
 
 // ── Main export ──
-export default function AnnouncementsSection() {
+export default function AnnouncementsSection({ initialData }: { initialData?: AnnouncementRow[] }) {
   const [cat, setCat]       = useState<Category>("Board Meetings");
   const [search, setSearch] = useState("");
-  const [allRows, setAllRows] = useState<AnnouncementRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allRows, setAllRows] = useState<AnnouncementRow[]>(() => initialData ?? []);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (initialData?.length) return; // already have data from server
     fetch("/api/portal/announcements?limit=50")
       .then(r => r.json())
       .then(d => setAllRows(d.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   const simpleRows = useMemo(() => allRows.map(toSimpleRow), [allRows]);
   const boardRows  = useMemo(() => allRows.filter(a => catOf(a.announcementType) === "Board Meetings").map(toBoardRow), [allRows]);
@@ -446,7 +480,7 @@ export default function AnnouncementsSection() {
             {CATS.map(c=>(
               <button key={c}
                 onClick={()=>{setCat(c);setSearch("");}}
-                className="px-3 py-3 text-sm font-semibold whitespace-nowrap transition-all"
+                className="flex items-center gap-1 px-3 py-3 text-[12px] font-semibold whitespace-nowrap transition-all"
                 style={{
                   color:cat===c?"var(--navy)":"var(--text-muted)",
                   background:"transparent",
@@ -454,9 +488,10 @@ export default function AnnouncementsSection() {
                   borderBottom:cat===c?"2px solid var(--navy)":"2px solid transparent",
                   cursor:"pointer",
                 }}>
+                {CAT_ICONS[c]}
                 {c}
-                <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold"
-                  style={{background:cat===c?"var(--navy-tint)":"transparent",color:"var(--text-muted)"}}>
+                <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                  style={{background:cat===c?"var(--navy-tint)":"transparent",color:cat===c?"var(--navy)":"var(--text-muted)"}}>
                   {loading ? "…" : counts[c]}
                 </span>
               </button>
@@ -478,11 +513,11 @@ export default function AnnouncementsSection() {
         {/* Loading skeleton */}
         {loading && (
           <div className="px-4 py-8 flex flex-col gap-3">
-            {Array.from({length:5}).map((_,i)=>(
+            {Array.from({length:6}).map((_,i)=>(
               <div key={i} className="flex items-center gap-3 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0"/>
-                <div className="flex-1 h-4 bg-gray-100 rounded"/>
-                <div className="w-20 h-4 bg-gray-100 rounded"/>
+                <div className="w-8 h-8 rounded-full shrink-0" style={{background:"var(--light-bg)"}}/>
+                <div className="flex-1 h-4 rounded" style={{background:"var(--light-bg)"}}/>
+                <div className="w-20 h-4 rounded" style={{background:"var(--light-bg)"}}/>
               </div>
             ))}
           </div>

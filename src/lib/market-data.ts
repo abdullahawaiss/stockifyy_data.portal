@@ -3,7 +3,7 @@
  * The API route also calls this so the in-memory cache is shared.
  */
 import { db } from "@/db";
-import { dailyStockPrices, dailyIndexValues } from "@/db/schema/market";
+import { dailyStockPrices, dailyIndexValues, companyAnnouncements } from "@/db/schema/market";
 import { eq, desc, sql } from "drizzle-orm";
 import { getPsxRows, getPsxIndices } from "@/lib/psx-live";
 
@@ -114,4 +114,42 @@ function build(
   }
   const sectors = [...sectorMap.entries()].map(([name, pcts]) => ({ name, pct: +(pcts.reduce((a, b) => a + b, 0) / pcts.length).toFixed(2), count: pcts.length })).sort((a, b) => b.count - a.count).slice(0, 12);
   return { indices, gainers, losers, volume, breadth, sectors, updatedAt: new Date().toISOString(), source };
+}
+
+export interface AnnouncementItem {
+  id: number;
+  symbol: string | null;
+  announcementType: string;
+  title: string;
+  content: string | null;
+  announcementDate: string;
+  fileUrl: string | null;
+}
+
+let _annCache: { data: AnnouncementItem[]; ts: number } | null = null;
+
+export async function getAnnouncements(limit = 30): Promise<AnnouncementItem[]> {
+  const now = Date.now();
+  if (_annCache && now - _annCache.ts < 120_000) return _annCache.data;
+  try {
+    const rows = await db
+      .select({
+        id: companyAnnouncements.id,
+        symbol: companyAnnouncements.symbol,
+        announcementType: companyAnnouncements.announcementType,
+        title: companyAnnouncements.title,
+        content: companyAnnouncements.content,
+        announcementDate: companyAnnouncements.announcementDate,
+        fileUrl: companyAnnouncements.fileUrl,
+      })
+      .from(companyAnnouncements)
+      .where(eq(companyAnnouncements.isPublic, true))
+      .orderBy(desc(companyAnnouncements.announcementDate))
+      .limit(limit);
+    const data = rows as AnnouncementItem[];
+    _annCache = { data, ts: now };
+    return data;
+  } catch {
+    return _annCache?.data ?? [];
+  }
 }
