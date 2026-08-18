@@ -36,7 +36,7 @@ function addDisclaimer(text: string, userMessage: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY ?? process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "AI service is not configured." }, { status: 503 });
   }
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         messages: groqMessages,
         temperature: 0.7,
         max_tokens: 1024,
