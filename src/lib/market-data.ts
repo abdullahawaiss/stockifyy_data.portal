@@ -225,3 +225,15 @@ export async function getAnnouncements(limit = 30): Promise<AnnouncementItem[]> 
     return _annCache?.data ?? [];
   }
 }
+
+// ── Startup cache warming ─────────────────────────────────────────────────
+// Fires immediately when the module first loads (i.e. on `npm run dev` / server start).
+// By the time the first browser request arrives the cache is already populated,
+// so every user gets sub-5ms data instead of a cold-start wait.
+if (process.env.NODE_ENV !== "test") {
+  Promise.all([
+    getMarketSummary().catch(e => console.warn("[market-data] startup warm failed:", e)),
+    getAnnouncements(30).catch(() => {}),
+  ]);
+}
+

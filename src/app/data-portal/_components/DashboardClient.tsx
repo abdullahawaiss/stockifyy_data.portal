@@ -124,10 +124,9 @@ function SkeletonCard() {
 
 // ── Main dashboard client component ─────────────────────────────────────
 export default function DashboardClient({ initialData }: { initialData: MarketSummary | null }) {
-  const [data, setData]           = useState<MarketSummary | null>(initialData);
-  const [loading, setLoading]     = useState(!initialData);
-  const [activeCode, setActive]   = useState<string | null>(null);
-  const [isOpen, setIsOpen]       = useState(() => getMarketStatus().open);
+  const [data, setData]         = useState<MarketSummary | null>(initialData);
+  const [activeCode, setActive] = useState<string | null>(null);
+  const [isOpen, setIsOpen]     = useState(() => getMarketStatus().open);
 
   // Market open/close ticker
   useEffect(() => {
@@ -143,16 +142,13 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
   }, []);
 
   useEffect(() => {
-    if (!initialData) {
-      fetch("/api/portal/market-summary")
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) { setData(d); setLoading(false); } })
-        .catch(() => setLoading(false));
-    }
-    // Only refresh live in background if not using static data
+    // Always do one immediate fetch on mount — updates placeholder data to live,
+    // or confirms the SSR data is still current. Silent (no loading state).
+    refresh();
     const id = setInterval(refresh, 60_000);
     return () => clearInterval(id);
-  }, [initialData, refresh]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const indices = data ? toIdxRows(data.indices) : [];
   const active  = activeCode ?? indices[0]?.code ?? null;
@@ -164,15 +160,13 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
     <>
       {/* ── Index Cards ── */}
       <div className="grid gap-3 sm:gap-4" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-        {loading
+        {indices.length === 0
           ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-          : indices.length === 0
-            ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-            : indices.map(idx => (
-                <IdxCard key={idx.code} idx={idx} isOpen={isOpen}
-                  active={idx.code === active}
-                  onClick={() => setActive(idx.code)} />
-              ))}
+          : indices.map(idx => (
+              <IdxCard key={idx.code} idx={idx} isOpen={isOpen}
+                active={idx.code === active}
+                onClick={() => setActive(idx.code)} />
+            ))}
       </div>
 
       {/* ── Index Chart — synced to selected card ── */}
