@@ -83,15 +83,15 @@ export default function CompaniesPage() {
               <tbody>
                 {data.map((co, i) => (
                   <tr key={co.symbol} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#EFF6FF")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--row-hover)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "var(--white)" : "var(--light-bg)")}>
                     <td className="px-3 py-2.5 border-b font-bold" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>{co.symbol}</td>
                     <td className="px-3 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>{co.name}</td>
                     <td className="px-3 py-2.5 border-b text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>{co.sectorName ?? "—"}</td>
                     <td className="px-3 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
-                      <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{
-                        background: co.shariahStatus === "compliant" ? "#D1FAE5" : "#FEE2E2",
-                        color: co.shariahStatus === "compliant" ? "#065F46" : "#991B1B",
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${co.shariahStatus === "compliant" ? "badge-compliant" : "badge-non-compliant"}`} style={{
+                        background: co.shariahStatus === "compliant" ? "var(--badge-compliant-bg)" : "var(--badge-noncompliant-bg)",
+                        color: co.shariahStatus === "compliant" ? "var(--badge-compliant-color)" : "var(--badge-noncompliant-color)",
                       }}>
                         {co.shariahStatus === "compliant" ? "Compliant" : co.shariahStatus === "non_compliant" ? "Non-Compliant" : co.shariahStatus}
                       </span>

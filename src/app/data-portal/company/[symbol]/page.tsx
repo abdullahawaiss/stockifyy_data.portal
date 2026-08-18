@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/db";
-import { companies, dailyStockPrices, weeklyStockPrices, sectors, companyAnnouncements, financialResults, dividends } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
-import { notFound } from "next/navigation";
+import { companies, dailyStockPrices, weeklyStockPrices, sectors, companyAnnouncements } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { formatNumber, formatVolume, formatPct, formatChange, getWeekLabel } from "@/lib/utils";
+import { getPsxRow } from "@/lib/psx-live";
 
 interface Props { params: Promise<{ symbol: string }> }
 
@@ -13,55 +13,81 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: symbol.toUpperCase() };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getCompanyData(sym: string): Promise<{ company: any; latestDaily: any; latestWeekly: any; recentDaily: any[]; recentWeekly: any[]; announcements: any[]; fromLive: boolean }> {
+  // Try DB first
+  try {
+    const [company] = await Promise.race([
+      db.select({
+        id: companies.id, symbol: companies.symbol, name: companies.name,
+        sectorId: companies.sectorId, description: companies.description,
+        listingDate: companies.listingDate, fiscalYearEnd: companies.fiscalYearEnd,
+        website: companies.website, freeFloat: companies.freeFloat,
+        shariahStatus: companies.shariahStatus, marketCapCategory: companies.marketCapCategory,
+        sectorName: sectors.name,
+      }).from(companies).leftJoin(sectors, eq(companies.sectorId, sectors.id))
+        .where(eq(companies.symbol, sym)),
+      new Promise<never>((_, r) => setTimeout(() => r(new Error("db timeout")), 400)),
+    ]);
+
+    if (company) {
+      const [latestDaily, latestWeekly, recentDaily, recentWeekly, announcements] = await Promise.all([
+        db.select().from(dailyStockPrices).where(eq(dailyStockPrices.symbol, sym)).orderBy(desc(dailyStockPrices.tradingDate)).limit(1).then(r => r[0]),
+        db.select().from(weeklyStockPrices).where(eq(weeklyStockPrices.symbol, sym)).orderBy(desc(weeklyStockPrices.weekStartDate)).limit(1).then(r => r[0]),
+        db.select().from(dailyStockPrices).where(eq(dailyStockPrices.symbol, sym)).orderBy(desc(dailyStockPrices.tradingDate)).limit(10),
+        db.select().from(weeklyStockPrices).where(eq(weeklyStockPrices.symbol, sym)).orderBy(desc(weeklyStockPrices.weekStartDate)).limit(8),
+        db.select().from(companyAnnouncements).where(eq(companyAnnouncements.symbol, sym)).orderBy(desc(companyAnnouncements.announcementDate)).limit(5),
+      ]);
+      return { company, latestDaily, latestWeekly, recentDaily, recentWeekly, announcements, fromLive: false };
+    }
+  } catch {
+    // DB unavailable — fall through to live data
+  }
+
+  // Fall back to PSX live data (shared in-memory cache — instant on warm server)
+  try {
+    const row = await getPsxRow(sym);
+    if (row) {
+      const company = {
+        id: null, symbol: row.symbol, name: row.companyName ?? row.symbol,
+        sectorId: row.sectorId, description: null, listingDate: null,
+        fiscalYearEnd: null, website: null, freeFloat: null,
+        shariahStatus: row.shariahStatus ?? null,
+        marketCapCategory: null, sectorName: row.sectorName ?? null,
+      };
+      const latestDaily = {
+        symbol: row.symbol, tradingDate: row.tradingDate,
+        open: row.open, high: row.high, low: row.low, close: row.close,
+        previousClose: row.previousClose, priceChange: row.priceChange,
+        percentageChange: row.percentageChange, volume: row.volume,
+        marketValue: row.marketValue, numberOfTrades: row.numberOfTrades,
+        weekHigh52: null, weekLow52: null,
+      };
+      return { company, latestDaily, latestWeekly: null, recentDaily: [latestDaily], recentWeekly: [], announcements: [], fromLive: true };
+    }
+  } catch {
+    // live also failed
+  }
+
+  return { company: null, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };
+}
+
 export default async function CompanyPage({ params }: Props) {
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
 
-  const [company] = await db
-    .select({
-      id: companies.id,
-      symbol: companies.symbol,
-      name: companies.name,
-      sectorId: companies.sectorId,
-      description: companies.description,
-      listingDate: companies.listingDate,
-      fiscalYearEnd: companies.fiscalYearEnd,
-      website: companies.website,
-      freeFloat: companies.freeFloat,
-      shariahStatus: companies.shariahStatus,
-      marketCapCategory: companies.marketCapCategory,
-      sectorName: sectors.name,
-    })
-    .from(companies)
-    .leftJoin(sectors, eq(companies.sectorId, sectors.id))
-    .where(eq(companies.symbol, sym));
+  const { company, latestDaily, latestWeekly, recentDaily, recentWeekly, announcements, fromLive } = await getCompanyData(sym);
 
-  if (!company) notFound();
-
-  const [latestDaily] = await db
-    .select().from(dailyStockPrices)
-    .where(eq(dailyStockPrices.symbol, sym))
-    .orderBy(desc(dailyStockPrices.tradingDate)).limit(1);
-
-  const [latestWeekly] = await db
-    .select().from(weeklyStockPrices)
-    .where(eq(weeklyStockPrices.symbol, sym))
-    .orderBy(desc(weeklyStockPrices.weekStartDate)).limit(1);
-
-  const recentDaily = await db
-    .select().from(dailyStockPrices)
-    .where(eq(dailyStockPrices.symbol, sym))
-    .orderBy(desc(dailyStockPrices.tradingDate)).limit(10);
-
-  const recentWeekly = await db
-    .select().from(weeklyStockPrices)
-    .where(eq(weeklyStockPrices.symbol, sym))
-    .orderBy(desc(weeklyStockPrices.weekStartDate)).limit(8);
-
-  const announcements = await db
-    .select().from(companyAnnouncements)
-    .where(eq(companyAnnouncements.symbol, sym))
-    .orderBy(desc(companyAnnouncements.announcementDate)).limit(5);
+  if (!company) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-12 text-center">
+        <p className="text-lg font-semibold" style={{ color: "var(--navy)" }}>Symbol not found: {sym}</p>
+        <Link href="/data-portal/stocks" className="text-sm mt-3 inline-block hover:underline" style={{ color: "var(--gold)" }}>
+          ← Back to Stocks
+        </Link>
+      </div>
+    );
+  }
 
   const dailyPct = formatPct(latestDaily?.percentageChange);
   const weeklyPct = formatPct(latestWeekly?.weeklyPctChange);
@@ -73,6 +99,7 @@ export default async function CompanyPage({ params }: Props) {
         <Link href="/data-portal/companies" className="hover:underline">Companies</Link>
         {" / "}
         <span style={{ color: "var(--navy)", fontWeight: 600 }}>{sym}</span>
+        {fromLive && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px]" style={{ background: "rgba(212,175,55,0.15)", color: "var(--gold)" }}>Live</span>}
       </nav>
 
       {/* Company header */}
@@ -84,10 +111,9 @@ export default async function CompanyPage({ params }: Props) {
               {company.shariahStatus === "compliant" && (
                 <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: "#D1FAE5", color: "#065F46" }}>Shariah Compliant</span>
               )}
-              {latestDaily?.isDemo && <span className="badge-demo">Demo Data</span>}
             </div>
             <p className="text-base font-medium mb-1" style={{ color: "var(--text-secondary)" }}>{company.name}</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{company.sectorName} · Listed: {company.listingDate ?? "—"}</p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{company.sectorName ?? "—"} · Listed: {company.listingDate ?? "—"}</p>
           </div>
           <div className="text-right">
             {latestDaily ? (
@@ -151,7 +177,7 @@ export default async function CompanyPage({ params }: Props) {
                     {recentDaily.map((r, i) => {
                       const pct = formatPct(r.percentageChange);
                       return (
-                        <tr key={r.tradingDate} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}>
+                        <tr key={r.tradingDate + i} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}>
                           <td className="px-3 py-2 border-b text-left" style={{ borderColor: "var(--border)" }}>{r.tradingDate}</td>
                           <td className="px-3 py-2 border-b text-right font-medium" style={{ borderColor: "var(--border)" }}>{formatNumber(r.close)}</td>
                           <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatNumber(r.open)}</td>
@@ -169,15 +195,11 @@ export default async function CompanyPage({ params }: Props) {
           </div>
 
           {/* Weekly data */}
-          <div className="card">
-            <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-              Recent Weekly Data
-            </div>
-            {recentWeekly.length === 0 ? (
-              <p className="px-4 py-6 text-sm" style={{ color: "var(--text-muted)" }}>
-                No weekly data. Run <code>pnpm aggregate:weekly</code> to generate.
-              </p>
-            ) : (
+          {recentWeekly.length > 0 && (
+            <div className="card">
+              <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
+                Recent Weekly Data
+              </div>
               <div className="table-scroll">
                 <table className="w-full text-sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
                   <thead>
@@ -206,8 +228,8 @@ export default async function CompanyPage({ params }: Props) {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Right column */}
@@ -222,7 +244,7 @@ export default async function CompanyPage({ params }: Props) {
                 { l: "Sector", v: company.sectorName ?? "—" },
                 { l: "Listing Date", v: company.listingDate ?? "—" },
                 { l: "Fiscal Year End", v: company.fiscalYearEnd ?? "—" },
-                { l: "Shariah Status", v: company.shariahStatus },
+                { l: "Shariah Status", v: company.shariahStatus ?? "—" },
                 { l: "Free Float", v: company.freeFloat ? company.freeFloat + "%" : "—" },
                 { l: "Website", v: company.website ?? "—" },
               ].map((item) => (
@@ -235,22 +257,23 @@ export default async function CompanyPage({ params }: Props) {
           </div>
 
           {/* Announcements */}
-          <div className="card">
-            <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-              Recent Announcements
+          {announcements.length > 0 && (
+            <div className="card">
+              <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
+                Recent Announcements
+              </div>
+              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+                {announcements.map((a) => (
+                  <div key={a.id} className="px-4 py-3">
+                    <p className="text-xs font-medium leading-snug" style={{ color: "var(--text-primary)" }}>{a.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{a.announcementDate} · {a.announcementType}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {announcements.map((a) => (
-                <div key={a.id} className="px-4 py-3">
-                  <p className="text-xs font-medium leading-snug" style={{ color: "var(--text-primary)" }}>{a.title}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{a.announcementDate} · {a.announcementType}</p>
-                </div>
-              ))}
-              {announcements.length === 0 && <p className="px-4 py-3 text-sm" style={{ color: "var(--text-muted)" }}>No announcements.</p>}
-            </div>
-          </div>
+          )}
 
-          {/* Navigation to screener/historical */}
+          {/* Navigation */}
           <div className="card p-4">
             <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--navy)" }}>More Tools</h3>
             {[

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 
 /* ── Config ─────────────────────────────────────────────── */
 const SECTOR_CFG: Record<string, { color: string; bg: string; dark: string; icon: string }> = {
@@ -12,7 +11,7 @@ const SECTOR_CFG: Record<string, { color: string; bg: string; dark: string; icon
   "Islamic Banking": { color: "#166534", bg: "#DCFCE7", dark: "#15803D", icon: "🕌" },
   "Pharma":          { color: "#9D174D", bg: "#FCE7F3", dark: "#BE185D", icon: "💊" },
   "Food & FMCG":     { color: "#78350F", bg: "#FEF9C3", dark: "#92400E", icon: "🌾" },
-  "Textile":         { color: "#1D4ED8", bg: "#EFF6FF", dark: "#1E40AF", icon: "🧵" },
+  "Textile":         { color: "#1D4ED8", bg: "var(--row-hover)", dark: "#1E40AF", icon: "🧵" },
   "Chemicals":       { color: "#064E3B", bg: "#ECFDF5", dark: "#065F46", icon: "🔬" },
   "Auto":            { color: "#1E3A5F", bg: "#E0F2FE", dark: "#0369A1", icon: "🚗" },
   "Engineering":     { color: "#78350F", bg: "#FEF3C7", dark: "#92400E", icon: "⚙️" },
@@ -62,12 +61,6 @@ const COMPANIES = [
 ];
 
 const SECTORS = Object.keys(SECTOR_CFG);
-const WHY_CARDS = [
-  { icon: "🚫", title: "Riba Free",       desc: "No interest-based income — fully compliant with Islamic finance principles." },
-  { icon: "📋", title: "SECP Screened",   desc: "Every stock screened under SECP-approved Shariah criteria before inclusion." },
-  { icon: "🕌", title: "Meezan Certified",desc: "Endorsed by Meezan Bank Shariah Supervisory Board — Pakistan's #1 Islamic bank." },
-  { icon: "♻",  title: "Halal Business",  desc: "Only companies with permissible business activities are eligible." },
-];
 
 /* ── Animation Hook ────────────────────────────────────── */
 function useFade(threshold = 0.1) {
@@ -111,81 +104,17 @@ export default function ShariahClient() {
     <div>
 
 
-      {/* ── HERO ─────────────────────────────────────── */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg,#1A1200 0%,#2C1E00 35%,#07111F 100%)", borderBottom: "2px solid rgba(212,175,55,0.3)" }}>
-        <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="shex" x="0" y="0" width="80" height="92" patternUnits="userSpaceOnUse">
-              <polygon points="40,4 76,23 76,69 40,88 4,69 4,23" fill="none" stroke="#D4AF37" strokeWidth="1.2"/>
-              <circle cx="40" cy="46" r="8" fill="none" stroke="#D4AF37" strokeWidth="0.8"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#shex)"/>
-        </svg>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[130px] opacity-[0.06] select-none pointer-events-none hidden xl:block" style={{ color: "#D4AF37" }}>☪</div>
-        <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle,rgba(212,175,55,0.1) 0%,transparent 70%)" }}/>
-
-        <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="sh1 flex items-center gap-2 text-xs mb-4" style={{ color: "rgba(212,175,55,0.55)" }}>
-            <Link href="/data-portal" className="hover:opacity-80">Data Portal</Link>
-            <span>›</span><span style={{ color: "#D4AF37" }}>Shariah Compliant Equities</span>
-          </div>
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-xl">
-              <div className="sh2 flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0" style={{ background: "rgba(212,175,55,0.15)", border: "1px solid rgba(212,175,55,0.3)" }}>☪</div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight" style={{ color: "#E8C84A" }}>Shariah Compliant</h1>
-                  <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase" style={{ color: "rgba(212,175,55,0.65)" }}>PAKISTAN STOCK EXCHANGE · HALAL EQUITIES</p>
-                </div>
-              </div>
-              <p className="sh3 text-xs sm:text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                PSX Shariah-screened stocks certified under SECP &amp; Meezan Bank Shariah Advisory Board. Free from riba, prohibited activities &amp; excessive leverage.
-              </p>
-              <div className="sh4 flex flex-wrap gap-2 mt-4">
-                {["◆ SECP Certified","◆ Meezan Approved","◆ Riba Free","◆ June 2025"].map(b => (
-                  <span key={b} className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: "rgba(212,175,55,0.10)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.22)" }}>{b}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="sh5 grid grid-cols-2 gap-2 sm:gap-3 shrink-0">
-              {[
-                { val: String(COMPANIES.length), label: "Compliant Stocks", icon: "✅" },
-                { val: String(kmiCount),          label: "KMI-30 Stocks",   icon: "☪" },
-                { val: String(SECTORS.length),    label: "Sectors",          icon: "📊" },
-                { val: "PKR 4.2T",                label: "Total Mkt Cap",    icon: "💰" },
-              ].map(s => (
-                <div key={s.label} className="rounded-xl px-3 py-3 sm:px-4 text-center" style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.18)" }}>
-                  <div className="text-lg sm:text-xl mb-0.5">{s.icon}</div>
-                  <div className="text-lg sm:text-xl font-black" style={{ color: "#E8C84A" }}>{s.val}</div>
-                  <div className="text-[9px] sm:text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* ── HEADER ───────────────────────────────────── */}
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 pt-5 pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: "var(--navy)" }}>
+            <span className="text-2xl">🕌</span> Shariah Compliant Equities
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {COMPANIES.length} screened stocks · {kmiCount} KMI-30 · SECP certified
+          </p>
         </div>
       </div>
-
-      {/* ── WHY SHARIAH ──────────────────────────────── */}
-      <Fade>
-        <div style={{ background: "#F0FDF4", borderBottom: "1px solid #BBF7D0" }}>
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {WHY_CARDS.map((w, i) => (
-              <Fade key={w.title} delay={i * 80}>
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <span className="text-lg sm:text-xl shrink-0 mt-0.5">{w.icon}</span>
-                  <div>
-                    <div className="text-xs sm:text-sm font-bold" style={{ color: "#065F46" }}>{w.title}</div>
-                    <div className="text-[10px] sm:text-xs mt-0.5 leading-snug" style={{ color: "#374151" }}>{w.desc}</div>
-                  </div>
-                </div>
-              </Fade>
-            ))}
-          </div>
-        </div>
-      </Fade>
 
       {/* ── FILTERS ──────────────────────────────────── */}
       <Fade>

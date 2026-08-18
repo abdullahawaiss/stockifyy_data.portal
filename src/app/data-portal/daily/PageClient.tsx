@@ -94,7 +94,7 @@ export default function DailyPage() {
         <div>
           <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Daily Market Data</h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {data[0]?.isDemo && <span className="badge-demo mr-2">Demo Data</span>}
+            
             {pagination.total} records · Last updated: {date || "Loading…"}
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function DailyPage() {
                   <tr
                     key={row.symbol}
                     style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#EFF6FF")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--row-hover)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "var(--white)" : "var(--light-bg)")}
                   >
                     <td className="px-3 py-2.5 border-b font-semibold" style={{ borderColor: "var(--border)" }}>
@@ -200,8 +200,8 @@ export default function DailyPage() {
                     <td className="px-3 py-2.5 border-b text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>{row.numberOfTrades?.toLocaleString() ?? "—"}</td>
                     <td className="px-3 py-2.5 border-b text-center" style={{ borderColor: "var(--border)" }}>
                       <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{
-                        background: row.shariahStatus === "compliant" ? "#D1FAE5" : "#FEE2E2",
-                        color: row.shariahStatus === "compliant" ? "#065F46" : "#991B1B",
+                        background: row.shariahStatus === "compliant" ? "var(--badge-compliant-bg)" : "var(--badge-noncompliant-bg)",
+                        color: row.shariahStatus === "compliant" ? "var(--badge-compliant-color)" : "var(--badge-noncompliant-color)",
                       }}>
                         {row.shariahStatus === "compliant" ? "✓" : row.shariahStatus === "non_compliant" ? "✗" : "?"}
                       </span>

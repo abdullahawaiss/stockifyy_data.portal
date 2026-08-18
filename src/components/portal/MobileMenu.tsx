@@ -4,39 +4,35 @@ import Link from "next/link";
 
 const NAV = [
   {
-    label: "Market",
+    label: "Markets",
     items: [
-      { label: "Market Overview",    href: "/data-portal" },
-      { label: "Daily Summary",      href: "/data-portal/daily" },
-      { label: "Weekly Summary",     href: "/data-portal/weekly" },
-      { label: "Market Indices",     href: "/data-portal/indices" },
-      { label: "Sector Summary",     href: "/data-portal/sectors" },
-      { label: "Market Performers",  href: "/data-portal/daily?view=performers" },
+      { label: "Overview", href: "/dashboard" },
+      { label: "Daily",    href: "/dashboard/daily"   },
+      { label: "Weekly",   href: "/dashboard/weekly"  },
+      { label: "Indices",  href: "/dashboard/indices" },
+      { label: "Sectors",  href: "/dashboard/sectors" },
     ],
   },
   {
     label: "Companies",
     items: [
-      { label: "Company Directory",    href: "/data-portal/companies" },
-      { label: "Financial Statements", href: "/data-portal/companies?tab=financials" },
-      { label: "Dividends",            href: "/data-portal/companies?tab=dividends" },
-      { label: "☪ Shariah Compliant", href: "/data-portal/shariah" },
+      { label: "Directory", href: "/dashboard/companies" },
+      { label: "Shariah",   href: "/dashboard/shariah"   },
     ],
   },
   {
     label: "Tools",
     items: [
-      { label: "Stock Screener",  href: "/data-portal/screener" },
-      { label: "Historical Data", href: "/data-portal/historical-data" },
-      { label: "Data Downloads",  href: "/data-portal/downloads" },
+      { label: "Screener",        href: "/dashboard/screener"        },
+      { label: "Historical Data", href: "/dashboard/historical-data"  },
+      { label: "Downloads",       href: "/dashboard/downloads"        },
     ],
   },
   {
-    label: "Information",
+    label: "Research",
     items: [
-      { label: "Announcements",  href: "/data-portal/announcements" },
-      { label: "Research Reports", href: "/data-portal/research" },
-      { label: "Weekly Report",  href: "/data-portal/research?type=weekly_market" },
+      { label: "Announcements", href: "/dashboard/announcements" },
+      { label: "Reports",       href: "/dashboard/research"      },
     ],
   },
 ];
@@ -81,8 +77,8 @@ export default function MobileMenu({ isAdmin }: { isAdmin?: boolean }) {
           ))}
           {isAdmin && (
             <div className="px-4 py-2 border-t" style={{ borderColor: "rgba(212,175,55,0.2)" }}>
-              <Link href="/data-portal/admin" className="text-sm" style={{ color: "var(--gold)" }} onClick={() => setOpen(false)}>
-                ⚙ Admin Panel
+              <Link href="/dashboard/admin" className="text-sm" style={{ color: "var(--gold)" }} onClick={() => setOpen(false)}>
+                Admin Panel
               </Link>
             </div>
           )}

@@ -55,7 +55,7 @@ export default function ScreenerPage() {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
         <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Stock Screener</h1>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Filter stocks by multiple criteria · Demo Data</p>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Filter stocks by multiple criteria</p>
       </div>
 
       {/* Filter panel */}
@@ -143,7 +143,7 @@ export default function ScreenerPage() {
                         <td className="px-3 py-2.5 border-b font-semibold" style={{ borderColor: "var(--border)", color: pct.positive === true ? "var(--positive)" : pct.positive === false ? "var(--negative)" : "var(--neutral)" }}>{pct.text}</td>
                         <td className="px-3 py-2.5 border-b" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatVolume(r.volume)}</td>
                         <td className="px-3 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
-                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: r.shariahStatus === "compliant" ? "#D1FAE5" : "#FEE2E2", color: r.shariahStatus === "compliant" ? "#065F46" : "#991B1B" }}>
+                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: r.shariahStatus === "compliant" ? "var(--badge-compliant-bg)" : "var(--badge-noncompliant-bg)", color: r.shariahStatus === "compliant" ? "var(--badge-compliant-color)" : "var(--badge-noncompliant-color)" }}>
                             {r.shariahStatus === "compliant" ? "✓" : "✗"}
                           </span>
                         </td>

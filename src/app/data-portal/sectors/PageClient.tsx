@@ -73,7 +73,7 @@ export default function SectorsPage() {
                   const value = period === "daily" ? row.totalValue : row.totalWeeklyValue;
                   return (
                     <tr key={row.sectorCode ?? row.sectorId} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#EFF6FF")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--row-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "var(--white)" : "var(--light-bg)")}>
                       <td className="px-3 py-2.5 border-b font-medium" style={{ borderColor: "var(--border)" }}>{row.sectorName ?? "—"}</td>
                       <td className="px-3 py-2.5 border-b" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{row.totalCompanies ?? "—"}</td>

@@ -1,27 +1,75 @@
 @import "tailwindcss";
 
 :root {
+  --sidebar-w: 182px;
   /* Stockifyy Design Tokens */
-  --navy: #07111F;
+  --navy:     #07111F;
+  --navy-bg:  #07111F;   /* chip/badge backgrounds — never changes */
   --deep-blue: #032E44;
-  --gold: #D4AF37;
+  --gold:      #D4AF37;
   --gold-light: #E8C84A;
-  --white: #FFFFFF;
-  --light-bg: #F5F7FA;
-  --text-primary: #07111F;
+  --white:     #FFFFFF;
+  --light-bg:  #F5F7FA;
+  --row-hover: #EFF6FF;
+  --badge-compliant-bg:    #D1FAE5;
+  --badge-compliant-color: #065F46;
+  --badge-noncompliant-bg:    #FEE2E2;
+  --badge-noncompliant-color: #991B1B;
+  --badge-complete-bg:    #D1FAE5;
+  --badge-complete-color: #065F46;
+  --badge-incomplete-bg:    #FEF3C7;
+  --badge-incomplete-color: #92400E;
+  --text-primary:   #07111F;
   --text-secondary: #4A5568;
-  --text-muted: #718096;
-  --border: #E2E8F0;
-  --border-dark: #CBD5E0;
+  --text-muted:     #718096;
+  --border:         #E2E8F0;
+  --border-dark:    #CBD5E0;
   --positive: #16A34A;
   --negative: #DC2626;
-  --neutral: #6B7280;
-  --card-bg: #FFFFFF;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --neutral:  #6B7280;
+  --card-bg:  #FFFFFF;
+  --card-shadow:       0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
   --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+  --navy-tint: rgba(7,17,31,0.07);
 
   --background: #F8F6F1;
   --foreground: var(--text-primary);
+}
+
+/* ══════════════════════════════════════
+   DARK MODE — full token override
+   navy becomes a readable light-blue;
+   nav bar re-anchors it back to dark
+   ══════════════════════════════════════ */
+[data-theme="dark"] {
+  --navy:            #BDD0E8;   /* was near-black; now readable on dark bg */
+  --background:      #0B1622;
+  --foreground:      #BDD0E8;
+  --card-bg:         #0E1F30;
+  --white:           #0E1F30;
+  --light-bg:        #0A1825;
+  --row-hover:       rgba(255,255,255,0.06);
+  --badge-compliant-bg:    rgba(22,163,74,0.18);
+  --badge-compliant-color: #4ade80;
+  --badge-noncompliant-bg:    rgba(220,38,38,0.18);
+  --badge-noncompliant-color: #f87171;
+  --badge-complete-bg:    rgba(22,163,74,0.18);
+  --badge-complete-color: #4ade80;
+  --badge-incomplete-bg:    rgba(251,191,36,0.18);
+  --badge-incomplete-color: #fbbf24;
+  --border:          rgba(255,255,255,0.09);
+  --border-dark:     rgba(255,255,255,0.15);
+  --text-primary:    #BDD0E8;
+  --text-secondary:  #7A9AB8;
+  --text-muted:      #5C8099;
+  --card-shadow:       0 1px 4px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4);
+  --card-shadow-hover: 0 6px 20px rgba(0,0,0,0.65);
+  --navy-tint:       rgba(255,255,255,0.07);
+}
+
+/* nav bar always stays dark — re-scope --navy back inside the <nav> */
+[data-theme="dark"] nav {
+  --navy: #07111F;
 }
 
 @theme inline {
@@ -41,26 +89,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--light-bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A4A6A; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3A6090; }
 
 /* Table responsive wrapper */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* PortalNav — CSS-only hover dropdowns (no JS required) */
-.nav-dropdown { display: none; }
-.nav-group:hover .nav-dropdown { display: block; }
+/* PortalNav — CSS-only hover dropdowns */
+.nav-dropdown { display: none; pointer-events: none; }
+.nav-group:hover .nav-dropdown { display: block; pointer-events: auto; }
+.nav-group:focus-within .nav-dropdown { display: block; pointer-events: auto; }
 .nav-group:hover .nav-trigger { color: var(--gold) !important; background: rgba(212,175,55,0.08) !important; }
+.nav-trigger { cursor: pointer; }
+.nav-link { cursor: pointer; }
 .nav-link:hover { color: var(--gold) !important; }
 .shariah-link:hover { background: #D1FAE5 !important; color: #065F46 !important; }
 
-/* Portal specific utilities */
+/* Portal utilities */
 .change-positive { color: var(--positive); }
 .change-negative { color: var(--negative); }
-.change-neutral { color: var(--neutral); }
+.change-neutral  { color: var(--neutral); }
 
 .badge-demo {
   display: inline-flex;
@@ -82,12 +135,43 @@ body {
   border-radius: 8px;
   box-shadow: var(--card-shadow);
 }
+.card:hover { box-shadow: var(--card-shadow-hover); }
 
-.card:hover {
-  box-shadow: var(--card-shadow-hover);
+/* ── Dark mode: cards & tables ── */
+[data-theme="dark"] .card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+[data-theme="dark"] tr:hover {
+  background: rgba(255,255,255,0.03) !important;
+}
+/* table header rows that use inline var(--light-bg) as background */
+[data-theme="dark"] thead tr {
+  background: var(--light-bg) !important;
 }
 
-/* Ticker tape */
+/* ── Chips/badges that use rgba(7,17,31,...) hardcoded ── */
+/* Target by class we'll add, or just override inline rgba via filter:none approach */
+[data-theme="dark"] .chip-navy {
+  background: rgba(255,255,255,0.08) !important;
+  color: var(--navy) !important;
+}
+
+/* Sector/index heat tiles dark mode — make the container bg visible */
+[data-theme="dark"] [style*="rgba(22,163,74"] {
+  filter: brightness(1.25);
+}
+[data-theme="dark"] [style*="rgba(220,38,38"] {
+  filter: brightness(1.25);
+}
+
+/* Sidebar-aware layout */
+@media (max-width: 1023px) {
+  :root { --sidebar-w: 0px; }
+  #portal-main { margin-left: 0 !important; padding-top: 52px; }
+}
+
+/* Ticker tape (legacy) */
 @keyframes ticker {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -99,43 +183,227 @@ body {
 }
 .ticker-track:hover { animation-play-state: paused; }
 
-/* Shariah page animations — transform only, no opacity, so LCP paint is immediate */
-@keyframes sHeroUp {
-  from { transform: translateY(18px); }
-  to   { transform: translateY(0); }
+/* ── Sidebar decorative gold ray ── */
+.sidebar-ray {
+  position: absolute;
+  top: -30%;
+  left: -40%;
+  width: 180%;
+  height: 180%;
+  transform-origin: center center;
+  pointer-events: none;
 }
-@keyframes sHeroFade {
-  from { transform: scale(0.98); }
-  to   { transform: scale(1); }
+.sidebar-ray-1 {
+  background: linear-gradient(
+    130deg,
+    transparent 38%,
+    rgba(212,175,55,0.055) 47%,
+    rgba(212,175,55,0.13) 50%,
+    rgba(212,175,55,0.055) 53%,
+    transparent 62%
+  );
+  animation: sidebar-ray-move 5s ease-in-out infinite;
 }
-@keyframes cardPop {
-  from { transform: scale(0.95) translateY(10px); }
-  to   { transform: scale(1) translateY(0); }
+.sidebar-ray-2 {
+  background: linear-gradient(
+    130deg,
+    transparent 44%,
+    rgba(212,175,55,0.03) 49%,
+    rgba(212,175,55,0.07) 51%,
+    rgba(212,175,55,0.03) 53%,
+    transparent 58%
+  );
+  animation: sidebar-ray-move 5s ease-in-out infinite reverse;
+  animation-delay: -2.5s;
 }
-.sh1 { animation: sHeroUp 0.5s ease both 0.05s; }
-.sh2 { animation: sHeroUp 0.5s ease both 0.17s; }
-.sh3 { animation: sHeroFade 0.5s ease both 0.27s; }
-.sh4 { animation: sHeroUp 0.5s ease both 0.38s; }
-.sh5 { animation: sHeroUp 0.5s ease both 0.48s; }
+@keyframes sidebar-ray-move {
+  0%   { transform: translateY(-12%) translateX(-8%); opacity: 0.7; }
+  50%  { transform: translateY(8%)  translateX(8%);  opacity: 1;   }
+  100% { transform: translateY(-12%) translateX(-8%); opacity: 0.7; }
+}
 
-/* Hero animations — transform only, no opacity, so LCP paint is immediate */
-@keyframes heroUp {
-  from { transform: translateY(16px); }
-  to   { transform: translateY(0); }
+/* Stockifyy logo — force to exact brand gold #D4AF37 */
+.logo-gold {
+  filter: brightness(0) saturate(100%) invert(76%) sepia(53%) saturate(497%) hue-rotate(7deg) brightness(103%);
 }
-@keyframes heroPop {
-  from { transform: scale(0.97); }
-  to   { transform: scale(1); }
+
+/* Premium ticker */
+@keyframes ticker-premium {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
+.ticker-premium {
+  display: flex;
+  width: max-content;
+  animation: ticker-premium 62s linear infinite;
+  will-change: transform;
+}
+.ticker-premium:hover { animation-play-state: paused; }
+
+/* Market status dot pulse — all states */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.55); opacity: 0.6; }
+}
+.ticker-status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* Shariah page animations */
+@keyframes goldShimmer { 0%,100%{background-position:200% 0} 50%{background-position:0% 0} }
+@keyframes goldPulse { 0%,100%{opacity:1;width:72px} 50%{opacity:0.6;width:90px} }
+@keyframes sHeroUp  { from { transform: translateY(18px); } to { transform: translateY(0); } }
+@keyframes sHeroFade{ from { transform: scale(0.98); } to { transform: scale(1); } }
+@keyframes cardPop  { from { transform: scale(0.95) translateY(10px); } to { transform: scale(1) translateY(0); } }
+.sh1 { animation: sHeroUp   0.5s ease both 0.05s; }
+.sh2 { animation: sHeroUp   0.5s ease both 0.17s; }
+.sh3 { animation: sHeroFade 0.5s ease both 0.27s; }
+.sh4 { animation: sHeroUp   0.5s ease both 0.38s; }
+.sh5 { animation: sHeroUp   0.5s ease both 0.48s; }
+
+/* Hero animations */
+@keyframes heroUp  { from { transform: translateY(16px); } to { transform: translateY(0); } }
+@keyframes heroPop { from { transform: scale(0.97); } to { transform: scale(1); } }
 .h1 { animation: heroUp  0.45s ease both 0.05s; }
 .h2 { animation: heroUp  0.45s ease both 0.15s; }
 .h3 { animation: heroUp  0.45s ease both 0.22s; }
 .h4 { animation: heroPop 0.45s ease both 0.30s; }
 
+/* ══════════════════════════════════════
+   PORTAL ENTRANCE MOTION SYSTEM
+   GPU-friendly (transform + opacity only)
+   easing: cubic-bezier(0.22, 1, 0.36, 1)
+   ══════════════════════════════════════ */
+@keyframes portalSlideIn {
+  from { transform: translateX(-18px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes portalFadeUp {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes portalFadeDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes portalFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes portalScaleIn {
+  from { transform: scale(0.97) translateY(8px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);   opacity: 1; }
+}
+
+.portal-slide-in   { animation: portalSlideIn  320ms cubic-bezier(0.22,1,0.36,1) both; will-change: transform, opacity; }
+.portal-fade-up    { animation: portalFadeUp   380ms cubic-bezier(0.22,1,0.36,1) both; will-change: transform, opacity; }
+.portal-fade-down  { animation: portalFadeDown 260ms cubic-bezier(0.22,1,0.36,1) both; will-change: transform, opacity; }
+.portal-fade       { animation: portalFade     220ms cubic-bezier(0.22,1,0.36,1) both; will-change: opacity; }
+.portal-scale-in   { animation: portalScaleIn  360ms cubic-bezier(0.22,1,0.36,1) both; will-change: transform, opacity; }
+
+/* Pressable micro-interaction */
+.portal-pressable { transition: transform 120ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease; }
+.portal-pressable:active { transform: scale(0.97); }
+
+/* Reduce motion — near-instant fade only, no transforms */
+@media (prefers-reduced-motion: reduce) {
+  .portal-slide-in,
+  .portal-fade-up,
+  .portal-fade-down,
+  .portal-fade,
+  .portal-scale-in {
+    animation: portalFade 80ms linear both !important;
+    will-change: auto !important;
+  }
+}
+
+/* ══════════════════════════════════════
+   DARK MODE — Global page background
+   ══════════════════════════════════════ */
+[data-theme="dark"] body {
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+/* ── Headings ─── */
+[data-theme="dark"] #portal-main h1,
+[data-theme="dark"] #portal-main h2,
+[data-theme="dark"] #portal-main h3,
+[data-theme="dark"] #portal-main h4,
+[data-theme="dark"] #portal-main h5,
+[data-theme="dark"] #portal-main h6 {
+  color: var(--text-primary);
+}
+
+/* ── All spans/p/divs that use inline color:#111 or #333 etc ─── */
+/* We can't override inline styles directly, but we set body color
+   so un-styled elements inherit correctly */
+[data-theme="dark"] #portal-main {
+  color: var(--text-primary);
+}
+
+/* ══════════════════════════════════════
+   DARK MODE — Tailwind class overrides
+   Inline styles need useDarkTokens hook.
+   These fix class-based color issues.
+   ══════════════════════════════════════ */
+[data-theme="dark"] #portal-main .bg-white,
+[data-theme="dark"] #portal-main [class*="bg-white"] { background-color: var(--card-bg) !important; }
+
+[data-theme="dark"] #portal-main .bg-gray-50,
+[data-theme="dark"] #portal-main .bg-gray-100 { background-color: var(--light-bg) !important; }
+
+[data-theme="dark"] #portal-main .text-gray-900,
+[data-theme="dark"] #portal-main .text-black,
+[data-theme="dark"] #portal-main .text-gray-800 { color: var(--text-primary) !important; }
+
+[data-theme="dark"] #portal-main .text-gray-700,
+[data-theme="dark"] #portal-main .text-gray-600 { color: var(--text-secondary) !important; }
+
+[data-theme="dark"] #portal-main .text-gray-500,
+[data-theme="dark"] #portal-main .text-gray-400 { color: var(--text-muted) !important; }
+
+[data-theme="dark"] #portal-main .border-gray-200,
+[data-theme="dark"] #portal-main .border-gray-100 { border-color: var(--border) !important; }
+
+[data-theme="dark"] #portal-main .divide-gray-200 > * + * { border-color: var(--border) !important; }
+
+/* White card/panel backgrounds commonly used */
+[data-theme="dark"] #portal-main .rounded-xl,
+[data-theme="dark"] #portal-main .rounded-lg {
+  background-color: var(--card-bg);
+}
+
+/* Buttons with white background in dark mode */
+[data-theme="dark"] #portal-main button:not([style*="background: #16"]):not([style*="background: #DC"]):not([style*="background: var(--navy)"]):not([style*="background: rgba(7"]) {
+  color: var(--text-primary);
+}
+
+/* Force white backgrounds to card-bg in dark mode via CSS property cascade */
+[data-theme="dark"] #portal-main [style*="background: rgb(255, 255, 255)"],
+[data-theme="dark"] #portal-main [style*='background: "#fff"'] {
+  background-color: var(--card-bg) !important;
+}
+
+/* Table cells dark mode */
+[data-theme="dark"] #portal-main table { color: var(--text-primary); }
+[data-theme="dark"] #portal-main td    { color: var(--text-primary); border-color: var(--border); }
+[data-theme="dark"] #portal-main th    { color: var(--text-secondary); background: var(--light-bg) !important; border-color: var(--border); }
+
+/* Input / select dark mode */
+[data-theme="dark"] #portal-main input,
+[data-theme="dark"] #portal-main select,
+[data-theme="dark"] #portal-main textarea {
+  background: #0A1825 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] #portal-main input::placeholder { color: var(--text-muted) !important; }
+
 /* Loading skeleton */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 .skeleton {
   background: linear-gradient(90deg, #E2E8F0 25%, #F7FAFC 50%, #E2E8F0 75%);
@@ -143,3 +411,47 @@ body {
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
 }
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #112030 25%, #162B42 50%, #112030 75%);
+  background-size: 200% 100%;
+}
+
+/* ── Dark mode: fix hardcoded hover + badge colors in PageClient files ── */
+/* Row hover (was #EFF6FF light blue — invisible on dark bg) */
+[data-theme="dark"] #portal-main tr:hover td {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+/* Shariah / status badge colors — dark-friendly versions */
+[data-theme="dark"] #portal-main .badge-compliant {
+  background: rgba(22,163,74,0.18) !important;
+  color: #4ade80 !important;
+}
+[data-theme="dark"] #portal-main .badge-non-compliant {
+  background: rgba(220,38,38,0.18) !important;
+  color: #f87171 !important;
+}
+[data-theme="dark"] #portal-main .badge-complete {
+  background: rgba(22,163,74,0.18) !important;
+  color: #4ade80 !important;
+}
+[data-theme="dark"] #portal-main .badge-incomplete {
+  background: rgba(251,191,36,0.18) !important;
+  color: #fbbf24 !important;
+}
+
+/* Page headings, labels that use gray Tailwind classes */
+[data-theme="dark"] #portal-main .text-gray-500 { color: var(--text-muted) !important; }
+[data-theme="dark"] #portal-main .text-gray-400 { color: var(--text-muted) !important; }
+[data-theme="dark"] #portal-main .text-gray-700 { color: var(--text-secondary) !important; }
+[data-theme="dark"] #portal-main .bg-gray-50   { background: var(--light-bg) !important; }
+[data-theme="dark"] #portal-main .bg-gray-200  { background: rgba(255,255,255,0.06) !important; }
+[data-theme="dark"] #portal-main .border-gray-200 { border-color: var(--border) !important; }
+[data-theme="dark"] #portal-main .border-gray-300 { border-color: var(--border-dark) !important; }
+[data-theme="dark"] #portal-main .divide-gray-100 > * + * { border-color: var(--border) !important; }
+
+/* Cards / panels */
+[data-theme="dark"] #portal-main .shadow { box-shadow: 0 1px 4px rgba(0,0,0,0.55) !important; }
+[data-theme="dark"] #portal-main .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.45) !important; }
+[data-theme="dark"] #portal-main .rounded-xl,
+[data-theme="dark"] #portal-main .rounded-lg { border-color: var(--border); }

@@ -1,61 +1,60 @@
 // Server component — no "use client". Desktop dropdowns use CSS :hover (zero JS).
-// Only LiveClock and MobileMenu are client islands.
+// Only LiveClock, MobileMenu, and ThemeToggle are client islands.
 import Image from "next/image";
 import Link from "next/link";
 import LiveClock from "./LiveClock";
 import MobileMenu from "./MobileMenu";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV = [
   {
-    label: "Market",
+    label: "Market Overview",
     items: [
-      { label: "Market Overview",   href: "/data-portal" },
-      { label: "Daily Summary",     href: "/data-portal/daily" },
-      { label: "Weekly Summary",    href: "/data-portal/weekly" },
-      { label: "Market Indices",    href: "/data-portal/indices" },
-      { label: "Sector Summary",    href: "/data-portal/sectors" },
-      { label: "Market Performers", href: "/data-portal/daily?view=performers" },
+      { label: "Portfolio",        href: "/dashboard/portfolio"    },
+      { label: "Daily Market",    href: "/dashboard/daily"        },
+      { label: "Weekly Summary",  href: "/dashboard/weekly"       },
+      { label: "Indices",         href: "/dashboard/indices"      },
+      { label: "Sectors",         href: "/dashboard/sectors"      },
+      { label: "Announcements",   href: "/dashboard/announcements"},
+      { label: "News",            href: "/dashboard/news"         },
     ],
   },
   {
-    label: "Companies",
+    label: "Technical",
     items: [
-      { label: "Company Directory",    href: "/data-portal/companies" },
-      { label: "Financial Statements", href: "/data-portal/companies?tab=financials" },
-      { label: "Dividends",            href: "/data-portal/companies?tab=dividends" },
-      { label: "☪ Shariah Compliant", href: "/data-portal/shariah" },
-    ],
-  },
-  {
-    label: "Tools",
-    items: [
-      { label: "Stock Screener",  href: "/data-portal/screener" },
-      { label: "Historical Data", href: "/data-portal/historical-data" },
-      { label: "Data Downloads",  href: "/data-portal/downloads" },
-    ],
-  },
-  {
-    label: "Information",
-    items: [
-      { label: "Announcements",   href: "/data-portal/announcements" },
-      { label: "Research Reports",href: "/data-portal/research" },
-      { label: "Weekly Report",   href: "/data-portal/research?type=weekly_market" },
+      { label: "Historical Data", href: "/dashboard/historical-data" },
+      { label: "Downloads",       href: "/dashboard/downloads"       },
+      { label: "Reports",         href: "/dashboard/research"        },
+      { label: "Shariah",         href: "/dashboard/shariah"         },
     ],
   },
 ];
 
-// Reduced to 10 unique symbols — doubled by TickerTape = 20 DOM nodes (was 36)
 const TICKER_ITEMS = [
-  { symbol: "KSE-100", price: "78,432.10", pct: "+1.25%", up: true  },
-  { symbol: "KSE-30",  price: "48,628.55", pct: "+0.87%", up: true  },
-  { symbol: "OGDC",    price: "142.30",    pct: "+4.82%", up: true  },
-  { symbol: "PSO",     price: "318.75",    pct: "+3.91%", up: true  },
-  { symbol: "LUCK",    price: "894.20",    pct: "+3.15%", up: true  },
-  { symbol: "MCB",     price: "224.50",    pct: "+1.72%", up: true  },
-  { symbol: "MLCF",    price: "41.80",     pct: "-3.22%", up: false },
-  { symbol: "TRG",     price: "92.40",     pct: "+1.26%", up: true  },
-  { symbol: "MARI",    price: "2,145.00",  pct: "+2.41%", up: true  },
-  { symbol: "HBL",     price: "196.80",    pct: "+1.34%", up: true  },
+  { symbol: "KSE 100",  price: "180,059.79", pct: "-0.69%", up: false },
+  { symbol: "KSE ALL",  price: "108,894.65", pct: "-0.46%", up: false },
+  { symbol: "KMI ALL",  price: "69,823.76",  pct: "-0.56%", up: false },
+  { symbol: "KMI 30",   price: "253,326.40", pct: "-0.94%", up: false },
+  { symbol: "OLPL",     price: "49.95",      pct: "-0.03%", up: false },
+  { symbol: "PABC",     price: "108.89",     pct: "-2.06%", up: false },
+  { symbol: "HALEON",   price: "748.99",     pct: "-0.49%", up: false },
+  { symbol: "FHAM",     price: "32.98",      pct: "-0.54%", up: false },
+  { symbol: "SCBPL",    price: "66.00",      pct: "0.00%",  up: true  },
+  { symbol: "HINO",     price: "380.99",     pct: "-0.06%", up: false },
+  { symbol: "COLG",     price: "1,227.77",   pct: "-0.58%", up: false },
+  { symbol: "PTL",      price: "53.75",      pct: "+0.45%", up: true  },
+  { symbol: "ATBA",     price: "204.80",     pct: "+0.45%", up: true  },
+  { symbol: "FEROZ",    price: "380.00",     pct: "+0.07%", up: true  },
+  { symbol: "LIVEN",    price: "35.77",      pct: "-0.22%", up: false },
+  { symbol: "UBDL",     price: "26.00",      pct: "-4.55%", up: false },
+  { symbol: "REDCO",    price: "31.00",      pct: "-1.59%", up: false },
+  { symbol: "ATIL",     price: "78.10",      pct: "-1.13%", up: false },
+  { symbol: "JDMT",     price: "165.00",     pct: "-1.30%", up: false },
+  { symbol: "SARC",     price: "98.00",      pct: "+0.22%", up: true  },
+  { symbol: "PPP",      price: "135.00",     pct: "-1.82%", up: false },
+  { symbol: "MCBIM",    price: "160.00",     pct: "-0.01%", up: false },
+  { symbol: "FEM",      price: "11.13",      pct: "-1.16%", up: false },
+  { symbol: "INDU",     price: "1,924.25",   pct: "-0.23%", up: false },
 ];
 
 export default function PortalNav({ isAdmin }: { isAdmin?: boolean }) {
@@ -90,18 +89,28 @@ export default function PortalNav({ isAdmin }: { isAdmin?: boolean }) {
       >
         {/* Logo */}
         <Link
-          href="/data-portal"
-          className="flex items-center gap-3 shrink-0 px-5 h-14"
-          style={{ background: "linear-gradient(135deg,#B8860B 0%,#E8C84A 45%,#C9A227 100%)", minWidth: 195 }}
+          href="/dashboard"
+          className="flex items-center gap-3 shrink-0 px-4 h-14"
+          style={{ minWidth: 200 }}
         >
-          <Image src="/stockifyy-logo.svg" alt="Stockifyy" width={95} height={27} className="object-contain shrink-0" priority />
-          <span className="text-[9px] font-bold tracking-widest uppercase border-l pl-2.5 hidden sm:inline-block" style={{ color: "rgba(7,17,31,0.65)", borderColor: "rgba(7,17,31,0.25)" }}>
+          <Image src="/stockifyy-full-logo.png" alt="Stockifyy" width={130} height={37} className="object-contain shrink-0 logo-gold" priority />
+          <span className="text-[9px] font-bold tracking-widest uppercase border-l pl-2.5 hidden sm:inline-block" style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.2)" }}>
             Data Portal
           </span>
         </Link>
 
-        {/* Desktop nav — CSS :hover dropdowns, zero JS */}
-        <div className="hidden lg:flex items-center gap-1 flex-1 px-3">
+        {/* Desktop nav */}
+        <div className="hidden lg:flex items-center gap-0.5 flex-1 px-3">
+          {/* Dashboard */}
+          <Link
+            href="/dashboard"
+            className="px-3 py-2 text-sm rounded transition-colors nav-link relative z-10"
+            style={{ color: "rgba(255,255,255,0.85)" }}
+          >
+            Dashboard
+          </Link>
+
+          {/* Dropdown groups */}
           {NAV.map(group => (
             <div key={group.label} className="nav-group relative">
               <button
@@ -111,15 +120,22 @@ export default function PortalNav({ isAdmin }: { isAdmin?: boolean }) {
                 {group.label} ▾
               </button>
               <div
-                className="nav-dropdown absolute top-full left-0 w-52 py-1 rounded-lg shadow-2xl border mt-1"
-                style={{ background: "var(--deep-blue)", borderColor: "rgba(212,175,55,0.25)", zIndex: 100 }}
+                className="nav-dropdown absolute top-full left-0 w-44 py-0.5 rounded-lg border mt-1"
+                style={{
+                  background: "rgba(7,17,31,0.35)",
+                  backdropFilter: "blur(24px)",
+                  WebkitBackdropFilter: "blur(24px)",
+                  borderColor: "rgba(212,175,55,0.12)",
+                  boxShadow: "0 8px 40px rgba(0,0,0,0.28)",
+                  zIndex: 100,
+                }}
               >
                 {group.items.map(item => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="nav-link block px-4 py-2 text-sm"
-                    style={{ color: "rgba(255,255,255,0.85)" }}
+                    className="nav-link block px-3 py-1.5 text-xs"
+                    style={{ color: "rgba(255,255,255,0.82)" }}
                   >
                     {item.label}
                   </Link>
@@ -128,28 +144,36 @@ export default function PortalNav({ isAdmin }: { isAdmin?: boolean }) {
             </div>
           ))}
 
+          {/* Advanced Screener */}
           <Link
-            href="/data-portal/shariah"
-            className="shariah-link px-3 py-2 text-sm rounded transition-colors ml-1 flex items-center gap-1.5"
-            style={{ color: "rgba(255,255,255,0.85)", background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.25)" }}
+            href="/dashboard/screener"
+            className="px-3 py-2 text-sm rounded transition-colors nav-link"
+            style={{ color: "rgba(255,255,255,0.85)" }}
           >
-            <span>☪</span> Shariah
+            Advanced Screener
           </Link>
 
-          {isAdmin && (
-            <Link href="/data-portal/admin" className="px-3 py-1.5 text-xs rounded ml-1" style={{ color: "var(--gold)", border: "1px solid rgba(212,175,55,0.4)" }}>
-              ⚙ Admin
-            </Link>
-          )}
+          {/* Search Companies */}
+          <Link
+            href="/dashboard/companies"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded transition-colors nav-link ml-1"
+            style={{ color: "rgba(255,255,255,0.7)" }}
+          >
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M13.5 13.5L17.5 17.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            Search Companies
+          </Link>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-4 pr-4">
+        <div className="flex items-center gap-2 sm:gap-3 pr-4">
           <LiveClock />
+          <ThemeToggle />
           <Link href="/" className="hidden sm:block text-xs px-3 py-1.5 rounded border transition-opacity hover:opacity-70" style={{ color: "rgba(255,255,255,0.55)", borderColor: "rgba(255,255,255,0.12)" }}>
             ← Main Site
           </Link>
-          {/* Mobile menu — only client island needed for the toggle */}
           <MobileMenu isAdmin={isAdmin} />
         </div>
       </div>
