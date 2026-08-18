@@ -66,7 +66,7 @@ function StockTable({ rows, positive, loading }: { rows: Row[]; positive: boolea
   );
 }
 
-export default function GainersLosersSection() {
+export default function GainersLosersSection({ gainersOnly, losersOnly }: { gainersOnly?: boolean; losersOnly?: boolean } = {}) {
   const [gainers, setGainers] = useState<Row[]>([]);
   const [losers,  setLosers]  = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +81,9 @@ export default function GainersLosersSection() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  if (gainersOnly) return <StockTable rows={gainers} positive loading={loading} />;
+  if (losersOnly)  return <StockTable rows={losers}  positive={false} loading={loading} />;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">

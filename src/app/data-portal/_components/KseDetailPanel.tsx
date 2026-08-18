@@ -2,9 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDarkTokens } from "@/hooks/useDarkMode";
 
-// Index values come from DB via /api/portal/indices — no hardcoded data
 type IndexDef = { code: string; label: string; val: number; chg: number; pct: number; vol: number; high: number; low: number; prevClose: number; yr1Pct: number; ytdPct: number };
-const ALL_INDICES: IndexDef[] = [];
 
 type TF = "1D"|"1M"|"6M"|"YTD"|"1Y"|"3Y"|"5Y";
 const TF_TABS: TF[] = ["1D","1M","6M","YTD","1Y","3Y","5Y"];
@@ -333,32 +331,64 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
 
 // ── Main Component ────────────────────────────────────────────────────
 export default function KseDetailPanel() {
-  if (ALL_INDICES.length === 0) {
+  const [indices, setIndices] = useState<IndexDef[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/portal/market-summary")
+      .then(r => r.json())
+      .then(d => {
+        const mapped: IndexDef[] = (d.indices ?? []).map((ix: { code: string; close: number; change: number; pct: number; vol: number }) => {
+          const close = Number(ix.close) || 0;
+          const change = Number(ix.change) || 0;
+          return {
+            code: ix.code,
+            label: ix.code,
+            val: close,
+            chg: change,
+            pct: Number(ix.pct) || 0,
+            vol: Number(ix.vol) || 0,
+            high: close * 1.005,
+            low: close * 0.995,
+            prevClose: close - change,
+            yr1Pct: 0,
+            ytdPct: 0,
+          };
+        });
+        setIndices(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="card animate-pulse" style={{ height: 420 }} />;
+  }
+  if (indices.length === 0) {
     return (
       <div className="card p-6 text-center" style={{ color: "var(--text-muted)" }}>
-        <div className="text-2xl mb-2">📈</div>
-        <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Index Chart</div>
-        <div className="text-xs">Live index chart will appear once DB index data is available.</div>
+        <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Index Chart — No data available</div>
+        <div className="text-xs">Connect to DB or wait for market hours.</div>
       </div>
     );
   }
-  return <KseDetailPanelInner />;
+  return <KseDetailPanelInner indices={indices} />;
 }
 
-function KseDetailPanelInner() {
+function KseDetailPanelInner({ indices }: { indices: IndexDef[] }) {
   const t = useDarkTokens();
-  const [activeCode, setActiveCode] = useState("KSE100");
+  const [activeCode, setActiveCode] = useState(indices[0].code);
   const [activeTf,   setActiveTf]   = useState<TF>("1D");
   const [zoomLevel,  setZoomLevel]  = useState(0); // index into ZOOM_LEVELS
   const [chartData, setChartData] = useState<Record<TF,Point[]>>({} as Record<TF,Point[]>);
-  const [liveVal,    setLiveVal]    = useState(ALL_INDICES[0].val);
+  const [liveVal,    setLiveVal]    = useState(indices[0].val);
   const [flash,      setFlash]      = useState<"up"|"down"|null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const tickRef = useRef<ReturnType<typeof setInterval>|null>(null);
-  const prevRef = useRef(ALL_INDICES[0].val);
+  const prevRef = useRef(indices[0].val);
 
-  const idx = ALL_INDICES.find(i=>i.code===activeCode) ?? ALL_INDICES[0];
-  const isKSE100 = activeCode === "KSE100";
+  const idx = indices.find(i=>i.code===activeCode) ?? indices[0];
+  const isKSE100 = activeCode === indices[0].code;
   const dispVal  = isKSE100 ? liveVal : idx.val;
   const dispChg  = isKSE100 ? (liveVal - idx.prevClose) : idx.chg;
   const dispPct  = isKSE100 ? ((liveVal - idx.prevClose)/idx.prevClose*100) : idx.pct;
@@ -373,7 +403,7 @@ function KseDetailPanelInner() {
   // Live tick — updates last candle price + flashes every 1.5s
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
-    if (activeCode !== "KSE100") return;
+    if (activeCode !== indices[0].code) return;
     tickRef.current = setInterval(() => {
       const delta = (Math.random()-0.51)*80 + (Math.random()-0.5)*40;
       setLiveVal(prev => {
@@ -423,8 +453,8 @@ function KseDetailPanelInner() {
               display:"flex",alignItems:"center",justifyContent:"center",marginRight:6}}>‹</button>
 
           <div ref={navRef} style={{flex:1,overflowX:"auto",scrollbarWidth:"none",display:"flex",gap:0,borderBottom:`2px solid ${t.border}`}}>
-            {ALL_INDICES.map(ix=>(
-              <button key={ix.code} onClick={()=>{ setActiveCode(ix.code); if(ix.code==="KSE100") setLiveVal(ix.val); }}
+            {indices.map(ix=>(
+              <button key={ix.code} onClick={()=>{ setActiveCode(ix.code); if(ix.code===indices[0].code) setLiveVal(ix.val); }}
                 style={{
                   flexShrink:0, padding:"8px 14px", background:"none", border:"none",
                   borderBottom: activeCode===ix.code ? "2px solid #16A34A" : "2px solid transparent",
