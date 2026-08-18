@@ -5,6 +5,7 @@ import MarketBreadthBar from "./_components/MarketBreadthBar";
 import PortalTitle from "./_components/PortalTitle";
 import PageAnimations from "./_components/PageAnimations";
 import GlobalSearch from "./_components/GlobalSearch";
+import PublicNotice from "./_components/PublicNotice";
 
 const KseDetailPanel        = dynamic(() => import("./_components/KseDetailPanel"));
 const GainersLosersSection  = dynamic(() => import("./_components/GainersLosersSection"));
@@ -16,6 +17,8 @@ export const metadata: Metadata = { title: "Market Overview" };
 
 export default function DataPortalPage() {
   return (
+    <>
+    <PublicNotice />
     <PageAnimations>
       {/* ── Hero Title + Global Search ──────────────────────────────── */}
       <div className="px-4 sm:px-5" style={{ paddingTop: 10, paddingBottom: 8 }}>
@@ -49,5 +52,6 @@ export default function DataPortalPage() {
         <AnnouncementsSection />
       </div>
     </PageAnimations>
+    </>
   );
 }
