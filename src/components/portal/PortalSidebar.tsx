@@ -392,7 +392,6 @@ export default function PortalSidebar({ isAdmin }: { isAdmin?: boolean }) {
             ))}
           </nav>
           <div className="shrink-0 px-2 py-2.5" style={{ borderTop: "1px solid rgba(212,175,55,0.08)" }}>
-            <MarketStatusPill collapsed={false} />
             <div className="flex items-center gap-2.5 px-1">
               <ThemeToggle />
               <Link href="/" className="text-[10.5px] px-2 py-1 rounded border" style={{ color: "rgba(255,255,255,0.45)", borderColor: "rgba(255,255,255,0.1)" }}>← Main Site</Link>
@@ -524,11 +523,6 @@ export default function PortalSidebar({ isAdmin }: { isAdmin?: boolean }) {
           ))}
 
         </nav>
-
-        {/* ── Market Status ─────────────────── */}
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <MarketStatusPill collapsed={collapsed} />
-        </div>
 
         {/* ── Bottom: Theme + Main Site ─────── */}
         <div
