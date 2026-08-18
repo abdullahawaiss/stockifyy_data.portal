@@ -339,7 +339,7 @@ function mapIndices(raw: RawIndex[]): IndexDef[] {
   });
 }
 
-export default function KseDetailPanel({ initialIndices }: { initialIndices?: RawIndex[] }) {
+export default function KseDetailPanel({ initialIndices, activeIndexCode }: { initialIndices?: RawIndex[]; activeIndexCode?: string | null }) {
   const [indices, setIndices] = useState<IndexDef[]>(() => initialIndices ? mapIndices(initialIndices) : []);
   const [loading, setLoading] = useState(!initialIndices);
 
@@ -352,23 +352,26 @@ export default function KseDetailPanel({ initialIndices }: { initialIndices?: Ra
       .finally(() => setLoading(false));
   }, [initialIndices]);
 
-  if (loading) {
-    return <div className="card animate-pulse" style={{ height: 420 }} />;
-  }
-  if (indices.length === 0) {
-    return (
-      <div className="card p-6 text-center" style={{ color: "var(--text-muted)" }}>
-        <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Index Chart — No data available</div>
-        <div className="text-xs">Connect to DB or wait for market hours.</div>
-      </div>
-    );
-  }
-  return <KseDetailPanelInner indices={indices} />;
+  if (loading) return <div className="card animate-pulse" style={{ height: 420 }} />;
+  if (indices.length === 0) return (
+    <div className="card p-6 text-center" style={{ color: "var(--text-muted)" }}>
+      <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Index Chart — No data available</div>
+      <div className="text-xs">Connect to DB or wait for market hours.</div>
+    </div>
+  );
+  return <KseDetailPanelInner indices={indices} externalActiveCode={activeIndexCode ?? null} />;
 }
 
-function KseDetailPanelInner({ indices }: { indices: IndexDef[] }) {
+function KseDetailPanelInner({ indices, externalActiveCode }: { indices: IndexDef[]; externalActiveCode: string | null }) {
   const t = useDarkTokens();
-  const [activeCode, setActiveCode] = useState(indices[0].code);
+  const [activeCode, setActiveCode] = useState(externalActiveCode ?? indices[0].code);
+
+  // Sync when parent card selection changes
+  useEffect(() => {
+    if (externalActiveCode && indices.some(i => i.code === externalActiveCode)) {
+      setActiveCode(externalActiveCode);
+    }
+  }, [externalActiveCode, indices]);
   const [activeTf,   setActiveTf]   = useState<TF>("1D");
   const [zoomLevel,  setZoomLevel]  = useState(0); // index into ZOOM_LEVELS
   const [chartData, setChartData] = useState<Record<TF,Point[]>>({} as Record<TF,Point[]>);
