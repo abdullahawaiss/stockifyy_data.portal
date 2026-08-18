@@ -185,7 +185,7 @@ async function fetchLivePSXContext(): Promise<string> {
 
 // Call Groq with auto-retry on 429
 async function callGroq(apiKey: string, messages: object[], retries = 2): Promise<Response> {
-  const body = JSON.stringify({ model: "compound-beta-mini", messages, temperature: 0.7, max_tokens: 600, top_p: 0.9 });
+  const body = JSON.stringify({ model: "llama-3.3-70b-versatile", messages, temperature: 0.7, max_tokens: 600, top_p: 0.9 });
   const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
   for (let i = 0; i <= retries; i++) {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
