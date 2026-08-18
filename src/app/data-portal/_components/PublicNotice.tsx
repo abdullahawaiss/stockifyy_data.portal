@@ -1,178 +1,211 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export default function PublicNotice() {
-  const [visible, setVisible] = useState(false);
+/* Brand tokens */
+const G = "#0B4D35";   /* deep green  */
+const GA = "#0F6344";  /* mid green   */
+const AU = "#C9A227";  /* gold        */
+const AUL = "#F0D97A"; /* light gold  */
 
-  // Show on every page load (not persisted to localStorage)
+export default function PublicNotice() {
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 300);
+    const t = setTimeout(() => setOpen(true), 250);
     return () => clearTimeout(t);
   }, []);
 
-  if (!visible) return null;
+  if (!open) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* ── Backdrop ─────────────────────────────────────── */}
       <div
-        onClick={() => setVisible(false)}
+        onClick={() => setOpen(false)}
         style={{
           position: "fixed", inset: 0, zIndex: 9998,
-          background: "rgba(0,0,0,0.55)",
-          backdropFilter: "blur(3px)",
-          WebkitBackdropFilter: "blur(3px)",
-          animation: "pnFadeIn 0.25s ease",
+          background: "rgba(5,20,12,0.65)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+          animation: "pnFade .22s ease",
         }}
       />
 
-      {/* Modal */}
+      {/* ── Modal shell ──────────────────────────────────── */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px",
+        padding: "12px",
         pointerEvents: "none",
       }}>
         <div style={{
           pointerEvents: "all",
-          background: "#fff",
-          borderRadius: 14,
-          boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
-          maxWidth: 560, width: "100%",
-          overflow: "hidden",
-          animation: "pnSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          position: "relative",
+          width: "100%", maxWidth: 500,
+          maxHeight: "calc(100dvh - 24px)",
+          overflowY: "auto",
+          background: "#FAFAF8",
+          borderRadius: 12,
+          boxShadow: "0 0 0 1px rgba(0,0,0,.08), 0 20px 60px rgba(0,0,0,.28)",
+          animation: "pnUp .3s cubic-bezier(.22,.68,0,1.2)",
+          display: "flex", flexDirection: "column",
         }}>
 
-          {/* Green header */}
+          {/* ── Gold top bar ─────────────────────────────── */}
+          <div style={{ height: 5, background: `linear-gradient(90deg, ${AU} 0%, ${AUL} 60%, ${AU} 100%)`, borderRadius: "12px 12px 0 0", flexShrink: 0 }} />
+
+          {/* ── Header ───────────────────────────────────── */}
           <div style={{
-            background: "linear-gradient(135deg, #064E3B 0%, #065F46 60%, #047857 100%)",
-            padding: "18px 20px 16px",
-            display: "flex", alignItems: "center", gap: 14,
+            padding: "16px 20px 14px",
+            borderBottom: `1px solid rgba(0,0,0,.07)`,
+            display: "flex", alignItems: "center", gap: 12,
+            flexShrink: 0,
           }}>
-            {/* Logo area */}
+            {/* Seal */}
             <div style={{
-              width: 46, height: 46, borderRadius: 10,
-              background: "rgba(255,255,255,0.15)",
+              width: 44, height: 44, borderRadius: "50%",
+              border: `2px solid ${AU}`,
+              background: G,
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#D4AF37"/>
-                <path d="M2 17l10 5 10-5" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round"/>
-                <path d="M2 12l10 5 10-5" stroke="rgba(212,175,55,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
+              {/* Simple S wordmark */}
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M15 7.5C14.2 5.8 12.7 5 11 5 8.8 5 7 6.3 7 8c0 1.4 1 2.2 3.2 2.8l1.6.4C14 11.8 15 12.8 15 14.2 15 16.3 13 18 10.5 18 8.5 18 6.8 17 6 15.5" stroke={AUL} strokeWidth="1.7" strokeLinecap="round"/>
               </svg>
             </div>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: G, letterSpacing: "-0.2px" }}>
                 Stockifyy
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>
-                Pakistan's Shariah-Compliant Stock Data Portal
+              <div style={{ fontSize: 10.5, color: "#6B7280", marginTop: 1, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                PSX Data Portal — Public Notice
               </div>
             </div>
+
             {/* Close */}
             <button
-              onClick={() => setVisible(false)}
+              onClick={() => setOpen(false)}
+              aria-label="Close"
               style={{
-                marginLeft: "auto", width: 30, height: 30, borderRadius: "50%",
-                border: "none", background: "rgba(255,255,255,0.15)",
-                color: "#fff", fontSize: 16, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
+                width: 28, height: 28, borderRadius: 6, border: "1px solid #E5E7EB",
+                background: "#fff", color: "#6B7280", fontSize: 14,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, fontWeight: 600,
               }}
             >✕</button>
           </div>
 
-          {/* Body */}
-          <div style={{ padding: "20px 22px 24px" }}>
+          {/* ── Body ─────────────────────────────────────── */}
+          <div style={{ padding: "16px 20px 20px", flex: 1 }}>
 
-            {/* Title */}
-            <div style={{ marginBottom: 14 }}>
+            {/* Heading */}
+            <div style={{ marginBottom: 12 }}>
               <div style={{
-                display: "inline-block",
-                background: "#D1FAE5", color: "#064E3B",
-                fontSize: 11, fontWeight: 800, letterSpacing: "0.08em",
-                textTransform: "uppercase", padding: "3px 10px",
-                borderRadius: 20, marginBottom: 8,
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: `${G}18`, border: `1px solid ${G}30`,
+                borderRadius: 20, padding: "3px 10px 3px 8px",
+                marginBottom: 8,
               }}>
-                اعلان عام — Public Notice
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: AU, display: "inline-block",
+                }} />
+                <span style={{ fontSize: 10, fontWeight: 800, color: G, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  اعلان عام
+                </span>
               </div>
-              <h2 style={{
-                fontSize: 17, fontWeight: 800, color: "#064E3B",
-                margin: 0, lineHeight: 1.3,
-              }}>
-                Shariah-Compliant &amp; Interest-Free Platform
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827", lineHeight: 1.35 }}>
+                Shariah-Compliant &amp; Riba-Free Platform
               </h2>
             </div>
 
             {/* Key statement */}
             <div style={{
-              background: "linear-gradient(135deg, #ECFDF5, #F0FDF4)",
-              border: "1.5px solid #6EE7B7",
-              borderRadius: 10, padding: "12px 14px", marginBottom: 14,
+              background: "#fff", border: `1.5px solid ${G}25`,
+              borderLeft: `3px solid ${G}`,
+              borderRadius: "0 8px 8px 0",
+              padding: "10px 14px", marginBottom: 14,
             }}>
-              <p style={{ margin: 0, fontSize: 13, color: "#065F46", lineHeight: 1.65, fontWeight: 600 }}>
-                🕌 &nbsp;Stockifyy is a <strong>100% Shariah-compliant</strong> data portal. We provide
-                stock market information strictly in accordance with Islamic finance principles.
-                Our platform does <strong>not</strong> promote, facilitate, or earn from any
-                interest-based (Riba) activities.
+              <p style={{ margin: 0, fontSize: 12.5, color: "#1F2937", lineHeight: 1.7, fontWeight: 500 }}>
+                Stockifyy is a <strong style={{ color: G }}>100% Shariah-compliant</strong> stock market data portal.
+                This platform strictly follows Islamic finance principles and does{" "}
+                <strong>not</strong> promote, facilitate, or earn from any interest-based (Riba) activities.
               </p>
             </div>
 
-            {/* Bullet points */}
-            <ul style={{ margin: "0 0 16px", paddingLeft: 0, listStyle: "none" }}>
+            {/* Points */}
+            <div style={{ marginBottom: 14 }}>
               {[
-                { icon: "✅", text: "Shariah screening status shown for every listed company" },
-                { icon: "🚫", text: "No Riba — zero interest-based instruments promoted on this platform" },
-                { icon: "📊", text: "Data sourced directly from Pakistan Stock Exchange (PSX)" },
-                { icon: "🔒", text: "We do not manage funds, accept investments, or provide trading services" },
-                { icon: "⚠️",  text: "For investment decisions, always consult a certified Shariah advisor" },
-              ].map((item, i) => (
-                <li key={i} style={{
-                  display: "flex", gap: 10, alignItems: "flex-start",
-                  padding: "6px 0",
-                  borderBottom: i < 4 ? "1px solid #F0FDF4" : "none",
+                ["Shariah Screening", "Every listed company's Shariah compliance status is displayed based on recognized screening criteria."],
+                ["Zero Interest (Riba)", "No interest-bearing instruments, margin financing, or Riba-based products are promoted on this platform."],
+                ["PSX Official Data", "All market data is sourced directly from Pakistan Stock Exchange (PSX). We do not alter or fabricate figures."],
+                ["Data Portal Only", "Stockifyy does not manage funds, execute trades, or provide personalized investment advice."],
+              ].map(([title, desc], i) => (
+                <div key={i} style={{
+                  display: "flex", gap: 10, padding: "8px 0",
+                  borderBottom: i < 3 ? "1px solid #F3F4F6" : "none",
+                  alignItems: "flex-start",
                 }}>
-                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
-                  <span style={{ fontSize: 12.5, color: "#374151", lineHeight: 1.55 }}>{item.text}</span>
-                </li>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 5,
+                    background: `${G}12`, border: `1px solid ${G}20`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, marginTop: 1,
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke={G} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#111827", marginBottom: 1 }}>{title}</div>
+                    <div style={{ fontSize: 11.5, color: "#6B7280", lineHeight: 1.55 }}>{desc}</div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
 
             {/* Urdu note */}
             <div style={{
-              background: "#FFFBEB", border: "1px solid #FDE68A",
-              borderRadius: 8, padding: "10px 14px", marginBottom: 18,
-              textAlign: "right", direction: "rtl",
+              background: `${AU}12`, border: `1px solid ${AU}40`,
+              borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+              direction: "rtl", textAlign: "right",
             }}>
-              <p style={{ margin: 0, fontSize: 12.5, color: "#92400E", lineHeight: 1.8, fontWeight: 500 }}>
-                یہ پلیٹ فارم مکمل طور پر شریعت کے اصولوں کے مطابق ہے۔ یہاں کوئی سودی
-                لین دین نہیں ہوتا۔ تمام ڈیٹا پاکستان اسٹاک ایکسچینج سے لیا جاتا ہے۔
+              <div style={{ fontSize: 11, fontWeight: 700, color: AU, marginBottom: 4, letterSpacing: "0.02em" }}>
+                نوٹ
+              </div>
+              <p style={{ margin: 0, fontSize: 12.5, color: "#78350F", lineHeight: 1.8, fontWeight: 500 }}>
+                یہ پلیٹ فارم مکمل طور پر شریعت کے اصولوں کے مطابق ہے۔
+                یہاں کوئی سودی لین دین نہیں ہوتا اور نہ ہی کوئی سودی مصنوعات فروخت کی جاتی ہیں۔
+                سرمایہ کاری کے فیصلوں کے لیے اپنے شرعی مشیر سے رہنمائی حاصل کریں۔
               </p>
             </div>
 
-            {/* CTA button */}
+            {/* CTA */}
             <button
-              onClick={() => setVisible(false)}
+              onClick={() => setOpen(false)}
               style={{
                 width: "100%", padding: "11px 0",
-                background: "linear-gradient(135deg, #065F46, #047857)",
-                color: "#fff", border: "none", borderRadius: 9,
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(6,95,70,0.35)",
+                background: `linear-gradient(135deg, ${G} 0%, ${GA} 100%)`,
+                color: "#fff", border: "none", borderRadius: 8,
+                fontSize: 13.5, fontWeight: 700, cursor: "pointer",
                 letterSpacing: "0.01em",
+                boxShadow: `0 2px 12px ${G}40`,
               }}
             >
-              میں سمجھتا/سمجھتی ہوں — I Understand &amp; Continue
+              میں سمجھتا / سمجھتی ہوں &nbsp;—&nbsp; I Understand, Continue
             </button>
+
+            <p style={{ margin: "10px 0 0", fontSize: 10.5, color: "#9CA3AF", textAlign: "center", lineHeight: 1.5 }}>
+              This notice appears on every session for regulatory transparency.
+            </p>
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes pnFadeIn  { from { opacity:0 } to { opacity:1 } }
-        @keyframes pnSlideUp { from { opacity:0; transform:translateY(30px) scale(0.96) } to { opacity:1; transform:translateY(0) scale(1) } }
+        @keyframes pnFade { from { opacity:0 } to { opacity:1 } }
+        @keyframes pnUp   { from { opacity:0; transform:translateY(24px) scale(.97) } to { opacity:1; transform:none } }
       `}</style>
     </>
   );
