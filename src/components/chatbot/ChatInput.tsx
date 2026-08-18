@@ -29,7 +29,7 @@ export default function ChatInput({ value, onChange, onSend, isLoading, disabled
   return (
     <div
       className="flex items-end gap-2 px-3 py-2.5 shrink-0"
-      style={{ background: "white", borderTop: "1px solid var(--border)" }}
+      style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid rgba(212,175,55,0.18)" }}
     >
       <textarea
         ref={ref}

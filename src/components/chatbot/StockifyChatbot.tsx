@@ -245,7 +245,10 @@ export default function StockifyChatbot() {
             flexDirection: "column",
             borderRadius: 20,
             overflow: "hidden",
-            boxShadow: "0 24px 64px rgba(7,17,31,0.28), 0 0 0 1px rgba(212,175,55,0.18)",
+            background: "rgba(245,248,255,0.25)",
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+            boxShadow: "0 24px 64px rgba(7,17,31,0.38), 0 0 0 1px rgba(212,175,55,0.22)",
           }}
         >
           <ChatHeader

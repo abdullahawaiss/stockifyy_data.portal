@@ -86,7 +86,7 @@ function inlineFormat(text: string): React.ReactNode[] {
 /* ── Typing indicator ─────────────────────────────────────────────── */
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl rounded-bl-sm w-fit" style={{ background: "white", border: "1px solid var(--border)" }}>
+    <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl rounded-bl-sm w-fit" style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(212,175,55,0.15)" }}>
       {[0, 1, 2].map(i => (
         <span
           key={i}
@@ -122,7 +122,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         style={
           isUser
             ? { background: "var(--navy)", color: "white" }
-            : { background: "white", color: "var(--text-primary)", border: "1px solid var(--border)" }
+            : { background: "rgba(255,255,255,0.78)", color: "var(--text-primary)", border: "1px solid rgba(212,175,55,0.15)", backdropFilter: "blur(8px)" }
         }
       >
         {isUser ? (
@@ -164,7 +164,7 @@ export default function ChatMessages({ messages, isLoading }: { messages: ChatMe
   return (
     <div
       className="flex-1 overflow-y-auto px-3 py-3 space-y-3"
-      style={{ background: "var(--light-bg)" }}
+      style={{ background: "rgba(240,245,255,0.55)" }}
       role="log"
       aria-live="polite"
       aria-label="Chat messages"
