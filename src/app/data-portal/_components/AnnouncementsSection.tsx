@@ -1,14 +1,11 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { TYPE_COLORS } from "../_data";
+import type { AnnouncementItem } from "@/lib/market-data";
 
 // ── types ──
 type Category = "Board Meetings" | "Payouts" | "Insider Transactions" | "Result Announcements" | "Dividend Payout";
-
-interface AnnouncementRow {
-  id: number; symbol: string | null; announcementType: string; title: string;
-  content: string | null; announcementDate: string; fileUrl: string | null;
-}
+type AnnouncementRow = AnnouncementItem;
 
 interface SimpleRow {
   symbol: string; title: string; heldDate: string; postingDate: string; cat: Category;
@@ -438,10 +435,11 @@ export default function AnnouncementsSection({ initialData }: { initialData?: An
   const [cat, setCat]       = useState<Category>("Board Meetings");
   const [search, setSearch] = useState("");
   const [allRows, setAllRows] = useState<AnnouncementRow[]>(() => initialData ?? []);
-  const [loading, setLoading] = useState(!initialData);
+  // loading = true only if we have NO server data at all
+  const [loading, setLoading] = useState(initialData === undefined);
 
   useEffect(() => {
-    if (initialData?.length) return; // already have data from server
+    if (Array.isArray(initialData)) return; // server already sent data (even if empty)
     fetch("/api/portal/announcements?limit=50")
       .then(r => r.json())
       .then(d => setAllRows(d.data ?? []))
