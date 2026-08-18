@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 570">
+  <defs>
+    <!-- Vertical gold gradient -->
+    <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F5E878"/>
+      <stop offset="20%"  stop-color="#EDD44A"/>
+      <stop offset="50%"  stop-color="#D4AF37"/>
+      <stop offset="78%"  stop-color="#B8920A"/>
+      <stop offset="100%" stop-color="#8B6500"/>
+    </linearGradient>
+    <!-- Horizontal gold gradient for border -->
+    <linearGradient id="gH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#8B6500"/>
+      <stop offset="25%"  stop-color="#D4AF37"/>
+      <stop offset="50%"  stop-color="#F0D860"/>
+      <stop offset="75%"  stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6500"/>
+    </linearGradient>
+    <!-- Radial highlight -->
+    <radialGradient id="gR" cx="50%" cy="35%" r="55%">
+      <stop offset="0%"   stop-color="#F5E878"/>
+      <stop offset="60%"  stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6500"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ═══════════════════════════════════════
+       OUTER HEXAGONAL DIAMOND BORDER
+       8-point polygon: pointed top, wide sides, sharp bottom tip
+       ═══════════════════════════════════════ -->
+  <polygon
+    points="250,24  320,42  464,272  340,472  250,556  160,472  36,272  180,42"
+    fill="none"
+    stroke="url(#gH)"
+    stroke-width="13"
+    stroke-linejoin="miter"
+  />
+
+  <!-- ═══════════════════════════════════════
+       LEFT BULL HORN
+       Sweeps outward from body, curves like real horn
+       ═══════════════════════════════════════ -->
+  <path d="
+    M 148,278
+    C 118,282 88,295 62,322
+    C 40,344 32,372 44,398
+    C 52,416 70,424 90,418
+    C 76,402 68,384 78,364
+    C 90,340 116,318 148,300
+    Z
+  " fill="url(#gR)"/>
+
+  <!-- ═══════════════════════════════════════
+       RIGHT BULL HORN (mirror)
+       ═══════════════════════════════════════ -->
+  <path d="
+    M 352,278
+    C 382,282 412,295 438,322
+    C 460,344 468,372 456,398
+    C 448,416 430,424 410,418
+    C 424,402 432,384 422,364
+    C 410,340 384,318 352,300
+    Z
+  " fill="url(#gR)"/>
+
+  <!-- ═══════════════════════════════════════
+       LEFT FIGURE — hexagonal head + body + lightning bolt
+       ═══════════════════════════════════════ -->
+  <!-- Left head (hexagon) -->
+  <polygon
+    points="174,140  198,154  198,182  174,196  150,182  150,154"
+    fill="url(#gV)"
+  />
+  <!-- Left body + lightning foot -->
+  <path d="
+    M 152,182
+    L 196,182
+    L 196,196
+    L 200,196
+    L 200,330
+    L 212,330
+    L 196,368
+    L 208,368
+    L 184,418
+    L 196,418
+    L 168,472
+    L 156,460
+    L 148,480
+    L 162,452
+    L 150,450
+    L 172,400
+    L 158,400
+    L 182,350
+    L 168,350
+    L 186,308
+    L 174,308
+    L 174,196
+    L 178,196
+    L 178,182
+    Z
+  " fill="url(#gV)"/>
+
+  <!-- ═══════════════════════════════════════
+       CENTER FIGURE — tallest, head + body + center lightning
+       ═══════════════════════════════════════ -->
+  <!-- Center head (hexagon, larger) -->
+  <polygon
+    points="250,106  276,121  276,151  250,166  224,151  224,121"
+    fill="url(#gV)"
+  />
+  <!-- Center body + lightning foot (extends to bottom tip) -->
+  <path d="
+    M 226,151
+    L 274,151
+    L 274,166
+    L 280,166
+    L 280,340
+    L 294,340
+    L 276,378
+    L 290,378
+    L 264,432
+    L 278,432
+    L 252,488
+    L 262,510
+    L 250,556
+    L 238,510
+    L 248,488
+    L 222,432
+    L 236,432
+    L 210,378
+    L 224,378
+    L 206,340
+    L 220,340
+    L 220,166
+    L 226,166
+    Z
+  " fill="url(#gV)"/>
+
+  <!-- ═══════════════════════════════════════
+       RIGHT FIGURE — mirror of left
+       ═══════════════════════════════════════ -->
+  <!-- Right head (hexagon) -->
+  <polygon
+    points="326,140  350,154  350,182  326,196  302,182  302,154"
+    fill="url(#gV)"
+  />
+  <!-- Right body + lightning foot -->
+  <path d="
+    M 304,182
+    L 348,182
+    L 322,182
+    L 322,196
+    L 326,196
+    L 326,308
+    L 314,308
+    L 332,350
+    L 318,350
+    L 342,400
+    L 328,400
+    L 352,452
+    L 340,450
+    L 354,480
+    L 346,460
+    L 334,472
+    L 308,418
+    L 320,418
+    L 296,368
+    L 308,368
+    L 292,330
+    L 304,330
+    L 304,196
+    L 308,196
+    L 308,182
+    Z
+  " fill="url(#gV)"/>
+
+  <!-- ═══════════════════════════════════════
+       LOWER LEFT BRACKET / ARMOR PIECE
+       Angular L-shaped decorative element
+       ═══════════════════════════════════════ -->
+  <path d="
+    M 90,442
+    L 104,442
+    L 104,456
+    L 136,456
+    L 136,470
+    L 90,470
+    L 90,442
+    Z
+    M 90,470
+    L 104,470
+    L 104,508
+    L 90,508
+    Z
+  " fill="url(#gV)" fill-rule="evenodd"/>
+
+  <!-- ═══════════════════════════════════════
+       LOWER RIGHT BRACKET / ARMOR PIECE (mirror)
+       ═══════════════════════════════════════ -->
+  <path d="
+    M 410,442
+    L 396,442
+    L 396,456
+    L 364,456
+    L 364,470
+    L 410,470
+    L 410,442
+    Z
+    M 410,470
+    L 396,470
+    L 396,508
+    L 410,508
+    Z
+  " fill="url(#gV)" fill-rule="evenodd"/>
+
+  <!-- Subtle inner highlights on heads for depth -->
+  <ellipse cx="174" cy="162" rx="10" ry="8"  fill="#1a140a" opacity="0.2"/>
+  <ellipse cx="250" cy="132" rx="12" ry="10" fill="#1a140a" opacity="0.2"/>
+  <ellipse cx="326" cy="162" rx="10" ry="8"  fill="#1a140a" opacity="0.2"/>
+
+</svg>

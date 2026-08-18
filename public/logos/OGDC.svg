@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a5c2a"/>
+      <stop offset="100%" stop-color="#0d3d1a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#g)"/>
+  <!-- Oil derrick -->
+  <polygon points="50,18 36,72 64,72" fill="none" stroke="#4ade80" stroke-width="3" stroke-linejoin="round"/>
+  <line x1="50" y1="18" x2="50" y2="72" stroke="#4ade80" stroke-width="2.5"/>
+  <line x1="40" y1="42" x2="60" y2="42" stroke="#4ade80" stroke-width="2.5"/>
+  <line x1="43" y1="57" x2="57" y2="57" stroke="#4ade80" stroke-width="2.5"/>
+  <!-- Flame -->
+  <path d="M50 10 C50 10 44 17 46 22 C43 19 43 14 43 14 C40 19 41 26 45 29 C43 27 43 23 43 23 C45 28 50 31 50 31 C50 31 55 28 57 23 C57 23 57 27 55 29 C59 26 60 19 57 14 C57 14 57 19 54 22 C56 17 50 10 50 10Z" fill="#fbbf24"/>
+  <!-- Base -->
+  <rect x="30" y="72" width="40" height="5" rx="2" fill="#4ade80" opacity="0.7"/>
+  <!-- OGDC text -->
+  <text x="50" y="88" font-family="Arial Black, sans-serif" font-size="10" font-weight="900" fill="white" text-anchor="middle" letter-spacing="1">OGDC</text>
+</svg>

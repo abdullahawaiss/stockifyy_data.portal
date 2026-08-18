@@ -37,6 +37,20 @@ const nextConfig: NextConfig = {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
 
+  async redirects() {
+    return [
+      { source: "/data-portal",           destination: "/dashboard",           permanent: true },
+      { source: "/data-portal/:path*",    destination: "/dashboard/:path*",    permanent: true },
+    ];
+  },
+
+  async rewrites() {
+    return [
+      { source: "/dashboard",             destination: "/data-portal"           },
+      { source: "/dashboard/:path*",      destination: "/data-portal/:path*"    },
+    ];
+  },
+
   // Silence the "you loaded an Image without width/height" warning for SVGs
   images: {
     dangerouslyAllowSVG: true,

@@ -70,56 +70,48 @@ export async function POST(req: NextRequest) {
 
   const fullUserMessage = contextNote ? `${contextNote}\n\n${message.trim()}` : message.trim();
 
-  // Build Gemini conversation turns from history
-  const contents = [
-    ...history.slice(-10).map(h => ({
-      role: h.role,
-      parts: [{ text: h.text }],
+  // Build messages array for OpenAI-compatible API
+  const groqMessages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...history.slice(-10).map((h: { role: string; text: string }) => ({
+      role: h.role === "user" ? "user" : "assistant",
+      content: h.text,
     })),
-    { role: "user", parts: [{ text: fullUserMessage }] },
+    { role: "user", content: fullUserMessage },
   ];
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-            topP: 0.9,
-          },
-          safetySettings: [
-            { category: "HARM_CATEGORY_HARASSMENT",        threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            { category: "HARM_CATEGORY_HATE_SPEECH",       threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          ],
-        }),
-        signal: AbortSignal.timeout(25_000), // 25s server-side timeout
-      }
-    );
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: groqMessages,
+        temperature: 0.7,
+        max_tokens: 1024,
+        top_p: 0.9,
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
 
-    if (!geminiRes.ok) {
-      const status = geminiRes.status;
+    if (!groqRes.ok) {
+      const status = groqRes.status;
       if (status === 429) {
         return NextResponse.json(
           { error: "AI assistant par filhal zyada requests aa rahi hain. Thori dair baad dobara try karein." },
           { status: 429 }
         );
       }
-      throw new Error(`Gemini API error ${status}`);
+      throw new Error(`Groq API error ${status}`);
     }
 
-    const data = await geminiRes.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data = await groqRes.json();
+    const raw = data?.choices?.[0]?.message?.content;
 
     if (!raw) {
-      // Blocked by safety filters or empty response
       return NextResponse.json({
         reply: "Sorry, main is request ka jawab nahi de sakta. Koi aur sawal puchein.",
       });

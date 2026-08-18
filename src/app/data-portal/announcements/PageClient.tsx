@@ -77,7 +77,7 @@ export default function AnnouncementsPage() {
                     <span>{a.announcementDate}</span>
                     <span>·</span>
                     <span className="capitalize">{TYPE_LABELS[a.announcementType] ?? a.announcementType}</span>
-                    {a.isDemo && <span className="badge-demo">Demo</span>}
+                    
                   </div>
                   {a.content && (
                     <p className="text-xs mt-1.5 leading-relaxed line-clamp-2" style={{ color: "var(--text-secondary)" }}>{a.content}</p>

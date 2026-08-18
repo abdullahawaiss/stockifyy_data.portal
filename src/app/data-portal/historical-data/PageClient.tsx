@@ -103,7 +103,7 @@ export default function HistoricalDataPage() {
           <>
             <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
               <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{data.length} records for {symbol} ({period})</p>
-              {data[0]?.isDemo && <span className="badge-demo">Demo Data</span>}
+              
             </div>
             <div className="table-scroll">
               {period === "daily" ? (

@@ -35,6 +35,17 @@ export async function getSession(): Promise<SessionUser | null> {
     const token = cookieStore.get(COOKIE)?.value;
     if (!token) return null;
     const { payload } = await jwtVerify(token, secret);
+
+    // Direct admin token (no DB session required)
+    if (payload.directAdmin === true) {
+      return {
+        id: payload.id as number,
+        email: payload.email as string,
+        fullName: payload.fullName as string,
+        role: payload.role as string,
+      };
+    }
+
     const sessionId = payload.sessionId as string;
     const [session] = await db
       .select({ userId: sessions.userId, expiresAt: sessions.expiresAt })

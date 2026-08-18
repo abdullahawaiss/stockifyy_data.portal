@@ -61,7 +61,7 @@ export default function ResearchPage() {
                 <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: "var(--light-bg)", color: "var(--text-muted)" }}>
                   {TYPES[r.reportType] ?? r.reportType}
                 </span>
-                {r.isDemo && <span className="badge-demo">Demo</span>}
+                
               </div>
               <h3 className="font-semibold text-sm mb-2 leading-snug flex-1" style={{ color: "var(--navy)" }}>{r.title}</h3>
               <p className="text-xs leading-relaxed mb-3 line-clamp-3" style={{ color: "var(--text-secondary)" }}>{r.summary ?? "No summary available."}</p>

@@ -28,7 +28,7 @@ export default function ChatHeader({ onMinimize, onClose, onClear }: ChatHeaderP
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" style={{ boxShadow: "0 0 5px #4ade80" }} />
           </div>
           <div className="text-[10px] mt-0.5" style={{ color: "rgba(212,175,55,0.7)" }}>
-            Powered by Gemini
+            Powered by Llama 3.3
           </div>
         </div>
       </div>

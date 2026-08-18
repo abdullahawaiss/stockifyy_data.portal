@@ -1,10 +1,11 @@
-# Stockifyy Data Portal — robots.txt
+# Stockifyy — robots.txt
 
-# Standard crawlers
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /dashboard/admin/
 
-# Block AI training bots — data portal content is proprietary
+# Block AI training bots
 User-agent: GPTBot
 Disallow: /
 

@@ -6,9 +6,9 @@ import { desc, eq } from "drizzle-orm";
 
 export default async function LogsPage() {
   const session = await getSession();
-  if (!canAccess(session, "data_manager")) redirect("/data-portal/admin/login");
+  if (!canAccess(session, "data_manager")) redirect("/dashboard/admin/login");
 
-  const [logs, batches] = await Promise.all([
+  const [logsResult, batchesResult] = await Promise.allSettled([
     db.select({ log: auditLogs, userName: users.fullName })
       .from(auditLogs)
       .leftJoin(users, eq(auditLogs.userId, users.id))
@@ -17,10 +17,19 @@ export default async function LogsPage() {
     db.select().from(importBatches).orderBy(desc(importBatches.createdAt)).limit(20),
   ]);
 
+  const logs    = logsResult.status    === "fulfilled" ? logsResult.value    : [];
+  const batches = batchesResult.status === "fulfilled" ? batchesResult.value : [];
+  const dbError = logsResult.status === "rejected" || batchesResult.status === "rejected";
+
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
         <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Audit & Import Logs</h1>
+        {dbError && (
+          <p className="mt-2 text-sm px-3 py-2 rounded" style={{ background: "#FEF3C7", color: "#92400E", border: "1px solid #FCD34D" }}>
+            One or more tables do not exist yet. Run <code className="font-mono font-bold">drizzle-kit push</code> to apply migrations.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

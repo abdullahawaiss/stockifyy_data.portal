@@ -65,7 +65,7 @@ export default function IndicesPage() {
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{idx.indexCode}</p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{idx.indexName}</p>
                   </div>
-                  {idx.isDemo && <span className="badge-demo">Demo</span>}
+                  
                 </div>
                 <p className="text-2xl font-bold mb-1" style={{ color: "var(--navy)" }}>{formatNumber(val, 2)}</p>
                 <p className="text-sm font-semibold" style={{ color: pct.positive === true ? "var(--positive)" : pct.positive === false ? "var(--negative)" : "var(--neutral)" }}>

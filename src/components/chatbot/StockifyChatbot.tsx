@@ -99,6 +99,37 @@ export default function StockifyChatbot() {
           0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
           40%          { transform: scale(1);   opacity: 1;   }
         }
+        @keyframes robotBob {
+          0%,100% { transform: translateY(0px); }
+          50%      { transform: translateY(-3px); }
+        }
+        @keyframes robotBlink {
+          0%,85%,100% { transform: scaleY(1); }
+          92%          { transform: scaleY(0.07); }
+        }
+        @keyframes eyeLook {
+          0%,18%        { transform: translateX(0px); }
+          25%,42%       { transform: translateX(1.8px); }
+          50%,67%       { transform: translateX(-1.8px); }
+          75%,92%       { transform: translateX(0.9px); }
+          100%          { transform: translateX(0px); }
+        }
+        @keyframes pupilLook {
+          0%,18%        { transform: translateX(0px); }
+          25%,42%       { transform: translateX(1.4px); }
+          50%,67%       { transform: translateX(-1.4px); }
+          75%,92%       { transform: translateX(0.7px); }
+          100%          { transform: translateX(0px); }
+        }
+        @keyframes antennaGlow {
+          0%,100% { opacity: 1; r: 2.5; }
+          50%      { opacity: 0.4; r: 2; }
+        }
+        .robot-bob   { animation: robotBob 2.2s ease-in-out infinite; }
+        .robot-eye   { transform-origin: center; animation: robotBlink 4.5s ease-in-out infinite, eyeLook 3.2s ease-in-out infinite; }
+        .robot-eye2  { transform-origin: center; animation: robotBlink 4.5s ease-in-out 0.08s infinite, eyeLook 3.2s ease-in-out infinite; }
+        .robot-pupil { animation: pupilLook 3.2s ease-in-out infinite; }
+        .antenna-dot { animation: antennaGlow 1.4s ease-in-out infinite; }
         .chat-window-enter { animation: chatSlideUp 0.28s cubic-bezier(0.34,1.1,0.64,1) forwards; }
         .chat-window-exit  { animation: chatSlideDown 0.22s ease-in forwards; }
         @media (prefers-reduced-motion: reduce) {
@@ -128,31 +159,64 @@ export default function StockifyChatbot() {
           title={isOpen ? "Close Stockify AI" : "Ask Stockify AI"}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
-          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+          className="relative w-[68px] h-[68px] rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
           style={{
-            background: "linear-gradient(135deg,#07111F 0%,#0D2137 60%,#07111F 100%)",
-            boxShadow: "0 8px 24px rgba(7,17,31,0.45), 0 0 0 1.5px rgba(212,175,55,0.5)",
+            background: "linear-gradient(145deg,#0D2137 0%,#07111F 100%)",
+            boxShadow: "0 8px 24px rgba(7,17,31,0.5), 0 0 0 2px rgba(212,175,55,0.55)",
           }}
         >
-          {/* Icon transitions between sparkle (closed) and X (open) */}
+          {/* Robot icon — visible when closed */}
           <span
             className="transition-all duration-200"
-            style={{ opacity: isOpen ? 0 : 1, transform: isOpen ? "rotate(90deg) scale(0.5)" : "rotate(0) scale(1)", position: "absolute" }}
+            style={{ opacity: isOpen ? 0 : 1, transform: isOpen ? "scale(0.4) rotate(15deg)" : "scale(1)", position: "absolute" }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 2L13.5 8.5L20 7L16 12L20 17L13.5 15.5L12 22L10.5 15.5L4 17L8 12L4 7L10.5 8.5L12 2Z" fill="#D4AF37"/>
+            <svg
+              width="46" height="46" viewBox="0 0 38 38"
+              fill="none" xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              className={!prefersReducedMotion ? "robot-bob" : ""}
+            >
+              {/* Antenna stem */}
+              <line x1="19" y1="4" x2="19" y2="9" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round"/>
+              {/* Antenna dot */}
+              <circle className="antenna-dot" cx="19" cy="2.5" r="2.5" fill="#D4AF37"/>
+
+              {/* Head */}
+              <rect x="7" y="9" width="24" height="16" rx="5" fill="#0D2137" stroke="#D4AF37" strokeWidth="1.4"/>
+
+              {/* Left eye socket */}
+              <ellipse className="robot-eye" cx="13.5" cy="17" rx="3" ry="3" fill="#D4AF37"/>
+              {/* Left pupil — moves with eye */}
+              <circle className="robot-pupil" cx="13.5" cy="17" r="1.1" fill="#07111F"/>
+
+              {/* Right eye socket */}
+              <ellipse className="robot-eye2" cx="24.5" cy="17" rx="3" ry="3" fill="#D4AF37"/>
+              {/* Right pupil — moves with eye */}
+              <circle className="robot-pupil" cx="24.5" cy="17" r="1.1" fill="#07111F"/>
+
+              {/* Mouth — happy line */}
+              <path d="M14 22 Q19 25.5 24 22" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+
+              {/* Body */}
+              <rect x="11" y="25" width="16" height="9" rx="3.5" fill="#0D2137" stroke="#D4AF37" strokeWidth="1.2"/>
+              {/* Body panel dots */}
+              <circle cx="16" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.7"/>
+              <circle cx="19" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.5"/>
+              <circle cx="22" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.3"/>
             </svg>
           </span>
+
+          {/* X icon — visible when open */}
           <span
             className="transition-all duration-200"
-            style={{ opacity: isOpen ? 1 : 0, transform: isOpen ? "rotate(0) scale(1)" : "rotate(-90deg) scale(0.5)", position: "absolute" }}
+            style={{ opacity: isOpen ? 1 : 0, transform: isOpen ? "scale(1) rotate(0)" : "scale(0.4) rotate(-15deg)", position: "absolute" }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </span>
 
-          {/* Notification dot */}
+          {/* Green online dot */}
           {!isOpen && (
             <span
               className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-white"

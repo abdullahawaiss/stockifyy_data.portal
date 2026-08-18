@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#g)"/>
+  <!-- DM letters as M shape with D curve -->
+  <!-- D -->
+  <path d="M18 30 L18 66 L34 66 Q50 66 50 48 Q50 30 34 30 Z" fill="white" opacity="0.9"/>
+  <path d="M26 38 L26 58 L32 58 Q42 58 42 48 Q42 38 32 38 Z" fill="#7c3aed"/>
+  <!-- M -->
+  <path d="M54 30 L54 66 L62 66 L70 46 L78 66 L86 66 L86 30 L78 30 L70 52 L62 30 Z" fill="white" opacity="0.9"/>
+  <!-- DMTM text -->
+  <text x="50" y="87" font-family="Arial Black, sans-serif" font-size="9.5" font-weight="900" fill="white" text-anchor="middle" letter-spacing="0.5">DMTM</text>
+</svg>

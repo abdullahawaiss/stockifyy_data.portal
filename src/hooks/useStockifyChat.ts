@@ -32,6 +32,7 @@ export function useStockifyChat(pageContext: PageContext) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const lastSentAt = useRef<number>(0);
   const initialized = useRef(false);
 
   // Hydrate from sessionStorage once on mount
@@ -60,6 +61,20 @@ export function useStockifyChat(pageContext: PageContext) {
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
+
+    // Client-side rate limit: min 5s between requests (Gemini free tier = 15 RPM)
+    const now = Date.now();
+    if (now - lastSentAt.current < 5000) {
+      setMessages(prev => [...prev, {
+        id: genId(),
+        role: "assistant",
+        content: "Thoda intezaar karein — agle sawal se pehle 5 seconds ka waqfa zaroor hona chahiye.",
+        timestamp: now,
+        isError: true,
+      }]);
+      return;
+    }
+    lastSentAt.current = now;
 
     // Cancel any in-flight request
     abortRef.current?.abort();
