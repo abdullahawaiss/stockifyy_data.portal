@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { getMarketSummary } from "@/lib/market-data";
+import dynamic from "next/dynamic";
 import PortalTitle from "./_components/PortalTitle";
 import PageAnimations from "./_components/PageAnimations";
 import GlobalSearch from "./_components/GlobalSearch";
 import PublicNotice from "./_components/PublicNotice";
 
-const DashboardClient      = dynamic(() => import("./_components/DashboardClient"), { ssr: false });
+import DashboardClient from "./_components/DashboardClient";
 const AnnouncementsSection = dynamic(() => import("./_components/AnnouncementsSection"));
 
 export const metadata: Metadata = { title: "Market Overview" };
