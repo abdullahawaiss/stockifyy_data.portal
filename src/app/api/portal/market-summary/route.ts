@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPsxRows } from "@/lib/psx-live";
+import { getPsxRows, getPsxIndices } from "@/lib/psx-live";
 import { db } from "@/db";
 import { dailyStockPrices, dailyIndexValues, indices } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -59,7 +59,7 @@ export async function GET() {
     ]);
 
     if (dbStocks.length > 50) {
-      const summary = buildSummary(dbStocks, dbIndices, "db");
+      const summary = await buildSummary(dbStocks, dbIndices, "db");
       _cache = { data: summary, ts: now };
       return NextResponse.json(summary);
     }
@@ -72,7 +72,7 @@ export async function GET() {
         close: parseFloat(r.close) || 0, change: parseFloat(r.priceChange) || 0,
         pct: parseFloat(r.percentageChange) || 0, vol: parseInt(r.volume) || 0,
       })) : [];
-      const summary = buildSummary(
+      const summary = await buildSummary(
         liveRows.length > 0 ? liveRows.map(r => ({ symbol: r.symbol, close: r.close, change: r.change, pct: r.pct, vol: r.vol })) : dbStocks,
         dbIndices,
         "db"
@@ -106,7 +106,7 @@ export async function GET() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildSummary(stocks: any[], dbIndices: any[], source: "db" | "live"): MarketSummary {
+async function buildSummary(stocks: any[], dbIndices: any[], source: "db" | "live"): Promise<MarketSummary> {
   const rows = stocks.map(s => ({
     symbol: s.symbol,
     name: s.symbol,
@@ -124,11 +124,12 @@ function buildSummary(stocks: any[], dbIndices: any[], source: "db" | "live"): M
     vol: parseFloat(String(i.vol)) || 0,
   })).filter(i => i.code);
 
-  return { ...deriveDashboard(rows), indices: idxRows, updatedAt: new Date().toISOString(), source };
+  const finalIdx = idxRows.length > 0 ? idxRows : await getPsxIndices();
+  return { ...deriveDashboard(rows), indices: finalIdx, updatedAt: new Date().toISOString(), source };
 }
 
 async function buildSummaryFromLiveWithIndices(rows: { symbol: string; name: string; sector: string; close: number; change: number; pct: number; vol: number }[]): Promise<MarketSummary> {
-  // Try to get latest index values from DB even during live scrape fallback
+  // 1. Try DB indices first
   try {
     const latestIndexDate = await db
       .select({ d: sql<string>`max(${dailyIndexValues.tradingDate})` })
@@ -150,10 +151,19 @@ async function buildSummaryFromLiveWithIndices(rows: { symbol: string; name: str
         change: parseFloat(String(i.change)) || 0,
         pct: parseFloat(String(i.pct)) || 0,
         vol: parseFloat(String(i.vol)) || 0,
-      })).filter(i => i.code);
-      return { ...deriveDashboard(rows), indices: idxRows, updatedAt: new Date().toISOString(), source: "live" };
+      })).filter(i => i.code && i.close > 0);
+      if (idxRows.length > 0) {
+        return { ...deriveDashboard(rows), indices: idxRows, updatedAt: new Date().toISOString(), source: "live" };
+      }
     }
   } catch { /* ignore */ }
+
+  // 2. Fallback: scrape live PSX index page
+  const psxIdx = await getPsxIndices();
+  if (psxIdx.length > 0) {
+    return { ...deriveDashboard(rows), indices: psxIdx, updatedAt: new Date().toISOString(), source: "live" };
+  }
+
   return { ...deriveDashboard(rows), indices: [], updatedAt: new Date().toISOString(), source: "live" };
 }
 

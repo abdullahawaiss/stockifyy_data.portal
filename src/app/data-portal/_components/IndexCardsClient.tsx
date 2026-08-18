@@ -106,19 +106,26 @@ export default function IndexCardsClient() {
         .then(d => {
           // If DB has index data use it, otherwise build from stocks summary
           if (Array.isArray(d.indices) && d.indices.length > 0) {
-            // Normalize DB index data
             const map = new Map<string, IndexRow>();
             for (const idx of d.indices) {
-              const code = normalizeCode(idx.code);
+              const code = normalizeCode(String(idx.code ?? ""));
+              if (!code) continue;
               map.set(code, {
                 code,
-                close:  parseFloat(idx.close)  || 0,
-                change: parseFloat(idx.change) || 0,
-                pct:    parseFloat(idx.pct)    || 0,
-                vol:    parseInt(idx.vol)       || 0,
+                close:  parseFloat(String(idx.close))  || 0,
+                change: parseFloat(String(idx.change)) || 0,
+                pct:    parseFloat(String(idx.pct))    || 0,
+                vol:    parseInt(String(idx.vol))       || 0,
               });
             }
-            setIndices(INDEX_ORDER.map(c => map.get(c)).filter(Boolean) as IndexRow[]);
+            // Try ordered list first, fallback to whatever we got
+            const ordered = INDEX_ORDER.map(c => map.get(c)).filter(Boolean) as IndexRow[];
+            if (ordered.length > 0) {
+              setIndices(ordered);
+            } else {
+              // DB/PSX returned different codes — show top 5 by close value
+              setIndices([...map.values()].filter(r => r.close > 0).sort((a,b) => b.close - a.close).slice(0, 5));
+            }
           }
           // else: no index data available — show nothing rather than fake data
         })
@@ -150,11 +157,12 @@ export default function IndexCardsClient() {
 
 function normalizeCode(raw: string): string {
   const m: Record<string, string> = {
-    "KSE100": "KSE-100", "KSE-100": "KSE-100",
-    "KSE30":  "KSE-30",  "KSE-30":  "KSE-30",
-    "ALLSHR": "KSE ALL", "KSE ALL": "KSE ALL",
-    "KMI30":  "KMI-30",  "KMI-30":  "KMI-30",
-    "KMIALLSHR": "KMI ALL", "KMI ALL": "KMI ALL",
+    "KSE100": "KSE-100", "KSE-100": "KSE-100", "KSE 100": "KSE-100",
+    "KSE100PR": "KSE-100",
+    "KSE30":  "KSE-30",  "KSE-30":  "KSE-30",  "KSE 30":  "KSE-30",
+    "ALLSHR": "KSE ALL", "KSE ALL": "KSE ALL",  "KSE-ALL": "KSE ALL",
+    "KMI30":  "KMI-30",  "KMI-30":  "KMI-30",   "KMI 30":  "KMI-30",
+    "KMIALLSHR": "KMI ALL", "KMI ALL": "KMI ALL", "KMI-ALL": "KMI ALL", "KMIALL": "KMI ALL",
   };
-  return m[raw] ?? raw;
+  return m[raw.trim().toUpperCase()] ?? m[raw.trim()] ?? raw;
 }

@@ -114,3 +114,67 @@ export async function getPsxRow(symbol: string): Promise<any | null> {
   if (!data) return null;
   return data.rows.find(r => r.symbol === symbol) ?? null;
 }
+
+export interface PsxIndexValue {
+  code: string;
+  close: number;
+  change: number;
+  pct: number;
+  vol: number;
+}
+
+let _idxCache: { data: PsxIndexValue[]; ts: number } | null = null;
+
+// Scrape live index values from PSX (KSE-100, KSE-30, etc.)
+export async function getPsxIndices(): Promise<PsxIndexValue[]> {
+  const now = Date.now();
+  if (_idxCache && now - _idxCache.ts < 60_000) return _idxCache.data;
+
+  try {
+    const abort = new AbortController();
+    setTimeout(() => abort.abort(), 8000);
+
+    const res = await fetch("https://dps.psx.com.pk/indices", {
+      headers: { ...PSX_HEADERS, Accept: "application/json, text/html, */*" },
+      cache: "no-store",
+      signal: abort.signal,
+    });
+    if (!res.ok) return [];
+
+    // Try JSON first
+    const text = await res.text();
+    let parsed: PsxIndexValue[] = [];
+
+    try {
+      const json = JSON.parse(text);
+      const arr = Array.isArray(json) ? json : (json.data ?? json.indices ?? []);
+      parsed = arr.map((r: Record<string, unknown>) => ({
+        code:   String(r.code ?? r.index_code ?? r.symbol ?? ""),
+        close:  parseFloat(String(r.close ?? r.current ?? r.value ?? 0)) || 0,
+        change: parseFloat(String(r.change ?? 0)) || 0,
+        pct:    parseFloat(String(r.pct ?? r.percentage_change ?? r.change_pct ?? 0)) || 0,
+        vol:    parseInt(String(r.vol ?? r.volume ?? 0)) || 0,
+      })).filter((r: PsxIndexValue) => r.code && r.close > 0);
+    } catch {
+      // Parse HTML table — PSX renders index table in HTML
+      const rows = [...text.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)];
+      for (const [, row] of rows) {
+        const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+          .map(c => c[1].replace(/<[^>]+>/g, "").trim());
+        if (cells.length < 4) continue;
+        const close = parseFloat(cells[1]?.replace(/,/g, ""));
+        if (!close || !cells[0]) continue;
+        const change = parseFloat(cells[2]?.replace(/,/g, "")) || 0;
+        const pct    = parseFloat(cells[3]?.replace(/[^0-9.-]/g, "")) || 0;
+        parsed.push({ code: cells[0].trim(), close, change, pct, vol: 0 });
+      }
+    }
+
+    if (parsed.length > 0) {
+      _idxCache = { data: parsed, ts: now };
+    }
+    return parsed;
+  } catch {
+    return [];
+  }
+}
