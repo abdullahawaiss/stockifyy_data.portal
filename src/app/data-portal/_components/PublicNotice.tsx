@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function PublicNotice() {
   const [open, setOpen] = useState(false);
@@ -18,130 +19,126 @@ export default function PublicNotice() {
         onClick={() => setOpen(false)}
         style={{
           position: "fixed", inset: 0, zIndex: 9998,
-          background: "rgba(0,0,0,0.55)",
-          backdropFilter: "blur(2px)",
-          WebkitBackdropFilter: "blur(2px)",
+          background: "rgba(0,0,0,0.5)",
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
           animation: "pnFade .2s ease",
         }}
       />
 
-      {/* Modal */}
+      {/* Modal wrapper */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px",
+        padding: "12px",
         pointerEvents: "none",
       }}>
         <div style={{
           pointerEvents: "all",
           width: "100%", maxWidth: 560,
           background: "#fff",
-          borderRadius: 6,
-          boxShadow: "0 2px 8px rgba(0,0,0,.12), 0 20px 60px rgba(0,0,0,.25)",
+          borderRadius: 8,
+          boxShadow: "0 4px 24px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06)",
           overflow: "hidden",
-          animation: "pnUp .28s cubic-bezier(.22,.68,0,1.15)",
+          animation: "pnUp .3s cubic-bezier(.22,.68,0,1.15)",
         }}>
 
-          {/* ── Header row (same as SCS: logo left, X right) ── */}
+          {/* Gold gradient bar — logo color */}
           <div style={{
-            background: "#0B3D2A",
-            padding: "14px 18px",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            {/* Logo */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: "50%",
-                border: "2px solid #C9A240",
-                background: "#0F5236",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M16 8.5C15 6.5 13.2 5.5 11 5.5C8.5 5.5 6.5 7 6.5 9C6.5 10.7 7.7 11.7 10.3 12.5L12 13C14.5 13.8 16 15 16 17C16 19.3 13.8 21 11 21C8.5 21 6.5 19.7 5.5 17.5"
-                    stroke="#C9A240" strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <div>
-                <div style={{ color: "#fff", fontSize: 16, fontWeight: 800, letterSpacing: "-0.2px", lineHeight: 1.1 }}>
-                  Stockifyy
-                </div>
-                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10, marginTop: 2, letterSpacing: "0.04em" }}>
-                  Pakistan Stock Exchange Data Portal
-                </div>
-              </div>
-            </div>
+            height: 4,
+            background: "linear-gradient(90deg, #986300 0%, #FEA500 50%, #986300 100%)",
+          }} />
 
-            {/* X close */}
+          {/* ── Light header with actual logo ── */}
+          <div style={{
+            background: "#fff",
+            padding: "14px 18px 13px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            borderBottom: "1px solid #F0EDEA",
+          }}>
+            <Image
+              src="/stockifyy-logo.svg"
+              alt="Stockifyy"
+              width={130}
+              height={37}
+              priority
+              style={{ display: "block", height: 37, width: "auto" }}
+            />
+
             <button
               onClick={() => setOpen(false)}
               aria-label="Close"
               style={{
-                width: 30, height: 30, borderRadius: "50%",
-                border: "2px solid rgba(255,255,255,0.3)",
-                background: "transparent", color: "#fff",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
+                width: 28, height: 28, borderRadius: "50%",
+                border: "1.5px solid #D1CBC0",
+                background: "#F7F4F0",
+                color: "#6B6560", fontSize: 12, fontWeight: 700,
+                cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                lineHeight: 1,
               }}
             >✕</button>
           </div>
 
-          {/* ── Content (white area, like SCS) ── */}
-          <div style={{ padding: "22px 24px 24px" }}>
+          {/* ── Body ── */}
+          <div style={{ padding: "20px 22px 22px", background: "#fff" }}>
 
-            {/* "PUBLIC NOTICE" — big bold green like SCS */}
+            {/* PUBLIC NOTICE heading like SCS */}
             <div style={{
-              fontSize: 26, fontWeight: 900,
-              color: "#0B5C35",
-              letterSpacing: "-0.5px",
-              marginBottom: 6,
               fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: 27, fontWeight: 900,
+              color: "#0B3D2A",
+              letterSpacing: "-0.3px",
+              marginBottom: 5,
             }}>
               PUBLIC NOTICE
             </div>
 
-            {/* Green subtitle line */}
+            {/* Gold subtitle */}
             <div style={{
-              fontSize: 12, fontWeight: 800,
-              color: "#0B5C35",
-              letterSpacing: "0.04em",
+              fontSize: 11.5, fontWeight: 800,
+              color: "#986300",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
               marginBottom: 16,
               lineHeight: 1.4,
             }}>
-              Stockifyy is a 100% Shariah-Compliant &amp; Riba-Free Stock Data Portal
+              Stockifyy is a 100% Shariah-Compliant &amp; Riba-Free Advisory Platform
             </div>
 
-            {/* Body paragraphs — no bullets, no Urdu */}
-            <p style={{ fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.75, marginBottom: 12, fontWeight: 500 }}>
+            {/* Body paragraphs */}
+            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
               It is hereby notified to all users and the general public that Stockifyy
-              operates strictly in accordance with Islamic finance principles. This platform
-              does <strong>not</strong> promote, facilitate, or earn from any interest-based
-              (Riba) activity, margin financing, or non-Shariah-compliant instruments.
+              is an <strong>SECP-licensed</strong> financial advisory operating strictly under
+              Islamic finance principles. Our platform does <strong>not</strong> promote,
+              facilitate, or earn from any interest-based (Riba) activity, margin
+              financing, or non-Shariah-compliant instruments.
             </p>
 
-            <p style={{ fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.75, marginBottom: 12, fontWeight: 500 }}>
-              Every company listed on this portal displays its Shariah compliance screening
-              status based on recognized criteria. All market data is sourced directly and
-              exclusively from the Pakistan Stock Exchange (PSX) without alteration.
+            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 11, fontWeight: 500 }}>
+              Every investment opportunity advised on this platform is evaluated against
+              recognised Shariah screening criteria, ensuring your portfolio remains
+              aligned with your values. All market data displayed is sourced directly
+              and exclusively from the Pakistan Stock Exchange (PSX).
             </p>
 
-            <p style={{ fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.75, marginBottom: 20, fontWeight: 500 }}>
-              Stockifyy is a <strong>data portal only</strong> — it does not manage funds,
-              execute trades, or provide personalized investment advice. For investment
-              decisions, always consult a certified Shariah advisor.
+            <p style={{ fontSize: 13.5, color: "#1C1C1C", lineHeight: 1.78, marginBottom: 20, fontWeight: 500 }}>
+              Stockifyy provides <strong>advisory services only</strong> — it does not
+              hold, manage, or trade client funds directly. For any investment decisions,
+              we strongly recommend consulting with a certified Shariah financial advisor.
             </p>
 
-            {/* Dismiss button */}
+            {/* Divider */}
+            <div style={{ height: 1, background: "#F0EDEA", marginBottom: 16 }} />
+
+            {/* CTA — dark green, full width like SCS */}
             <button
               onClick={() => setOpen(false)}
               style={{
                 width: "100%", padding: "11px 0",
                 background: "#0B3D2A",
-                color: "#fff", border: "none", borderRadius: 4,
+                color: "#fff", border: "none", borderRadius: 5,
                 fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-                letterSpacing: "0.01em",
+                letterSpacing: "0.02em",
               }}
             >
               I Understand &amp; Continue
@@ -152,7 +149,7 @@ export default function PublicNotice() {
 
       <style>{`
         @keyframes pnFade { from { opacity:0 } to { opacity:1 } }
-        @keyframes pnUp   { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
+        @keyframes pnUp   { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:none } }
       `}</style>
     </>
   );
