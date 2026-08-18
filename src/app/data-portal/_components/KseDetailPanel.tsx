@@ -331,11 +331,21 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
 
 // ── Main Component ────────────────────────────────────────────────────
 type RawIndex = { code: string; close: number; change: number; pct: number; vol: number };
+
+const IDX_NORM: Record<string, string> = {
+  KSE100: "KSE-100", "KSE-100": "KSE-100", KSE100PR: "KSE-100",
+  KSE30:  "KSE-30",  "KSE-30":  "KSE-30",
+  ALLSHR: "KSE ALL", "KSE ALL": "KSE ALL",
+  KMI30:  "KMI-30",  "KMI-30":  "KMI-30",
+  KMIALLSHR: "KMI ALL", KMIALL: "KMI ALL", "KMI ALL": "KMI ALL",
+};
+
 function mapIndices(raw: RawIndex[]): IndexDef[] {
   return raw.map(ix => {
+    const code = IDX_NORM[ix.code] ?? ix.code;
     const close = Number(ix.close) || 0;
     const change = Number(ix.change) || 0;
-    return { code: ix.code, label: ix.code, val: close, chg: change, pct: Number(ix.pct) || 0, vol: Number(ix.vol) || 0, high: close * 1.005, low: close * 0.995, prevClose: close - change, yr1Pct: 0, ytdPct: 0 };
+    return { code, label: code, val: close, chg: change, pct: Number(ix.pct) || 0, vol: Number(ix.vol) || 0, high: close * 1.005, low: close * 0.995, prevClose: close - change, yr1Pct: 0, ytdPct: 0 };
   });
 }
 
