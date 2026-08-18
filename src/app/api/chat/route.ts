@@ -185,35 +185,55 @@ async function fetchLivePSXContext(): Promise<string> {
 
 // Call Groq with auto-retry on 429
 async function callGroq(apiKey: string, messages: object[], retries = 2): Promise<Response> {
-  for (let i = 0; i < retries; i++) {
+  const body = JSON.stringify({ model: "compound-beta-mini", messages, temperature: 0.7, max_tokens: 600, top_p: 0.9 });
+  const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
+  for (let i = 0; i <= retries; i++) {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "groq/compound-mini",
-        messages,
-        temperature: 0.7,
-        max_tokens: 600,
-        top_p: 0.9,
-      }),
-      signal: AbortSignal.timeout(25_000),
+      method: "POST", headers, body, signal: AbortSignal.timeout(25_000),
     });
     if (res.status !== 429) return res;
-    // Wait 1s then retry
-    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    if (i < retries) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
   }
-  // Final attempt
   return fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: "groq/compound-mini", messages, temperature: 0.7, max_tokens: 600 }),
-    signal: AbortSignal.timeout(25_000),
+    method: "POST", headers, body, signal: AbortSignal.timeout(25_000),
   });
 }
 
+// Call Gemini when only GEMINI_API_KEY is available
+async function callGemini(apiKey: string, messages: object[]): Promise<{ ok: boolean; json: () => Promise<unknown> }> {
+  // Convert OpenAI-style messages to Gemini format
+  const contents = (messages as { role: string; content: string }[])
+    .filter(m => m.role !== "system")
+    .map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  const systemMsg = (messages as { role: string; content: string }[]).find(m => m.role === "system");
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: systemMsg ? { parts: [{ text: systemMsg.content }] } : undefined,
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 600 },
+      }),
+      signal: AbortSignal.timeout(25_000),
+    }
+  );
+  if (!res.ok) return { ok: false, json: () => res.json() };
+  // Wrap Gemini response in OpenAI-compatible shape
+  const data = await res.json() as { candidates?: { content?: { parts?: { text: string }[] } }[] };
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return {
+    ok: true,
+    json: async () => ({ choices: [{ message: { content: text } }] }),
+  };
+}
+
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GROQ_API_KEY ?? process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const groqKey   = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!groqKey && !geminiKey) {
     return NextResponse.json({ error: "AI service is not configured." }, { status: 503 });
   }
 
@@ -258,13 +278,16 @@ export async function POST(req: NextRequest) {
   ];
 
   try {
-    const groqRes = await callGroq(apiKey, groqMessages);
+    // Use Groq if key available, otherwise Gemini
+    const aiRes = groqKey
+      ? await callGroq(groqKey, groqMessages)
+      : await callGemini(geminiKey!, groqMessages);
 
-    if (!groqRes.ok) {
-      throw new Error(`Groq API error ${groqRes.status}`);
+    if (!aiRes.ok) {
+      throw new Error(`AI API error`);
     }
 
-    const data = await groqRes.json();
+    const data = await aiRes.json();
     const raw = data?.choices?.[0]?.message?.content;
 
     if (!raw) {
