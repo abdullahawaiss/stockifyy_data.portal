@@ -25,6 +25,10 @@ const ALL_INDICES = [
 type TF = "1D"|"1M"|"6M"|"YTD"|"1Y"|"3Y"|"5Y";
 const TF_TABS: TF[] = ["1D","1M","6M","YTD","1Y","3Y","5Y"];
 
+// zoom levels: fraction of candles to show from the end
+const ZOOM_LEVELS = [1, 0.6, 0.35, 0.18, 0.08];
+const ZOOM_MIN = 0; const ZOOM_MAX = ZOOM_LEVELS.length - 1;
+
 type Point = { t: string; o: number; h: number; l: number; c: number; vol: number };
 type HoverState = { idx: number; x: number; mouseX: number };
 
@@ -103,12 +107,20 @@ function genChartData(idxVal: number): Record<TF, Point[]> {
   while (tmp <= now) { const dow = tmp.getDay(); if (dow!==0&&dow!==6) ytdBars++; tmp.setDate(tmp.getDate()+1); }
   ytdBars = Math.max(1, ytdBars);
 
+  // hour label for intra-day (15-min bars for 1M)
+  const hourLabel = (hoursAgo: number): string => {
+    const d = new Date(now.getTime() - hoursAgo * 3600000);
+    return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getHours()}:00`;
+  };
+
   return {
     "1D":  genCandles(bars1D,   idxVal*0.993, idxVal*0.003,  i => fmtHour(i * 5)),
-    "1M":  genCandles(22,       idxVal*0.962, idxVal*0.008,  i => tradingLabel(21 - i)),
+    // 1M: 30 days × 6 trading hours × 4 (15-min bars) = ~480 bars → use hourly = 132
+    "1M":  genCandles(132,      idxVal*0.962, idxVal*0.004,  i => hourLabel(131 - i)),
     "6M":  genCandles(126,      idxVal*0.88,  idxVal*0.012,  i => tradingLabel(125 - i)),
     "YTD": genCandles(ytdBars,  idxVal*0.84,  idxVal*0.013,  i => { const d=addTradingDays(jan1,i); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; }),
-    "1Y":  genCandles(52,       idxVal*0.77,  idxVal*0.020,  i => weekLabel(51 - i)),
+    // 1Y: daily bars (252 trading days) for dense candles
+    "1Y":  genCandles(252,      idxVal*0.77,  idxVal*0.011,  i => tradingLabel(251 - i)),
     "3Y":  genCandles(36,       idxVal*0.48,  idxVal*0.040,  i => monthLabel(35 - i)),
     "5Y":  genCandles(60,       idxVal*0.30,  idxVal*0.055,  i => monthLabel(59 - i)),
   };
@@ -179,8 +191,8 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
   const hoverRef = useRef<HoverState|null>(null);
   const rafRef   = useRef<number|null>(null);
 
-  const W=900, H=260, padL=6, padR=76, padT=12, padB=22;
-  const volH = 40;
+  const W=900, H=300, padL=6, padR=76, padT=14, padB=24;
+  const volH = 36;
   const chartW = W-padL-padR, chartH = H-padT-padB-volH;
 
   const pts = isLive
@@ -196,9 +208,9 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
   const pad  = rng * 0.08;          // 8% padding top & bottom
   const lo = minV - pad, hi = maxV + pad;
 
-  // candle slot & width — body 8–12px, wick 1.5px
+  // candle slot & width — reference style: thin body (~55% of slot), max 10px
   const slot  = chartW / pts.length;
-  const candW = Math.max(4, Math.min(12, slot * 0.6));
+  const candW = Math.max(1, Math.min(10, slot * 0.55));
   const toX   = (i:number) => padL + i * slot + slot / 2;
   const toY   = (v:number) => padT + chartH - ((v - lo) / (hi - lo)) * chartH;
 
@@ -224,6 +236,9 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     setHover(null);
   };
+
+  // scroll-wheel zoom: pass onWheel from parent via prop if needed (no-op here, handled at panel level)
+
 
   const hPt = hover ? pts[hover.idx] : null;
   const maxVol = Math.max(...pts.map(p=>p.vol)) || 1;
@@ -272,9 +287,16 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
             const bodyH   = Math.max(2, bodyBot - bodyTop);
             const isHov   = hover?.idx === i;
             return (
-              <g key={i} style={{animation:`cFadeIn 0.3s ease ${i*2}ms both`}}>
-                <line x1={cx} y1={toY(p.h)} x2={cx} y2={toY(p.l)} stroke={col} strokeWidth={isHov ? 2 : 1.5}/>
-                <rect x={cx - candW/2} y={bodyTop} width={candW} height={bodyH} fill={col} stroke="none"/>
+              <g key={i} style={{animation:`cFadeIn 0.25s ease ${Math.min(i,40)*1.5}ms both`}}>
+                {/* wick */}
+                <line x1={cx} y1={toY(p.h)} x2={cx} y2={toY(p.l)} stroke={col} strokeWidth={isHov ? 1.5 : 1} opacity={0.85}/>
+                {/* body */}
+                <rect x={cx - candW/2} y={bodyTop} width={candW} height={bodyH}
+                  fill={bull ? "#16a34a" : "#dc2626"}
+                  stroke={isHov ? (bull ? "#4ade80" : "#f87171") : "none"}
+                  strokeWidth={isHov ? 0.8 : 0}
+                  rx={candW > 4 ? 1 : 0}
+                />
               </g>
             );
           })}
@@ -290,14 +312,13 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
         {/* Volume bars */}
         {pts.map((p,i)=>{
           const bull = p.c >= p.o;
-          const bh = Math.max(1,(p.vol/maxVol)*(volH-8));
+          const bh = Math.max(1,(p.vol/maxVol)*(volH-6));
           const isHov = hover?.idx===i;
           return (
             <rect key={i}
-              x={toX(i)-candW/2} y={volBaseY-bh} width={candW} height={bh}
-              fill={bull ? "rgba(22,163,74,0.4)" : "rgba(220,38,38,0.4)"}
-              opacity={isHov?1:0.7}
-              style={{animation:`cFadeIn 0.5s ease ${i*3}ms both`}}
+              x={toX(i)-candW/2} y={volBaseY-bh} width={Math.max(1, candW)} height={bh}
+              fill={bull ? "rgba(22,163,74,0.45)" : "rgba(220,38,38,0.45)"}
+              opacity={isHov ? 1 : 0.65}
             />
           );
         })}
@@ -331,6 +352,7 @@ export default function KseDetailPanel() {
   const t = useDarkTokens();
   const [activeCode, setActiveCode] = useState("KSE100");
   const [activeTf,   setActiveTf]   = useState<TF>("1D");
+  const [zoomLevel,  setZoomLevel]  = useState(0); // index into ZOOM_LEVELS
   const [chartData, setChartData] = useState<Record<TF,Point[]>>({} as Record<TF,Point[]>);
   const [liveVal,    setLiveVal]    = useState(ALL_INDICES[0].val);
   const [flash,      setFlash]      = useState<"up"|"down"|null>(null);
@@ -380,7 +402,10 @@ export default function KseDetailPanel() {
       + " " + now.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}));
   }, []);
 
-  const pts = chartData[activeTf] ?? [];
+  const allPts = chartData[activeTf] ?? [];
+  const zoomFrac = ZOOM_LEVELS[zoomLevel];
+  const showCount = Math.max(5, Math.round(allPts.length * zoomFrac));
+  const pts = allPts.slice(allPts.length - showCount);
   const high52 = idx.val * 1.06;
   const low52  = idx.val * 0.76;
 
@@ -451,15 +476,39 @@ export default function KseDetailPanel() {
 
       {/* ── Full-width chart ── */}
       <div style={{padding:"10px 10px 8px"}}>
-        <div style={{display:"flex",gap:2,marginBottom:8}}>
-          {TF_TABS.map(tf=>(
-            <button key={tf} onClick={()=>setActiveTf(tf)}
-              style={{padding:"3px 8px",borderRadius:4,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:activeTf===tf?"#16A34A":"transparent",color:activeTf===tf?"#fff":t.textMuted,transition:"all 120ms ease"}}>
-              {tf}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div style={{display:"flex",gap:2}}>
+            {TF_TABS.map(tf=>(
+              <button key={tf} onClick={()=>{ setActiveTf(tf); setZoomLevel(0); }}
+                style={{padding:"3px 8px",borderRadius:4,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:activeTf===tf?"#16A34A":"transparent",color:activeTf===tf?"#fff":t.textMuted,transition:"all 120ms ease"}}>
+                {tf}
+              </button>
+            ))}
+          </div>
+          {/* Zoom controls */}
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            <button
+              onClick={()=>setZoomLevel(z=>Math.min(z+1,ZOOM_MAX))}
+              disabled={zoomLevel>=ZOOM_MAX}
+              title="Zoom In"
+              style={{width:24,height:24,borderRadius:4,border:`1px solid ${t.border}`,background:t.dark?"rgba(255,255,255,0.06)":"#f5f5f5",color:zoomLevel>=ZOOM_MAX?t.textMuted:t.text,cursor:zoomLevel>=ZOOM_MAX?"not-allowed":"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+              +
             </button>
-          ))}
+            <span style={{fontSize:9,color:t.textMuted,minWidth:22,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
+              {zoomLevel===0?"All":`${Math.round(ZOOM_LEVELS[zoomLevel]*100)}%`}
+            </span>
+            <button
+              onClick={()=>setZoomLevel(z=>Math.max(z-1,ZOOM_MIN))}
+              disabled={zoomLevel<=ZOOM_MIN}
+              title="Zoom Out"
+              style={{width:24,height:24,borderRadius:4,border:`1px solid ${t.border}`,background:t.dark?"rgba(255,255,255,0.06)":"#f5f5f5",color:zoomLevel<=ZOOM_MIN?t.textMuted:t.text,cursor:zoomLevel<=ZOOM_MIN?"not-allowed":"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+              −
+            </button>
+          </div>
         </div>
-        <CandleChart points={pts} liveVal={dispVal} isLive={activeCode==="KSE100"&&activeTf==="1D"} dark={t.dark}/>
+        <div onWheel={e=>{ e.preventDefault(); setZoomLevel(z=>e.deltaY<0?Math.min(z+1,ZOOM_MAX):Math.max(z-1,ZOOM_MIN)); }} style={{touchAction:"none"}}>
+          <CandleChart points={pts} liveVal={dispVal} isLive={activeCode==="KSE100"&&activeTf==="1D"} dark={t.dark}/>
+        </div>
       </div>
     </div>
   );
