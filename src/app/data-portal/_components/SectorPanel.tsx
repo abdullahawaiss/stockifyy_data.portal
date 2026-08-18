@@ -5,21 +5,22 @@ import type { MarketSummary } from "@/app/api/portal/market-summary/route";
 
 type Period = "Daily" | "Weekly" | "Monthly";
 
-export default function SectorPanel() {
-  const [sectors, setSectors] = useState<MarketSummary["sectors"]>([]);
-  const [loading, setLoading] = useState(true);
+export default function SectorPanel({ initialData }: { initialData?: MarketSummary["sectors"] }) {
+  const [sectors, setSectors] = useState<MarketSummary["sectors"]>(() => initialData ?? []);
+  const [loading, setLoading] = useState(!initialData);
   const [period, setPeriod] = useState<Period>("Daily");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
+    if (initialData) return;
     fetch("/api/portal/market-summary")
       .then(r => r.json())
       .then((d: MarketSummary) => setSectors(d.sectors ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   useEffect(() => {
     const el = scrollRef.current;

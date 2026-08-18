@@ -330,36 +330,27 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
 }
 
 // ── Main Component ────────────────────────────────────────────────────
-export default function KseDetailPanel() {
-  const [indices, setIndices] = useState<IndexDef[]>([]);
-  const [loading, setLoading] = useState(true);
+type RawIndex = { code: string; close: number; change: number; pct: number; vol: number };
+function mapIndices(raw: RawIndex[]): IndexDef[] {
+  return raw.map(ix => {
+    const close = Number(ix.close) || 0;
+    const change = Number(ix.change) || 0;
+    return { code: ix.code, label: ix.code, val: close, chg: change, pct: Number(ix.pct) || 0, vol: Number(ix.vol) || 0, high: close * 1.005, low: close * 0.995, prevClose: close - change, yr1Pct: 0, ytdPct: 0 };
+  });
+}
+
+export default function KseDetailPanel({ initialIndices }: { initialIndices?: RawIndex[] }) {
+  const [indices, setIndices] = useState<IndexDef[]>(() => initialIndices ? mapIndices(initialIndices) : []);
+  const [loading, setLoading] = useState(!initialIndices);
 
   useEffect(() => {
+    if (initialIndices) return;
     fetch("/api/portal/market-summary")
       .then(r => r.json())
-      .then(d => {
-        const mapped: IndexDef[] = (d.indices ?? []).map((ix: { code: string; close: number; change: number; pct: number; vol: number }) => {
-          const close = Number(ix.close) || 0;
-          const change = Number(ix.change) || 0;
-          return {
-            code: ix.code,
-            label: ix.code,
-            val: close,
-            chg: change,
-            pct: Number(ix.pct) || 0,
-            vol: Number(ix.vol) || 0,
-            high: close * 1.005,
-            low: close * 0.995,
-            prevClose: close - change,
-            yr1Pct: 0,
-            ytdPct: 0,
-          };
-        });
-        setIndices(mapped);
-      })
+      .then(d => setIndices(mapIndices(d.indices ?? [])))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialIndices]);
 
   if (loading) {
     return <div className="card animate-pulse" style={{ height: 420 }} />;

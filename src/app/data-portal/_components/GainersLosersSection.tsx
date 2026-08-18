@@ -66,21 +66,19 @@ function StockTable({ rows, positive, loading }: { rows: Row[]; positive: boolea
   );
 }
 
-export default function GainersLosersSection({ gainersOnly, losersOnly }: { gainersOnly?: boolean; losersOnly?: boolean } = {}) {
-  const [gainers, setGainers] = useState<Row[]>([]);
-  const [losers,  setLosers]  = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function GainersLosersSection({ gainersOnly, losersOnly, initialData }: { gainersOnly?: boolean; losersOnly?: boolean; initialData?: Pick<MarketSummary, "gainers" | "losers"> } = {}) {
+  const [gainers, setGainers] = useState<Row[]>(() => initialData?.gainers ?? []);
+  const [losers,  setLosers]  = useState<Row[]>(() => initialData?.losers  ?? []);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (initialData) return;
     fetch("/api/portal/market-summary")
       .then(r => r.json())
-      .then((d: MarketSummary) => {
-        setGainers(d.gainers ?? []);
-        setLosers(d.losers ?? []);
-      })
+      .then((d: MarketSummary) => { setGainers(d.gainers ?? []); setLosers(d.losers ?? []); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   if (gainersOnly) return <StockTable rows={gainers} positive loading={loading} />;
   if (losersOnly)  return <StockTable rows={losers}  positive={false} loading={loading} />;

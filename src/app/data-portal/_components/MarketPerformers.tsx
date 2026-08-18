@@ -6,18 +6,19 @@ import type { MarketSummary } from "@/app/api/portal/market-summary/route";
 type Tab = "Top Active" | "Advancers" | "Decliners";
 type Row = MarketSummary["volume"][number];
 
-export default function MarketPerformers() {
+export default function MarketPerformers({ initialData }: { initialData?: MarketSummary | null }) {
   const [tab, setTab] = useState<Tab>("Top Active");
-  const [summary, setSummary] = useState<MarketSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<MarketSummary | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (initialData) return;
     fetch("/api/portal/market-summary")
       .then(r => r.json())
       .then(setSummary)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   const rows: Row[] =
     tab === "Top Active"  ? (summary?.volume  ?? []).slice(0, 8) :

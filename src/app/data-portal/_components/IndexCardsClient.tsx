@@ -89,9 +89,9 @@ function SkeletonCard() {
   );
 }
 
-export default function IndexCardsClient() {
-  const [indices, setIndices] = useState<IndexRow[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function IndexCardsClient({ initialData }: { initialData?: { indices: IndexRow[] } }) {
+  const [indices, setIndices] = useState<IndexRow[]>(() => initialData?.indices ?? []);
+  const [loading, setLoading] = useState(!initialData);
   const [isOpen,  setIsOpen]  = useState(() => getMarketStatus().open);
 
   useEffect(() => {
@@ -100,6 +100,7 @@ export default function IndexCardsClient() {
   }, []);
 
   useEffect(() => {
+    if (initialData) return; // already have data from server
     function load() {
       fetch("/api/portal/market-summary")
         .then(r => r.json())
@@ -133,10 +134,9 @@ export default function IndexCardsClient() {
         .finally(() => setLoading(false));
     }
     load();
-    // Refresh every 60s during market hours
     const id = setInterval(load, 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [initialData]);
 
   if (loading) {
     return (
