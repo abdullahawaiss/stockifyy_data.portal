@@ -1,24 +1,6 @@
 import type { Metadata } from "next";
-import { ECONOMY_INDICATORS } from "../_data";
 
 export const metadata: Metadata = { title: "Economy — Stockifyy" };
-
-const EXTRA = [
-  { indicator: "Trade Balance",    period: "Jun-26",    current: "−$2.1B"     },
-  { indicator: "Exports",         period: "Jun-26",    current: "$3.2B"      },
-  { indicator: "Imports",         period: "Jun-26",    current: "$5.3B"      },
-  { indicator: "Remittances",     period: "Jun-26",    current: "$3.1B"      },
-  { indicator: "Forex Reserves",  period: "Aug-11-26", current: "$9.87B"     },
-  { indicator: "Current Account", period: "May-26",    current: "−$198M"     },
-  { indicator: "T-Bill 3M",       period: "Aug-26",    current: "11.85%"     },
-  { indicator: "T-Bill 6M",       period: "Aug-26",    current: "11.92%"     },
-  { indicator: "PKR/USD Buy",     period: "—",         current: "Rs.276.80"  },
-  { indicator: "PKR/EUR",         period: "—",         current: "Rs.306.40"  },
-  { indicator: "Gold (per tola)", period: "Aug-11-26", current: "Rs.341,200" },
-  { indicator: "Crude (Brent)",   period: "Aug-11-26", current: "$77.45/bbl" },
-];
-
-const ALL = [...ECONOMY_INDICATORS, ...EXTRA];
 
 export default function EconomyPage() {
   return (
@@ -31,20 +13,10 @@ export default function EconomyPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {ALL.map((e) => (
-          <div key={e.indicator} className="card p-4 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: "var(--text-muted)" }}>
-                {e.indicator}
-              </div>
-              <div className="text-[10px]" style={{ color: "var(--text-secondary)" }}>{e.period}</div>
-            </div>
-            <div className="text-base font-black tabular-nums" style={{ color: "var(--gold)" }}>
-              {e.current}
-            </div>
-          </div>
-        ))}
+      <div className="py-12 text-center" style={{ color: "var(--text-muted)" }}>
+        <div className="text-3xl mb-3">📊</div>
+        <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Economy Data Coming Soon</div>
+        <div className="text-xs">Live economic indicators will be displayed here once connected to SBP / Trading Economics feeds.</div>
       </div>
     </div>
   );

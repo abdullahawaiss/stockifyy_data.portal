@@ -2,25 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDarkTokens } from "@/hooks/useDarkMode";
 
-// ── Index definitions ─────────────────────────────────────────────────
-const ALL_INDICES = [
-  { code:"KSE100",   label:"KSE100",    val:180059.79, chg:-1250.49, pct:-0.69, vol:322003264, high:181158.86, low:180393.34, prevClose:181319.24, yr1Pct:23.26, ytdPct:3.74 },
-  { code:"KSE100PR", label:"KSE100PR",  val:262845.32, chg:-1824.21, pct:-0.69, vol:322003264, high:264200.00, low:262100.00, prevClose:264669.53, yr1Pct:21.14, ytdPct:2.98 },
-  { code:"ALLSHR",   label:"ALLSHR",    val:108894.65, chg:-507.67,  pct:-0.46, vol:412000000, high:109500.00, low:108400.00, prevClose:109402.32, yr1Pct:18.42, ytdPct:2.31 },
-  { code:"KSE30",    label:"KSE30",     val:53632.56,  chg:-373.31,  pct:-0.69, vol:185412000, high:54010.00,  low:53480.00,  prevClose:54005.87,  yr1Pct:19.87, ytdPct:2.54 },
-  { code:"KMI30",    label:"KMI30",     val:253326.40, chg:-2398.79, pct:-0.94, vol:97240000,  high:256000.00, low:252800.00, prevClose:255725.19, yr1Pct:24.11, ytdPct:4.12 },
-  { code:"BKTI",     label:"BKTI",      val:18429.33,  chg:124.50,   pct:0.68,  vol:48200000,  high:18520.00,  low:18290.00,  prevClose:18304.83,  yr1Pct:31.20, ytdPct:5.84 },
-  { code:"OGTI",     label:"OGTI",      val:32841.20,  chg:-218.40,  pct:-0.66, vol:62100000,  high:33120.00,  low:32780.00,  prevClose:33059.60,  yr1Pct:15.33, ytdPct:1.92 },
-  { code:"KMIALLSHR",label:"KMIALLSHR", val:69727.60,  chg:-394.10,  pct:-0.56, vol:210000000, high:70200.00,  low:69500.00,  prevClose:70121.70,  yr1Pct:20.45, ytdPct:2.78 },
-  { code:"PSXDIV20", label:"PSXDIV20",  val:14832.45,  chg:98.20,    pct:0.67,  vol:38400000,  high:14920.00,  low:14710.00,  prevClose:14734.25,  yr1Pct:12.84, ytdPct:1.64 },
-  { code:"UPP9",     label:"UPP9",      val:28441.80,  chg:-192.30,  pct:-0.67, vol:52100000,  high:28700.00,  low:28380.00,  prevClose:28634.10,  yr1Pct:17.62, ytdPct:2.18 },
-  { code:"NITPGI",   label:"NITPGI",    val:8234.60,   chg:54.20,    pct:0.66,  vol:14200000,  high:8290.00,   low:8170.00,   prevClose:8180.40,   yr1Pct:14.28, ytdPct:1.81 },
-  { code:"NBPPGI",   label:"NBPPGI",    val:11842.30,  chg:-78.90,   pct:-0.66, vol:22400000,  high:11940.00,  low:11800.00,  prevClose:11921.20,  yr1Pct:16.54, ytdPct:2.09 },
-  { code:"MZNPI",    label:"MZNPI",     val:6429.80,   chg:42.80,    pct:0.67,  vol:9800000,   high:6480.00,   low:6390.00,   prevClose:6387.00,   yr1Pct:11.92, ytdPct:1.52 },
-  { code:"JSMFI",    label:"JSMFI",     val:9284.50,   chg:-61.80,   pct:-0.66, vol:18200000,  high:9360.00,   low:9260.00,   prevClose:9346.30,   yr1Pct:13.74, ytdPct:1.74 },
-  { code:"ACI",      label:"ACI",       val:4829.20,   chg:32.10,    pct:0.67,  vol:8100000,   high:4860.00,   low:4800.00,   prevClose:4797.10,   yr1Pct:10.84, ytdPct:1.38 },
-  { code:"JSGE",     label:"JSGE",      val:7341.60,   chg:-48.90,   pct:-0.66, vol:13400000,  high:7400.00,   low:7310.00,   prevClose:7390.50,   yr1Pct:12.38, ytdPct:1.58 },
-];
+// Index values come from DB via /api/portal/indices — no hardcoded data
+type IndexDef = { code: string; label: string; val: number; chg: number; pct: number; vol: number; high: number; low: number; prevClose: number; yr1Pct: number; ytdPct: number };
+const ALL_INDICES: IndexDef[] = [];
 
 type TF = "1D"|"1M"|"6M"|"YTD"|"1Y"|"3Y"|"5Y";
 const TF_TABS: TF[] = ["1D","1M","6M","YTD","1Y","3Y","5Y"];

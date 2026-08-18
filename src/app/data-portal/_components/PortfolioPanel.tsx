@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
-import { PORTFOLIO_FIPI } from "../_data";
+
+// FIPI data pending PSX/NCCPL data feed connection
+type FipiRow = { date: string; net: number; cumulative: number };
+const PORTFOLIO_FIPI: FipiRow[] = [];
 
 type Mode = "FIPI" | "LIPI";
 type Period = "10 Days" | "3 Months" | "1 Year";

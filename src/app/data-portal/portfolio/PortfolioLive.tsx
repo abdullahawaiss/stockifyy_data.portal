@@ -176,7 +176,7 @@ function LiveClock() {
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function PortfolioLive() {
   const t = useDarkTokens();
-  const [data, setData] = useState(() => clone(seed));
+  const [data, setData] = useState<typeof seed>(() => clone(seed));
   const [tick, setTick] = useState(0);
   const [pulse, setPulse] = useState(false);
   const FROZEN_FIPI  = [2, seed.fipiFlow.length + seed.fipiSectors.length,     // NET POSITION rows
@@ -196,7 +196,7 @@ export default function PortfolioLive() {
         lipiFlow:    drift(d.lipiFlow,    [2]),
         lipiSectors: drift(d.lipiSectors, []),
         lipiBottom:  drift(d.lipiBottom,  [0, 1, 3, 4]),
-      }));
+      }) as typeof seed);
       setTick(t => t + 1);
     }, 3000);
     return () => clearInterval(id);

@@ -9,7 +9,7 @@ import PublicNotice from "./_components/PublicNotice";
 
 const KseDetailPanel        = dynamic(() => import("./_components/KseDetailPanel"));
 const GainersLosersSection  = dynamic(() => import("./_components/GainersLosersSection"));
-const MarketPerformancePanel= dynamic(() => import("./_components/GainersLosersSection").then(m => ({ default: m.MarketPerformancePanel })));
+const VolumeLeadersPanel    = dynamic(() => import("./_components/GainersLosersSection").then(m => ({ default: m.VolumeLeadersPanel })));
 const SectorPanel           = dynamic(() => import("./_components/SectorPanel"));
 const AnnouncementsSection  = dynamic(() => import("./_components/AnnouncementsSection"));
 
@@ -36,18 +36,9 @@ export default function DataPortalPage() {
 
         <SectorPanel />
 
-        {/* Gainers | Losers | Market Performance — 3 columns */}
-        <div style={{ display:"flex", gap:12, alignItems:"stretch", width:"100%" }}>
-          <div style={{ flex:1, minWidth:0 }}>
-            <GainersLosersSection gainersOnly />
-          </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <GainersLosersSection losersOnly />
-          </div>
-          <div style={{ flex:1, minWidth:0, overflow:"hidden" }}>
-            <MarketPerformancePanel />
-          </div>
-        </div>
+        {/* Gainers / Losers / Volume Leaders */}
+        <GainersLosersSection />
+        <VolumeLeadersPanel />
 
         <AnnouncementsSection />
       </div>

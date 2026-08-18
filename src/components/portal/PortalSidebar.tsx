@@ -196,8 +196,8 @@ function NavItem({
         href={item.href!}
         onClick={onMobileClose}
         className="group flex items-center gap-2.5 px-2.5 rounded-lg relative"
-        style={{ transition: "background 160ms ease, color 160ms ease" }}
         style={{
+          transition: "background 160ms ease, color 160ms ease",
           height: 36,
           background: isActive ? "rgba(212,175,55,0.12)" : "transparent",
           color: isActive ? activeColor : "rgba(255,255,255,0.72)",
@@ -237,8 +237,8 @@ function NavItem({
     <button
       onClick={() => !collapsed && setOpen(o => !o)}
       className="group w-full flex items-center gap-2.5 px-2.5 rounded-lg relative"
-      style={{ transition: "background 160ms ease, color 160ms ease" }}
       style={{
+        transition: "background 160ms ease, color 160ms ease",
         height: 36,
         background: isChildActive ? "rgba(212,175,55,0.08)" : "transparent",
         color: isChildActive ? activeColor : "rgba(255,255,255,0.72)",

@@ -108,6 +108,7 @@ const MKT_ITEMS: { label: string; mt: MarketType }[] = [
 ];
 
 function MarketTypeTicker({ active, onChange }: { active: MarketType; onChange: (mt: MarketType) => void }) {
+  const t = useDarkTokens();
   const trackRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -455,9 +456,9 @@ export default function StocksClient() {
 
           {/* Right: market breadth summary */}
           {(() => {
-            const advances  = filtered.filter(r => parseFloat(r.priceChange) > 0).length;
-            const declines  = filtered.filter(r => parseFloat(r.priceChange) < 0).length;
-            const unchanged = filtered.filter(r => parseFloat(r.priceChange) === 0).length;
+            const advances  = filtered.filter(r => parseFloat(r.priceChange ?? "0") > 0).length;
+            const declines  = filtered.filter(r => parseFloat(r.priceChange ?? "0") < 0).length;
+            const unchanged = filtered.filter(r => parseFloat(r.priceChange ?? "0") === 0).length;
             const total     = filtered.length;
             const advPct    = total ? Math.round((advances / total) * 100) : 0;
             return (
@@ -541,7 +542,7 @@ export default function StocksClient() {
       <div style={{ background:t.bg, border:`1px solid ${t.border}`, borderRadius:6, overflow:"hidden", boxShadow:t.cardShadow }}>
         {error && (
           <div style={{ padding:24, textAlign:"center", color:"#DC2626" }}>
-            ⚠ {error} <button onClick={fetchData} style={{ marginLeft:8, padding:"3px 10px", border:"1px solid #d1d5db", borderRadius:4, cursor:"pointer", fontSize:12 }}>Retry</button>
+            ⚠ {error} <button onClick={() => fetchData()} style={{ marginLeft:8, padding:"3px 10px", border:"1px solid #d1d5db", borderRadius:4, cursor:"pointer", fontSize:12 }}>Retry</button>
           </div>
         )}
 

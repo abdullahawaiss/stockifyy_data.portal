@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import { BOARD_MEETINGS, FINANCIAL_RESULTS, DIVIDEND_PAYOUTS } from "../_data";
+import { TYPE_COLORS } from "../_data";
 
 // ── types ──
 type Category = "Board Meetings" | "Payouts" | "Insider Transactions" | "Result Announcements" | "Dividend Payout";
@@ -10,29 +10,11 @@ interface SimpleRow {
   detail?: { agenda?: string; venue?: string; eps?: string; dividend?: string; period?: string; shares?: string; type?: string; note?: string };
 }
 
-// ── simple announcement rows (Payouts + Insider Transactions) ──
-const SIMPLE_ROWS: SimpleRow[] = [
-  { symbol:"OGDC", title:"Cash Dividend — Rs.6.00 per share (Interim)",  heldDate:"12-08-2026", postingDate:"11-08-2026", cat:"Payouts", detail:{dividend:"Rs.6.00/share",type:"Interim",period:"Q4 FY26",note:"Book closure: 12-Aug-2026"} },
-  { symbol:"MARI", title:"Cash Dividend — Rs.18.70 per share (Final)",   heldDate:"11-08-2026", postingDate:"09-08-2026", cat:"Payouts", detail:{dividend:"Rs.18.70/share",type:"Final",period:"FY26",note:"Book closure: 11-Aug-2026"} },
-  { symbol:"LUCK", title:"Cash Dividend — Rs.5.00 per share (Final)",    heldDate:"10-08-2026", postingDate:"10-08-2026", cat:"Payouts", detail:{dividend:"Rs.5.00/share",type:"Final",period:"FY26",note:"Book closure: 10-Aug-2026"} },
-  { symbol:"MCB",  title:"Cash Dividend — Rs.8.00 per share (Interim)",  heldDate:"14-08-2026", postingDate:"08-08-2026", cat:"Payouts", detail:{dividend:"Rs.8.00/share",type:"Interim",period:"H1 FY26",note:"Book closure: 14-Aug-2026"} },
-  { symbol:"ENGRO",title:"Cash Dividend — Rs.12.50 per share (Interim)", heldDate:"16-08-2026", postingDate:"07-08-2026", cat:"Payouts", detail:{dividend:"Rs.12.50/share",type:"Interim",period:"H1 FY26",note:"Book closure: 16-Aug-2026"} },
-  { symbol:"PSO",  title:"Cash Dividend — Rs.9.00 per share (Final)",    heldDate:"18-08-2026", postingDate:"06-08-2026", cat:"Payouts", detail:{dividend:"Rs.9.00/share",type:"Final",period:"FY26",note:"Book closure: 18-Aug-2026"} },
-  { symbol:"ENGRO",title:"Change in Shareholding — Director Disclosure", heldDate:"10-08-2026", postingDate:"10-08-2026", cat:"Insider Transactions", detail:{type:"Director Disclosure",shares:"50,000 shares acquired"} },
-  { symbol:"LUCK", title:"Insider Transaction — Purchase by CEO",        heldDate:"09-08-2026", postingDate:"09-08-2026", cat:"Insider Transactions", detail:{type:"CEO Purchase",shares:"25,000 shares @ Rs.1,012"} },
-  { symbol:"TRG",  title:"Change in Shareholding — Sponsor / Director",  heldDate:"08-08-2026", postingDate:"08-08-2026", cat:"Insider Transactions", detail:{type:"Sponsor Transaction",shares:"100,000 shares transferred"} },
-  { symbol:"MARI", title:"Insider Transaction — Sale by Non-Exec Director",heldDate:"07-08-2026",postingDate:"07-08-2026",cat:"Insider Transactions", detail:{type:"Non-Exec Director Sale",shares:"10,000 shares sold @ Rs.1,835"} },
-  { symbol:"PSO",  title:"Change in Shareholding — CEO Acquisition",     heldDate:"06-08-2026", postingDate:"06-08-2026", cat:"Insider Transactions", detail:{type:"CEO Acquisition",shares:"30,000 shares acquired"} },
-];
-
+// Fake rows removed — data comes from /api/portal/announcements
+const SIMPLE_ROWS: SimpleRow[] = [];
 const CATS: Category[] = ["Board Meetings","Payouts","Insider Transactions","Result Announcements","Dividend Payout"];
-
 const CAT_COUNTS: Record<Category, number> = {
-  "Board Meetings":      BOARD_MEETINGS.length,
-  "Payouts":             SIMPLE_ROWS.filter(r=>r.cat==="Payouts").length,
-  "Insider Transactions":SIMPLE_ROWS.filter(r=>r.cat==="Insider Transactions").length,
-  "Result Announcements":FINANCIAL_RESULTS.length,
-  "Dividend Payout":     DIVIDEND_PAYOUTS.length,
+  "Board Meetings": 0, "Payouts": 0, "Insider Transactions": 0, "Result Announcements": 0, "Dividend Payout": 0,
 };
 
 // ── helpers ──
@@ -115,8 +97,9 @@ function BoardMeetingsTab({search}:{search:string}) {
   useEffect(()=>{ setMounted(true); const id=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(id);},[]);
   const [expanded,setExpanded] = useState<number|null>(null);
 
-  const rows = useMemo(()=>BOARD_MEETINGS.filter(m=>
-    !search||m.symbol.toLowerCase().includes(search.toLowerCase())||m.purpose.toLowerCase().includes(search.toLowerCase())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = useMemo(()=>([] as any[]).filter((m: any)=>
+    !search||m.symbol?.toLowerCase().includes(search.toLowerCase())||m.purpose?.toLowerCase().includes(search.toLowerCase())
   ),[search]);
 
   return (
@@ -199,8 +182,9 @@ function BoardMeetingsTab({search}:{search:string}) {
 // ── RESULT ANNOUNCEMENTS tab ──
 function ResultAnnouncementsTab({search}:{search:string}) {
   const [expanded,setExpanded] = useState<number|null>(null);
-  const rows = useMemo(()=>FINANCIAL_RESULTS.filter(r=>
-    !search||r.symbol.toLowerCase().includes(search.toLowerCase())||r.period.toLowerCase().includes(search.toLowerCase())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = useMemo(()=>([] as any[]).filter((r: any)=>
+    !search||r.symbol?.toLowerCase().includes(search.toLowerCase())||r.period?.toLowerCase().includes(search.toLowerCase())
   ),[search]);
 
   return (
@@ -268,7 +252,8 @@ function ResultAnnouncementsTab({search}:{search:string}) {
 
 // ── DIVIDEND PAYOUT tab ──
 function DividendPayoutTab({search}:{search:string}) {
-  const rows = useMemo(()=>DIVIDEND_PAYOUTS.filter(d=>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = useMemo(()=>([] as any[]).filter((d: any)=>
     !search||d.symbol.toLowerCase().includes(search.toLowerCase())
   ),[search]);
 

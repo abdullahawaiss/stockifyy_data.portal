@@ -1,6 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
-import { FINANCIAL_RESULTS, BOARD_MEETINGS, DIVIDEND_PAYOUTS } from "../_data";
+
+// Data pending DB connection
+type FinancialResult = { symbol: string; period: string; eps?: string; payout?: string; announced: string };
+type BoardMeeting    = { symbol: string; scheduledDate: string; time: string; purpose: string; periodEnded: string };
+type DividendPayout  = { symbol: string; exDate: string; payDate: string; type: string; amount: string; yield: string };
+
+const FINANCIAL_RESULTS: FinancialResult[] = [];
+const BOARD_MEETINGS: BoardMeeting[] = [];
+const DIVIDEND_PAYOUTS: DividendPayout[] = [];
 
 // ── helpers ──
 function parseDate(ddmmyyyy: string) {
