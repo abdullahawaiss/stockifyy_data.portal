@@ -17,7 +17,7 @@ export async function getPsxRows(): Promise<{ rows: any[]; sectors: any[] } | nu
 
   try {
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 4000);
+    const timer = setTimeout(() => abort.abort(), 3000);
 
     const [symbolsRes, mktRes] = await Promise.all([
       fetch("https://dps.psx.com.pk/symbols", {

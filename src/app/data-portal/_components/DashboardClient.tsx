@@ -145,13 +145,11 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
 
   useEffect(() => {
     if (!initialData) {
-      // No SSR data — fetch now
-      setLoading(true);
+      // SSR timed out — fetch immediately on client (no skeleton delay)
       fetch("/api/portal/market-summary")
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) setData(d); })
-        .catch(() => {})
-        .finally(() => setLoading(false));
+        .then(d => { if (d) { setData(d); setLoading(false); } })
+        .catch(() => setLoading(false));
     }
     const id = setInterval(refresh, 60_000);
     return () => clearInterval(id);
