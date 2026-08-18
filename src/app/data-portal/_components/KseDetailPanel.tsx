@@ -333,6 +333,19 @@ function CandleChart({ points, liveVal, isLive, dark }: { points: Point[]; liveV
 
 // ── Main Component ────────────────────────────────────────────────────
 export default function KseDetailPanel() {
+  if (ALL_INDICES.length === 0) {
+    return (
+      <div className="card p-6 text-center" style={{ color: "var(--text-muted)" }}>
+        <div className="text-2xl mb-2">📈</div>
+        <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>Index Chart</div>
+        <div className="text-xs">Live index chart will appear once DB index data is available.</div>
+      </div>
+    );
+  }
+  return <KseDetailPanelInner />;
+}
+
+function KseDetailPanelInner() {
   const t = useDarkTokens();
   const [activeCode, setActiveCode] = useState("KSE100");
   const [activeTf,   setActiveTf]   = useState<TF>("1D");
