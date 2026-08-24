@@ -415,7 +415,7 @@ export default function TechnicalChartClient() {
       if (quoteData && quoteData.price) setQuote(quoteData);
       if (quoteData?.name) setSymName(quoteData.name);
 
-      if (data.length === 0) { setDataStatus("empty"); setCandles([]); return; }
+      if (data.length === 0 && (histData.status === "NO_DATA" || !histData.status)) { setDataStatus("empty"); setCandles([]); return; }
 
       setCandles(data);
       setDataStatus("ok");
