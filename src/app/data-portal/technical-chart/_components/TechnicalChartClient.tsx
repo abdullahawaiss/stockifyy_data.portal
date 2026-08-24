@@ -69,6 +69,166 @@ function calcMACD(c: Candle[], fast=12, slow=26, sig=9) {
   };
 }
 
+function calcEMA(c: Candle[], p: number) {
+  if (c.length < p) return [];
+  const k = 2 / (p + 1), closes = c.map(x => x.close);
+  const ema: number[] = [closes.slice(0, p).reduce((s, x) => s + x, 0) / p];
+  for (let i = p; i < closes.length; i++) ema.push(closes[i] * k + ema[ema.length - 1] * (1 - k));
+  return ema.map((v, i) => ({ time: c[p - 1 + i].time as UTCTimestamp, value: v }));
+}
+function calcWMA(c: Candle[], p: number) {
+  if (c.length < p) return [];
+  const denom = (p * (p + 1)) / 2;
+  return c.slice(p - 1).map((_, i) => ({
+    time: c[i + p - 1].time as UTCTimestamp,
+    value: c.slice(i, i + p).reduce((s, x, j) => s + x.close * (j + 1), 0) / denom,
+  }));
+}
+function calcVWAP(c: Candle[]) {
+  let cumPV = 0, cumV = 0;
+  return c.map(x => {
+    const tp = (x.high + x.low + x.close) / 3;
+    cumPV += tp * x.volume; cumV += x.volume;
+    return { time: x.time as UTCTimestamp, value: cumV > 0 ? cumPV / cumV : 0 };
+  });
+}
+function calcStoch(c: Candle[], kP = 14, dP = 3) {
+  if (c.length < kP) return { k: [] as {time:UTCTimestamp;value:number}[], d: [] as {time:UTCTimestamp;value:number}[] };
+  const k = c.slice(kP - 1).map((_, i) => {
+    const sl = c.slice(i, i + kP);
+    const hi = Math.max(...sl.map(x => x.high)), lo = Math.min(...sl.map(x => x.low));
+    return { time: c[i + kP - 1].time as UTCTimestamp, value: hi === lo ? 100 : ((c[i + kP - 1].close - lo) / (hi - lo)) * 100 };
+  });
+  const d = k.slice(dP - 1).map((_, i) => ({
+    time: k[i + dP - 1].time,
+    value: k.slice(i, i + dP).reduce((s, x) => s + x.value, 0) / dP,
+  }));
+  return { k, d };
+}
+function calcATR(c: Candle[], p = 14) {
+  if (c.length <= p) return [];
+  const trs = c.slice(1).map((x, i) => Math.max(x.high - x.low, Math.abs(x.high - c[i].close), Math.abs(x.low - c[i].close)));
+  const atrs: number[] = [trs.slice(0, p).reduce((s, x) => s + x, 0) / p];
+  for (let i = p; i < trs.length; i++) atrs.push((atrs[atrs.length - 1] * (p - 1) + trs[i]) / p);
+  return atrs.map((v, i) => ({ time: c[p + i].time as UTCTimestamp, value: v }));
+}
+function calcCCI(c: Candle[], p = 20) {
+  if (c.length < p) return [];
+  return c.slice(p - 1).map((_, i) => {
+    const sl = c.slice(i, i + p);
+    const tps = sl.map(x => (x.high + x.low + x.close) / 3);
+    const mean = tps.reduce((s, x) => s + x, 0) / p;
+    const mad  = tps.reduce((s, x) => s + Math.abs(x - mean), 0) / p;
+    return { time: c[i + p - 1].time as UTCTimestamp, value: mad === 0 ? 0 : (tps[p - 1] - mean) / (0.015 * mad) };
+  });
+}
+function calcWilliamsR(c: Candle[], p = 14) {
+  if (c.length < p) return [];
+  return c.slice(p - 1).map((_, i) => {
+    const sl = c.slice(i, i + p);
+    const hi = Math.max(...sl.map(x => x.high)), lo = Math.min(...sl.map(x => x.low));
+    return { time: c[i + p - 1].time as UTCTimestamp, value: hi === lo ? -50 : ((hi - c[i + p - 1].close) / (hi - lo)) * -100 };
+  });
+}
+function calcMomentum(c: Candle[], p = 10) {
+  return c.slice(p).map((x, i) => ({ time: x.time as UTCTimestamp, value: x.close - c[i].close }));
+}
+function calcROC(c: Candle[], p = 10) {
+  return c.slice(p).map((x, i) => ({ time: x.time as UTCTimestamp, value: c[i].close === 0 ? 0 : ((x.close - c[i].close) / c[i].close) * 100 }));
+}
+function calcOBV(c: Candle[]) {
+  let obv = 0;
+  return c.map((x, i) => {
+    if (i > 0) { if (x.close > c[i-1].close) obv += x.volume; else if (x.close < c[i-1].close) obv -= x.volume; }
+    return { time: x.time as UTCTimestamp, value: obv };
+  });
+}
+
+/* Sub-pane assignment — each oscillator gets its own pane */
+const SUB_PANE_IND_ORDER = [
+  "Relative Strength Index","Stochastic","Stochastic RSI","MACD",
+  "Average True Range","Commodity Channel Index","Williams %R",
+  "Momentum","Rate Of Change","On Balance Volume","Money Flow Index",
+];
+function computeSubPanes(activeStudies: string[]): Record<string, number> {
+  const r: Record<string, number> = {}; let pane = 1;
+  for (const ind of SUB_PANE_IND_ORDER) { if (activeStudies.includes(ind)) r[ind] = pane++; }
+  return r;
+}
+
+/* ── Extra calc functions ── */
+function emaArr(vals: number[], p: number): number[] {
+  if (vals.length < p) return [];
+  const k = 2/(p+1), r: number[] = [vals.slice(0,p).reduce((s,x)=>s+x,0)/p];
+  for (let i=p;i<vals.length;i++) r.push(vals[i]*k+r[r.length-1]*(1-k));
+  return r;
+}
+function wmaArr(vals: number[], p: number): number[] {
+  if (vals.length < p) return [];
+  const d=(p*(p+1))/2;
+  return vals.slice(p-1).map((_,i)=>vals.slice(i,i+p).reduce((s,x,j)=>s+x*(j+1),0)/d);
+}
+function calcDEMA(c: Candle[], p: number) {
+  const cl=c.map(x=>x.close), e1=emaArr(cl,p), e2=emaArr(e1,p);
+  const off=p-1;
+  return e2.map((v,i)=>({ time:c[off+off+i].time as UTCTimestamp, value:2*e1[off+i]-v }));
+}
+function calcTEMA(c: Candle[], p: number) {
+  const cl=c.map(x=>x.close), e1=emaArr(cl,p), e2=emaArr(e1,p), e3=emaArr(e2,p);
+  const off=p-1;
+  return e3.map((v,i)=>({ time:c[off*2+i].time as UTCTimestamp, value:3*e1[off*2+i]-3*e2[off+i]+v }));
+}
+function calcHMA(c: Candle[], p: number) {
+  const cl=c.map(x=>x.close);
+  const half=Math.floor(p/2), sq=Math.floor(Math.sqrt(p));
+  const w1=wmaArr(cl,half), w2=wmaArr(cl,p);
+  const diff=w1.slice(w2.length-w1.length).map((v,i)=>2*v-w2[i+(w2.length-w1.length>0?w2.length-w1.length:0)]);
+  const off=(half-1);
+  const adjusted=w1.slice(p-half).map((v,i)=>2*v-w2[i]);
+  const final=wmaArr(adjusted,sq);
+  const startC=c.length-final.length;
+  return final.map((v,i)=>({ time:c[startC+i].time as UTCTimestamp, value:v }));
+}
+function calcMFI(c: Candle[], p=14) {
+  if(c.length<=p) return [];
+  const out=[];
+  for(let i=p;i<c.length;i++){
+    const sl=c.slice(i-p+1,i+1);
+    let pf=0,nf=0;
+    for(let j=1;j<sl.length;j++){
+      const tp=(sl[j].high+sl[j].low+sl[j].close)/3;
+      const ptp=(sl[j-1].high+sl[j-1].low+sl[j-1].close)/3;
+      const mf=tp*sl[j].volume;
+      if(tp>ptp) pf+=mf; else if(tp<ptp) nf+=mf;
+    }
+    out.push({ time:c[i].time as UTCTimestamp, value:nf===0?100:100-(100/(1+pf/nf)) });
+  }
+  return out;
+}
+function calcStochRSI(c: Candle[], rsiP=14, kP=3, dP=3) {
+  const rsi=calcRSI(c,rsiP);
+  if(rsi.length<kP) return {k:[],d:[]};
+  const k=rsi.slice(kP-1).map((_,i)=>{
+    const sl=rsi.slice(i,i+kP).map(x=>x.value);
+    const hi=Math.max(...sl),lo=Math.min(...sl);
+    return { time:rsi[i+kP-1].time, value:hi===lo?0:((sl[kP-1]-lo)/(hi-lo))*100 };
+  });
+  const d=k.slice(dP-1).map((_,i)=>({
+    time:k[i+dP-1].time,
+    value:k.slice(i,i+dP).reduce((s,x)=>s+x.value,0)/dP,
+  }));
+  return {k,d};
+}
+function calcVWMA(c: Candle[], p=20) {
+  if(c.length<p) return [];
+  return c.slice(p-1).map((_,i)=>{
+    const sl=c.slice(i,i+p);
+    const num=sl.reduce((s,x)=>s+x.close*x.volume,0);
+    const den=sl.reduce((s,x)=>s+x.volume,0);
+    return { time:c[i+p-1].time as UTCTimestamp, value:den===0?0:num/den };
+  });
+}
+
 /* ─── RANGE helper ─── */
 const RANGE_SECONDS: Record<string, number> = {
   "1d": 86400, "5d": 86400*5, "1m": 86400*30, "3m": 86400*90,
@@ -77,25 +237,60 @@ const RANGE_SECONDS: Record<string, number> = {
 
 /* ─── LEFT TOOLBAR DEFINITION ─── */
 const LEFT_TOOLS: { tool: DrawTool; icon: React.ReactElement; label: string; sep?: boolean }[] = [
-  { tool:"cursor",    label:"Cursor",         icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2l10 6-5 1-2 5z"/></svg> },
-  { tool:"crosshair", label:"Crosshair",      icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><line x1="8" y1="1" x2="8" y2="6"/><line x1="8" y1="10" x2="8" y2="15"/><line x1="1" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="15" y2="8"/><circle cx="8" cy="8" r="2"/></svg> },
-  { tool:"trendline", label:"Trend Line",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="2" y1="13" x2="14" y2="3"/><circle cx="2" cy="13" r="1.5" fill="currentColor"/><circle cx="14" cy="3" r="1.5" fill="currentColor"/></svg>, sep:true },
-  { tool:"hline",     label:"Horizontal",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="1" y1="8" x2="15" y2="8"/><line x1="5" y1="5" x2="5" y2="11" strokeDasharray="1.5"/></svg> },
-  { tool:"vline",     label:"Vertical",       icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="8" y1="1" x2="8" y2="15"/><line x1="5" y1="6" x2="11" y2="6" strokeDasharray="1.5"/></svg> },
-  { tool:"fib",       label:"Fibonacci",      icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="2" y1="9" x2="14" y2="9"/><line x1="2" y1="11" x2="14" y2="11"/><line x1="2" y1="13" x2="14" y2="13"/><line x1="2" y1="3" x2="2" y2="14" strokeWidth="1.8"/></svg>, sep:true },
-  { tool:"brush",     label:"Freehand",       icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14 Q4 8 8 6 Q12 4 13 2"/><path d="M2 14 Q3 13 4 14" strokeWidth="2.5"/></svg> },
-  { tool:"text",      label:"Text",           icon:<svg viewBox="0 0 16 16" fill="currentColor"><text x="3" y="13" fontSize="12" fontWeight="700" fontFamily="serif">T</text></svg>, sep:true },
-  { tool:"emoji",     label:"Marker",         icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="7" r="5"/><path d="M6 9 Q8 11 10 9"/><circle cx="6.5" cy="6" r=".8" fill="currentColor"/><circle cx="9.5" cy="6" r=".8" fill="currentColor"/></svg> },
-  { tool:"measure",   label:"Measure",        icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="5" width="12" height="6" rx="1"/><line x1="2" y1="8" x2="14" y2="8" strokeDasharray="2"/></svg>, sep:true },
-  { tool:"zoom",      label:"Zoom",           icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="7" cy="7" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/><line x1="5" y1="7" x2="9" y2="7"/><line x1="7" y1="5" x2="7" y2="9"/></svg> },
-  { tool:"magnet",    label:"Magnet",         icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 3 Q4 10 8 10 Q12 10 12 3"/><line x1="3" y1="3" x2="5" y2="3"/><line x1="11" y1="3" x2="13" y2="3"/></svg>, sep:true },
-  { tool:"lock",      label:"Lock Drawings",  icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="4" y="7" width="8" height="7" rx="1"/><path d="M6 7V5a2 2 0 0 1 4 0v2"/></svg> },
-  { tool:"hide",      label:"Show/Hide",      icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M1 8 Q8 1 15 8 Q8 15 1 8"/><circle cx="8" cy="8" r="2.5"/></svg> },
-  { tool:"delete",    label:"Delete All",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polyline points="3 4 13 4"/><path d="M6 4V3h4v1"/><path d="M5 4l.5 9h5l.5-9"/><line x1="7" y1="7" x2="7" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/></svg> },
+  { tool:"cursor",    label:"Cursor",        icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 2.5l9 5.5-4.5 1-1.5 4.5z"/></svg> },
+  { tool:"crosshair", label:"Crosshair",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><line x1="8" y1="1.5" x2="8" y2="6"/><line x1="8" y1="10" x2="8" y2="14.5"/><line x1="1.5" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="14.5" y2="8"/><circle cx="8" cy="8" r="1.8"/></svg> },
+  { tool:"trendline", label:"Trend Line",    icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><line x1="2.5" y1="13" x2="13.5" y2="3"/><circle cx="2.5" cy="13" r="1.3" fill="currentColor" stroke="none"/><circle cx="13.5" cy="3" r="1.3" fill="currentColor" stroke="none"/></svg>, sep:true },
+  { tool:"hline",     label:"Horizontal",    icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><line x1="1" y1="8" x2="15" y2="8"/><line x1="5" y1="5.5" x2="5" y2="10.5" strokeDasharray="1.5 1.5"/></svg> },
+  { tool:"vline",     label:"Vertical",      icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><line x1="8" y1="1" x2="8" y2="15"/><line x1="5" y1="6" x2="11" y2="6" strokeDasharray="1.5 1.5"/></svg> },
+  { tool:"fib",       label:"Fibonacci",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.0" strokeLinecap="round"><line x1="2.5" y1="4" x2="14" y2="4"/><line x1="2.5" y1="6.5" x2="14" y2="6.5"/><line x1="2.5" y1="8.5" x2="14" y2="8.5"/><line x1="2.5" y1="10.5" x2="14" y2="10.5"/><line x1="2.5" y1="12.5" x2="14" y2="12.5"/><line x1="2.5" y1="3" x2="2.5" y2="13.5" strokeWidth="1.4"/></svg>, sep:true },
+  { tool:"brush",     label:"Freehand",      icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 13.5 Q4.5 8 8 6 Q11.5 4 13 2.5"/><path d="M2.5 13.5 Q3.5 12.5 4.5 13.5" strokeWidth="2"/></svg> },
+  { tool:"text",      label:"Text",          icon:<svg viewBox="0 0 16 16" fill="currentColor"><text x="3.5" y="13" fontSize="11.5" fontWeight="400" fontFamily="Georgia,serif">T</text></svg>, sep:true },
+  { tool:"emoji",     label:"Marker",        icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><circle cx="8" cy="7.5" r="4.8"/><path d="M6.2 9.2 Q8 10.8 9.8 9.2"/><circle cx="6.5" cy="6.5" r=".7" fill="currentColor" stroke="none"/><circle cx="9.5" cy="6.5" r=".7" fill="currentColor" stroke="none"/></svg> },
+  { tool:"measure",   label:"Measure",       icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><rect x="2" y="5.5" width="12" height="5" rx="1"/><line x1="2" y1="8" x2="14" y2="8" strokeDasharray="2 1.5"/></svg>, sep:true },
+  { tool:"zoom",      label:"Zoom",          icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><circle cx="7" cy="7" r="4.3"/><line x1="10.3" y1="10.3" x2="14" y2="14"/><line x1="5" y1="7" x2="9" y2="7"/><line x1="7" y1="5" x2="7" y2="9"/></svg> },
+  { tool:"magnet",    label:"Magnet",        icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><path d="M4 3.5 Q4 10 8 10 Q12 10 12 3.5"/><line x1="3" y1="3.5" x2="5" y2="3.5"/><line x1="11" y1="3.5" x2="13" y2="3.5"/></svg>, sep:true },
+  { tool:"lock",      label:"Lock Drawings", icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><rect x="4" y="7.5" width="8" height="6.5" rx="1"/><path d="M6.5 7.5V5.5a1.5 1.5 0 0 1 3 0v2"/></svg> },
+  { tool:"hide",      label:"Show/Hide",     icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><path d="M1.5 8 Q8 1.5 14.5 8 Q8 14.5 1.5 8"/><circle cx="8" cy="8" r="2.3"/></svg> },
+  { tool:"delete",    label:"Delete All",    icon:<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"><polyline points="3 4.5 13 4.5"/><path d="M6.5 4.5V3.5h3v1"/><path d="M5.5 4.5l.5 8.5h4l.5-8.5"/><line x1="7" y1="7" x2="7" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/></svg> },
 ];
 
 const ALERT_CONDITIONS = ["Greater than","Less than","Crosses above","Crosses below","% Change up","% Change down"];
-const STUDY_LIST = ["Moving Average","Bollinger Bands","RSI","MACD","Volume"];
+const ALL_INDICATORS = [
+  "52 Week High/Low","Accelerator Oscillator","Accumulation/Distribution","Accumulative Swing Index",
+  "Advance/Decline","Arnaud Legoux Moving Average","Aroon","Average Directional Index","Average Price",
+  "Average True Range","Awesome Oscillator","Balance of Power","Bollinger Bands","Bollinger Bands %B",
+  "Bollinger Bands Width","Chaikin Money Flow","Chaikin Oscillator","Chaikin Volatility",
+  "Chande Kroll Stop","Chande Momentum Oscillator","Chop Zone","Choppiness Index",
+  "Commodity Channel Index","Connors RSI","Coppock Curve","Correlation - Log",
+  "Correlation Coefficient","Detrended Price Oscillator","Directional Movement","Donchian Channels",
+  "Double EMA","Ease Of Movement","Elder's Force Index","EMA Cross","Envelopes","Fisher Transform",
+  "Guppy Multiple Moving Average","Historical Volatility","Hull Moving Average","Ichimoku Cloud",
+  "Keltner Channels","Klinger Oscillator","Know Sure Thing","Least Squares Moving Average",
+  "Linear Regression Curve","Linear Regression Slope","MA Cross","MA with EMA Cross","MACD",
+  "Majority Rule","Mass Index","McGinley Dynamic","Median Price","Momentum","Money Flow Index",
+  "Moving Average","Moving Average Adaptive","Moving Average Channel","Moving Average Double",
+  "Moving Average Exponential","Moving Average Hamming","Moving Average Multiple","Moving Average Triple",
+  "Moving Average Weighted","Net Volume","On Balance Volume","Parabolic SAR","Pivot Points Standard",
+  "Price Channel","Price Oscillator","Price Volume Trend","Rank Correlation Index","Rate Of Change",
+  "Ratio","Relative Strength Index","Relative Vigor Index","Relative Volatility Index",
+  "SMI Ergodic Indicator/Oscillator","Smoothed Moving Average","Spread","Standard Deviation",
+  "Standard Error","Standard Error Bands","Stochastic","Stochastic RSI","SuperTrend",
+  "Trend Strength Index","Triple EMA","TRIX","True Strength Index","Typical Price",
+  "Ultimate Oscillator","Volatility Close-to-Close","Volatility Index","Volatility O-H-L-C",
+  "Volatility Zero Trend Close-to-Close","Volume","Volume Oscillator","Volume Profile Fixed Range",
+  "Volume Profile Visible Range","Vortex Indicator","VWAP","VWMA","Williams %R",
+  "Williams Alligator","Williams Fractal","Zig Zag",
+];
+
+/* indicators that actually render chart series */
+const IMPLEMENTED_INDS = new Set([
+  "Moving Average","Moving Average Exponential","Moving Average Weighted",
+  "Moving Average Double","Moving Average Triple","Triple EMA","Hull Moving Average",
+  "Bollinger Bands","VWAP","VWMA",
+  "Relative Strength Index","Stochastic","Stochastic RSI","MACD",
+  "Average True Range","Commodity Channel Index","Williams %R",
+  "Momentum","Rate Of Change","On Balance Volume","Money Flow Index","Volume",
+]);
 const LS_KEY = "stockifyy_chart_v3";
 
 function loadSaved(): { sym: string; tf: string; chartType: string; dark: boolean; studies: string[]; range: string } | null {
@@ -134,6 +329,7 @@ export default function TechnicalChartClient() {
   const [crosshairPos,setCrosshairPos]= useState({x:0,y:0,vis:false});
 
   /* panels */
+  const [indSearch,    setIndSearch]    = useState("");
   const [fxOpen,       setFxOpen]       = useState(false);
   const [tfOpen,       setTfOpen]       = useState(false);
   const [saveOpen,     setSaveOpen]     = useState(false);
@@ -165,18 +361,32 @@ export default function TechnicalChartClient() {
   const searchTimer       = useRef<ReturnType<typeof setTimeout>|null>(null);
   const candlesRef        = useRef<Candle[]>([]);
 
+  /* lock page scroll while chart is mounted */
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   /* inject CSS once */
   useEffect(() => {
     if (document.getElementById("tc3-css")) return;
     const s = document.createElement("style"); s.id = "tc3-css";
     s.textContent = `
-      .tc3-ltool{display:flex;align-items:center;justify-content:center;width:38px;height:34px;border:none;background:transparent;cursor:pointer;border-radius:4px;transition:background .12s,color .12s;position:relative;}
+      .tc3-ltool{display:flex;align-items:center;justify-content:center;width:38px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:4px;transition:background .12s,color .12s;position:relative;}
       .tc3-ltool:hover{background:#f0f0f0;color:#111;}
       .tc3-ltool.active{background:#e8f0fe;color:#2962ff;}
       .tc3-ltool.dark{color:#aaa;}.tc3-ltool.dark:hover{background:#2d3348;color:#e2e6f0;}
       .tc3-ltool.active.dark{background:#1e3a5f;color:#93c5fd;}
       .tc3-tip{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);background:#333;color:#fff;font-size:11px;padding:3px 7px;border-radius:3px;white-space:nowrap;pointer-events:none;z-index:999;opacity:0;transition:opacity .12s;}
       .tc3-ltool:hover .tc3-tip{opacity:1;}
+      .tc3-hov{transition:background .12s!important;}
+      .tc3-hov:hover{background:rgba(0,0,0,.06)!important;}
+      .tc3-hov.dark:hover{background:rgba(255,255,255,.09)!important;}
+      .tc3-sidebar{overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;}
+      .tc3-sidebar::-webkit-scrollbar{display:none;}
+      .tv-lightweight-charts a{display:none!important;}
+      .tv-lightweight-charts table tr:last-child td:last-child{display:none!important;}
     `;
     document.head.appendChild(s);
   }, []);
@@ -185,7 +395,7 @@ export default function TechnicalChartClient() {
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (!(e.target as Element).closest("[data-p]"))
-        { setFxOpen(false); setTfOpen(false); setSaveOpen(false); setSettingsOpen(false); }
+        { setTfOpen(false); setSaveOpen(false); setSettingsOpen(false); }
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -300,46 +510,112 @@ export default function TechnicalChartClient() {
       volSeriesRef.current = vol;
     }
 
-    /* MA */
+    /* ─── Indicator series ─── */
     const extraSeries: ISeriesApi<any>[] = [];
-    if (studies.includes("Moving Average") && candlesRef.current.length > 0) {
-      const ma = chart.addSeries(LineSeries, { color: "#ff9800", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-      ma.setData(calcSMA(candlesRef.current, 20));
-      extraSeries.push(ma);
-    }
+    const cd = candlesRef.current;
+    const sp = computeSubPanes(studies);
+    const has = (n: string) => studies.includes(n) && cd.length > 0;
 
-    /* BB */
-    if (studies.includes("Bollinger Bands") && candlesRef.current.length > 0) {
-      const bb = calcBB(candlesRef.current);
-      const bbColors = ["#7b61ff", "#7b61ff88", "#7b61ff"];
-      ["upper","mid","lower"].forEach((k, i) => {
-        const s = chart.addSeries(LineSeries, { color: bbColors[i], lineWidth: 1, lineStyle: i===1?2:0, priceLineVisible: false, lastValueVisible: false });
-        s.setData(bb.map(b => ({ time: b.time, value: (b as any)[k] })));
-        extraSeries.push(s);
-      });
-    }
-
-    /* RSI sub-pane */
-    if (studies.includes("RSI") && candlesRef.current.length > 0) {
-      const rsiData = calcRSI(candlesRef.current);
-      if (rsiData.length) {
-        const rsi = chart.addSeries(LineSeries, { color: "#9c27b0", lineWidth: 1, priceLineVisible: false, lastValueVisible: true }, 1);
-        rsi.setData(rsiData);
-        extraSeries.push(rsi);
+    if (cd.length > 0) {
+      // ── Main-pane overlays ──
+      if (has("Moving Average Exponential")) {
+        const s = chart.addSeries(LineSeries, { color:"#26c6da", lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+        s.setData(calcEMA(cd, 20)); extraSeries.push(s);
       }
-    }
-
-    /* MACD sub-pane */
-    if (studies.includes("MACD") && candlesRef.current.length > 0) {
-      const { macd, signal, hist } = calcMACD(candlesRef.current);
-      if (macd.length) {
-        const pane = studies.includes("RSI") ? 2 : 1;
-        const macdLine = chart.addSeries(LineSeries, { color: "#2196f3", lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, pane);
-        const sigLine  = chart.addSeries(LineSeries, { color: "#ff5722", lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, pane);
-        const histSeries = chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false }, pane);
-        macdLine.setData(macd); sigLine.setData(signal);
-        histSeries.setData(hist.map(h => ({ ...h, color: h.value >= 0 ? "#26a69a88" : "#ef535088" })));
-        extraSeries.push(macdLine, sigLine, histSeries);
+      if (has("Moving Average Weighted")) {
+        const s = chart.addSeries(LineSeries, { color:"#ffa726", lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+        s.setData(calcWMA(cd, 20)); extraSeries.push(s);
+      }
+      if (has("Moving Average Double")) {
+        const d = calcDEMA(cd, 20);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#f06292", lineWidth:1, priceLineVisible:false, lastValueVisible:false }); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Moving Average Triple") || has("Triple EMA")) {
+        const d = calcTEMA(cd, 20);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#4db6ac", lineWidth:1, priceLineVisible:false, lastValueVisible:false }); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Hull Moving Average")) {
+        const d = calcHMA(cd, 20);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#ba68c8", lineWidth:1, priceLineVisible:false, lastValueVisible:false }); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("VWAP")) {
+        const s = chart.addSeries(LineSeries, { color:"#e040fb", lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+        s.setData(calcVWAP(cd)); extraSeries.push(s);
+      }
+      if (has("VWMA")) {
+        const s = chart.addSeries(LineSeries, { color:"#80cbc4", lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+        s.setData(calcVWMA(cd, 20)); extraSeries.push(s);
+      }
+      if (has("Moving Average")) {
+        const s = chart.addSeries(LineSeries, { color:"#ff9800", lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+        s.setData(calcSMA(cd, 20)); extraSeries.push(s);
+      }
+      if (has("Bollinger Bands")) {
+        const bb = calcBB(cd);
+        ["#7b61ff","#7b61ff88","#7b61ff"].forEach((c, i) => {
+          const s = chart.addSeries(LineSeries, { color:c, lineWidth:1, lineStyle:i===1?2:0, priceLineVisible:false, lastValueVisible:false });
+          s.setData(bb.map(b => ({ time:b.time, value:(b as any)[["upper","mid","lower"][i]] }))); extraSeries.push(s);
+        });
+      }
+      // ── Sub-pane oscillators ──
+      if (has("Relative Strength Index")) {
+        const d = calcRSI(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#9c27b0", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Relative Strength Index"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Stochastic")) {
+        const { k, d } = calcStoch(cd);
+        if (k.length) {
+          const sk = chart.addSeries(LineSeries, { color:"#2196f3", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["Stochastic"]);
+          const sd2 = chart.addSeries(LineSeries, { color:"#ff5722", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["Stochastic"]);
+          sk.setData(k); sd2.setData(d); extraSeries.push(sk, sd2);
+        }
+      }
+      if (has("Stochastic RSI")) {
+        const { k, d } = calcStochRSI(cd);
+        if (k.length) {
+          const sk = chart.addSeries(LineSeries, { color:"#1976d2", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["Stochastic RSI"]);
+          const sd2 = chart.addSeries(LineSeries, { color:"#e64a19", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["Stochastic RSI"]);
+          sk.setData(k); sd2.setData(d); extraSeries.push(sk, sd2);
+        }
+      }
+      if (has("MACD")) {
+        const { macd, signal, hist } = calcMACD(cd);
+        if (macd.length) {
+          const ml = chart.addSeries(LineSeries, { color:"#2196f3", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["MACD"]);
+          const sl2 = chart.addSeries(LineSeries, { color:"#ff5722", lineWidth:1, priceLineVisible:false, lastValueVisible:false }, sp["MACD"]);
+          const hs  = chart.addSeries(HistogramSeries, { priceLineVisible:false, lastValueVisible:false }, sp["MACD"]);
+          ml.setData(macd); sl2.setData(signal);
+          hs.setData(hist.map(h => ({ ...h, color: h.value >= 0 ? "#26a69a88" : "#ef535088" })));
+          extraSeries.push(ml, sl2, hs);
+        }
+      }
+      if (has("Average True Range")) {
+        const d = calcATR(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#ff7043", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Average True Range"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Commodity Channel Index")) {
+        const d = calcCCI(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#00bcd4", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Commodity Channel Index"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Williams %R")) {
+        const d = calcWilliamsR(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#8bc34a", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Williams %R"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Momentum")) {
+        const d = calcMomentum(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#ffb300", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Momentum"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("Rate Of Change")) {
+        const d = calcROC(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#ec407a", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Rate Of Change"]); s.setData(d); extraSeries.push(s); }
+      }
+      if (has("On Balance Volume")) {
+        const s = chart.addSeries(LineSeries, { color:"#78909c", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["On Balance Volume"]);
+        s.setData(calcOBV(cd)); extraSeries.push(s);
+      }
+      if (has("Money Flow Index")) {
+        const d = calcMFI(cd);
+        if (d.length) { const s = chart.addSeries(LineSeries, { color:"#26a69a", lineWidth:1, priceLineVisible:false, lastValueVisible:true }, sp["Money Flow Index"]); s.setData(d); extraSeries.push(s); }
       }
     }
 
@@ -366,27 +642,37 @@ export default function TechnicalChartClient() {
         color: c.close >= c.open ? up + "88" : dn + "88",
       })));
     }
-    /* MA */
+    /* ─── Indicator data ─── */
     const extras = indSeriesRef.current;
     let ei = 0;
-    if (studies.includes("Moving Average")) {
-      extras[ei]?.setData(calcSMA(data, 20)); ei++;
-    }
-    if (studies.includes("Bollinger Bands")) {
+    const s = (n: string) => studies.includes(n);
+    if (s("Moving Average Exponential")) { extras[ei]?.setData(calcEMA(data,20)); ei++; }
+    if (s("Moving Average Weighted"))    { extras[ei]?.setData(calcWMA(data,20)); ei++; }
+    if (s("Moving Average Double"))      { extras[ei]?.setData(calcDEMA(data,20)); ei++; }
+    if (s("Moving Average Triple")||s("Triple EMA")) { extras[ei]?.setData(calcTEMA(data,20)); ei++; }
+    if (s("Hull Moving Average"))        { extras[ei]?.setData(calcHMA(data,20)); ei++; }
+    if (s("VWAP"))                       { extras[ei]?.setData(calcVWAP(data)); ei++; }
+    if (s("VWMA"))                       { extras[ei]?.setData(calcVWMA(data,20)); ei++; }
+    if (s("Moving Average"))             { extras[ei]?.setData(calcSMA(data,20)); ei++; }
+    if (s("Bollinger Bands")) {
       const bb = calcBB(data);
-      ["upper","mid","lower"].forEach(k => {
-        extras[ei]?.setData(bb.map(b => ({ time: b.time, value: (b as any)[k] }))); ei++;
-      });
+      ["upper","mid","lower"].forEach(k => { extras[ei]?.setData(bb.map(b=>({time:b.time,value:(b as any)[k]}))); ei++; });
     }
-    if (studies.includes("RSI")) {
-      extras[ei]?.setData(calcRSI(data)); ei++;
+    if (s("Relative Strength Index"))    { extras[ei]?.setData(calcRSI(data)); ei++; }
+    if (s("Stochastic"))  { const {k,d}=calcStoch(data); extras[ei]?.setData(k);ei++; extras[ei]?.setData(d);ei++; }
+    if (s("Stochastic RSI")) { const {k,d}=calcStochRSI(data); extras[ei]?.setData(k);ei++; extras[ei]?.setData(d);ei++; }
+    if (s("MACD")) {
+      const {macd,signal,hist}=calcMACD(data);
+      extras[ei]?.setData(macd);ei++; extras[ei]?.setData(signal);ei++;
+      extras[ei]?.setData(hist.map(h=>({...h,color:h.value>=0?"#26a69a88":"#ef535088"})));ei++;
     }
-    if (studies.includes("MACD")) {
-      const { macd, signal, hist } = calcMACD(data);
-      extras[ei]?.setData(macd); ei++;
-      extras[ei]?.setData(signal); ei++;
-      extras[ei]?.setData(hist.map(h => ({ ...h, color: h.value >= 0 ? "#26a69a88" : "#ef535088" }))); ei++;
-    }
+    if (s("Average True Range"))         { extras[ei]?.setData(calcATR(data)); ei++; }
+    if (s("Commodity Channel Index"))    { extras[ei]?.setData(calcCCI(data)); ei++; }
+    if (s("Williams %R"))                { extras[ei]?.setData(calcWilliamsR(data)); ei++; }
+    if (s("Momentum"))                   { extras[ei]?.setData(calcMomentum(data)); ei++; }
+    if (s("Rate Of Change"))             { extras[ei]?.setData(calcROC(data)); ei++; }
+    if (s("On Balance Volume"))          { extras[ei]?.setData(calcOBV(data)); ei++; }
+    if (s("Money Flow Index"))           { extras[ei]?.setData(calcMFI(data)); ei++; }
     /* apply visible range */
     const now = Date.now() / 1000;
     const sec = RANGE_SECONDS[range];
@@ -654,11 +940,11 @@ export default function TechnicalChartClient() {
 
       {/* ══ TOP TOOLBAR ══ */}
       <div style={{ display:"flex",alignItems:"center",height:38,padding:"0 6px",
-        background:bg,borderBottom:`1px solid ${bdr}`,flexShrink:0,overflowX:"auto",gap:0,position:"relative",zIndex:200 }}>
+        background:bg,borderBottom:`1px solid ${bdr}`,flexShrink:0,overflow:"visible",gap:0,position:"relative",zIndex:200 }}>
 
         {/* Symbol */}
         <div style={{ display:"flex",alignItems:"center",gap:5,flexShrink:0 }}>
-          <button style={ib()} onClick={() => setSearchOpen(true)} title="Search symbol">
+          <button className={`tc3-hov${dark?" dark":""}`} style={ib()} onClick={() => setSearchOpen(true)} title="Search symbol">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
               <circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/>
             </svg>
@@ -673,14 +959,41 @@ export default function TechnicalChartClient() {
 
         {/* TF */}
         <div data-p style={{ display:"flex",alignItems:"center",gap:1,flexShrink:0,position:"relative" }}>
-          {["D","W","M"].map(t => <button key={t} style={tfB(tf===t)} onClick={() => setTf(t)}>{t}</button>)}
-          <div style={{ position:"relative" }}>
-            <button style={caret} onClick={e => { e.stopPropagation(); setTfOpen(o => !o); }}><Caret/></button>
-            <div style={panel(tfOpen)}>
-              {["1m","5m","15m","30m","1h","4h","D","W","M"].map(t => (
-                <div key={t} style={mi(tf===t)} onClick={() => { setTf(t); setTfOpen(false); }}>{t}</div>
-              ))}
-            </div>
+          {["1h","D","W","M"].map(t => <button key={t} className={`tc3-hov${dark?" dark":""}`} style={tfB(tf===t)} onClick={() => setTf(t)}>{t}</button>)}
+          {/* expand arrow */}
+          <button onClick={e => { e.stopPropagation(); setTfOpen(o => !o); }}
+            style={{ height:26,padding:"0 3px",border:"none",background:"transparent",cursor:"pointer",color:col,display:"flex",alignItems:"center" }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              {tfOpen
+                ? <path d="M2 8l4-4 4 4"/>
+                : <path d="M2 4l4 4 4-4"/>}
+            </svg>
+          </button>
+          {/* grouped dropdown */}
+          <div style={{ ...panel(tfOpen, 180), padding:0, maxHeight:420, overflowY:"auto" }}>
+            {[
+              { label:"MINUTES", items:[{k:"1m",l:"1 minute"},{k:"5m",l:"5 minutes"},{k:"15m",l:"15 minutes"},{k:"30m",l:"30 minutes"}] },
+              { label:"HOURS",   items:[{k:"1h",l:"1 hour",star:true},{k:"2h",l:"2 hours"},{k:"3h",l:"3 hours"},{k:"4h",l:"4 hours"}] },
+              { label:"DAYS",    items:[{k:"D",l:"1 day",star:true},{k:"2d",l:"2 days"}] },
+              { label:"WEEKS",   items:[{k:"W",l:"1 week",star:true},{k:"2w",l:"2 weeks"}] },
+              { label:"MONTHS",  items:[{k:"M",l:"1 month",star:true},{k:"3M",l:"3 months"},{k:"6M",l:"6 months"},{k:"12M",l:"12 months"}] },
+            ].map(group => (
+              <div key={group.label}>
+                <div style={{ padding:"5px 12px 3px",fontSize:10,fontWeight:700,letterSpacing:".07em",color:colDim,textTransform:"uppercase" as const,userSelect:"none" as const }}>{group.label}</div>
+                {group.items.map(item => {
+                  const on = tf === item.k;
+                  return (
+                    <div key={item.k} onClick={() => { setTf(item.k); setTfOpen(false); }}
+                      style={{ padding:"6px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",
+                        background:on?(dark?"#2962ff":"#1d4ed8"):"transparent",
+                        color:on?"#fff":(dark?"#c8ccd8":"#333"),fontSize:13 }}>
+                      <span>{(item as any).l}</span>
+                      {(item as any).star && <span style={{ fontSize:14,opacity:on?1:.5 }}>★</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
         <div style={sep}/>
@@ -692,51 +1005,30 @@ export default function TechnicalChartClient() {
           { k:"area",        icon:<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,11 3.5,7.5 6.5,9.5 9.5,4.5 14,3.5"/><path d="M1 11 L14 3.5 L14 14 L1 14 Z" fill="currentColor" opacity=".18" stroke="none"/></svg> },
           { k:"bar",         icon:<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"><line x1="4" y1="2.5" x2="4" y2="12.5"/><line x1="4" y1="4.5" x2="2" y2="4.5"/><line x1="4" y1="9.5" x2="6" y2="9.5"/><line x1="10" y1="2" x2="10" y2="12"/><line x1="10" y1="3.5" x2="8" y2="3.5"/><line x1="10" y1="8.5" x2="12" y2="8.5"/></svg> },
         ].map(({ k, icon }) => (
-          <button key={k} style={ib(chartType===k)} title={k} onClick={() => setCT(k)}>{icon}</button>
+          <button key={k} className={`tc3-hov${dark?" dark":""}`} style={ib(chartType===k)} title={k} onClick={() => setCT(k)}>{icon}</button>
         ))}
         <div style={sep}/>
 
-        {/* Indicators */}
-        <div data-p style={{ position:"relative",flexShrink:0 }}>
-          <button style={{ height:28,padding:"0 7px",border:"none",background:"transparent",
+        {/* Indicators button — opens modal */}
+        <button style={{ height:28,padding:"0 4px",border:"none",background:"transparent",
             borderRadius:3,cursor:"pointer",display:"flex",alignItems:"center",gap:2,color:col }}
-            onClick={e => { e.stopPropagation(); setFxOpen(o => !o); }}>
+            onClick={() => { setFxOpen(true); setIndSearch(""); }}>
             <span style={{ fontStyle:"italic",fontFamily:"Georgia,serif",fontSize:13,lineHeight:1 }}>f</span>
             <span style={{ fontSize:"9.5px",fontStyle:"normal",lineHeight:1 }}>x</span>
           </button>
-          <div style={{ ...panel(fxOpen, 200), padding:0 }}>
-            <div style={{ padding:"8px 12px",fontSize:11,fontWeight:600,color:colDim,textTransform:"uppercase",letterSpacing:".06em",borderBottom:`1px solid ${bdr}` }}>Indicators</div>
-            {STUDY_LIST.map(name => (
-              <div key={name} style={{ padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer" }}
-                onClick={() => toggleStudy(name)}>
-                <span style={{ fontSize:12,color:studies.includes(name)?(dark?"#93c5fd":"#1d4ed8"):col,fontWeight:studies.includes(name)?500:400 }}>{name}</span>
-                <div style={{ width:16,height:16,borderRadius:3,border:`1.5px solid ${studies.includes(name)?"#2962ff":bdr}`,
-                  background:studies.includes(name)?"#2962ff":"transparent",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                  {studies.includes(name) && <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M2 6l3 3 5-5"/></svg>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <button style={tb} onClick={() => setFxOpen(o => !o)}>Indicators</button>
+        <button className={`tc3-hov${dark?" dark":""}`} style={tb} onClick={() => { setFxOpen(true); setIndSearch(""); }}>Indicators</button>
         <div style={sep}/>
 
-        <button style={tb} onClick={e => { e.preventDefault(); setDrawings([]); }}>Clear Marks</button>
-        <button style={tb} onClick={e => {
+        <button className={`tc3-hov${dark?" dark":""}`} style={tb} onClick={e => { e.preventDefault(); setDrawings([]); }}>Clear Marks</button>
+        <button className={`tc3-hov${dark?" dark":""}`} style={tb} onClick={e => {
           e.preventDefault();
-          const s = loadSaved();
-          if (s?.studies) {
-            // restore only drawings from saved state — drawings are canvas-only, not in LS yet
-            // so Load Marks = re-apply any canvas state from sessionStorage if present
-          }
-          // Load last-saved drawings from sessionStorage
           try {
             const raw = sessionStorage.getItem("stockifyy_drawings");
             if (raw) setDrawings(JSON.parse(raw));
           } catch { /* ignore */ }
         }}>Load Marks</button>
-        <button style={tb} onClick={e => { e.preventDefault(); setStudies([]); }}>Remove All Studies</button>
-        <button style={tb} onClick={e => { e.preventDefault(); setDrawings([]); }}>Remove All Shapes</button>
+        <button className={`tc3-hov${dark?" dark":""}`} style={tb} onClick={e => { e.preventDefault(); setStudies([]); }}>Remove All Studies</button>
+        <button className={`tc3-hov${dark?" dark":""}`} style={tb} onClick={e => { e.preventDefault(); setDrawings([]); }}>Remove All Shapes</button>
 
         <div style={{ flex:1 }}/>
 
@@ -768,13 +1060,13 @@ export default function TechnicalChartClient() {
         <div style={sep}/>
 
         {/* Alert */}
-        <button style={ib(alertOpen)} title="Create alert" onClick={() => setAlertOpen(o => !o)}>
+        <button className={`tc3-hov${dark?" dark":""}`} style={ib(alertOpen)} title="Create alert" onClick={() => setAlertOpen(o => !o)}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </button>
 
         {/* Settings */}
         <div data-p style={{ position:"relative",flexShrink:0 }}>
-          <button style={ib(settingsOpen)} title="Settings" onClick={e => { e.stopPropagation(); setSettingsOpen(o => !o); }}>
+          <button className={`tc3-hov${dark?" dark":""}`} style={ib(settingsOpen)} title="Settings" onClick={e => { e.stopPropagation(); setSettingsOpen(o => !o); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 19.5 6 19.5 18 12 22 4.5 18 4.5 6"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
           <div style={{ ...panel(settingsOpen, 220, true), padding:0 }}>
@@ -800,7 +1092,7 @@ export default function TechnicalChartClient() {
           </div>
         </div>
 
-        <button style={ib(isFS)} title="Fullscreen" onClick={toggleFS}>
+        <button className={`tc3-hov${dark?" dark":""}`} style={ib(isFS)} title="Fullscreen" onClick={toggleFS}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             {isFS?<><polyline points="8 3 3 3 3 8"/><polyline points="21 8 21 3 16 3"/><polyline points="3 16 3 21 8 21"/><polyline points="16 21 21 21 21 16"/></>:<><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></>}
           </svg>
@@ -819,13 +1111,13 @@ export default function TechnicalChartClient() {
       <div style={{ display:"flex",flex:1,minHeight:0 }}>
 
         {/* LEFT TOOLBAR */}
-        <div style={{ width:42,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",
-          padding:"4px 0",background:lbg,borderRight:`1px solid ${bdr}`,overflowY:"auto",gap:1,zIndex:100 }}>
+        <div className="tc3-sidebar" style={{ width:42,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",
+          padding:"6px 0 12px",background:lbg,borderRight:`1px solid ${bdr}`,gap:4,zIndex:100 }}>
           {LEFT_TOOLS.map((item, i) => {
             const isActive = item.tool === activeTool || (item.tool==="magnet"&&magnetOn) || (item.tool==="lock"&&lockOn) || (item.tool==="hide"&&!drawingsVis);
             return (
               <div key={item.tool}>
-                {item.sep && <div style={{ width:28,height:1,background:bdr,margin:"3px auto" }}/>}
+                {item.sep && <div style={{ width:28,height:1,background:bdr,margin:"2px auto" }}/>}
                 <button className={`tc3-ltool${dark?" dark":""}${isActive?" active":""}`} onClick={() => handleToolClick(item.tool)}>
                   <span style={{ width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center" }}>{item.icon}</span>
                   <span className="tc3-tip">{item.label}</span>
@@ -972,6 +1264,73 @@ export default function TechnicalChartClient() {
             style={{ width:"100%",padding:"9px",border:"none",borderRadius:4,background:alertSent?"#16a34a":"#2962ff",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"background .2s" }}>
             {alertSent ? "✓ Alert Created" : "Create Alert"}
           </button>
+        </div>
+      </div>
+
+      {/* ══ INDICATORS MODAL ══ */}
+      <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.32)",zIndex:500,
+        opacity:fxOpen?1:0,visibility:fxOpen?"visible":"hidden",transition:"opacity .2s,visibility .2s" }}
+        onClick={() => setFxOpen(false)}>
+        <div style={{ position:"absolute",top:56,left:"50%",transform:"translateX(-50%)",
+          background:surf,borderRadius:8,width:460,maxHeight:"76vh",overflow:"hidden",
+          boxShadow:"0 8px 30px rgba(0,0,0,.24)",display:"flex",flexDirection:"column" }}
+          onClick={e => e.stopPropagation()}>
+          {/* header */}
+          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px 10px",borderBottom:`1px solid ${bdr}`,flexShrink:0 }}>
+            <span style={{ fontSize:14,fontWeight:700,color:dark?"#e2e6f0":"#111" }}>Indicators</span>
+            <button onClick={() => setFxOpen(false)} style={{ border:"none",background:"none",cursor:"pointer",color:colDim,fontSize:18,lineHeight:1 }}>✕</button>
+          </div>
+          {/* search */}
+          <div style={{ padding:"8px 14px",borderBottom:`1px solid ${bdr}`,flexShrink:0 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:8,padding:"6px 10px",border:`1px solid ${bdr}`,borderRadius:6,background:surf2 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={colDim} strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/>
+              </svg>
+              <input value={indSearch} onChange={e => setIndSearch(e.target.value)} placeholder="Search indicators…" autoFocus
+                style={{ border:"none",outline:"none",fontSize:13,flex:1,fontFamily:"inherit",color:dark?"#e2e6f0":"#111",background:"transparent" }}/>
+              {indSearch && <button onClick={() => setIndSearch("")} style={{ border:"none",background:"none",cursor:"pointer",color:colDim,fontSize:14 }}>✕</button>}
+            </div>
+          </div>
+          {/* active indicators strip */}
+          {studies.filter(s => s !== "Volume").length > 0 && (
+            <div style={{ padding:"6px 14px",borderBottom:`1px solid ${bdr}`,flexShrink:0,display:"flex",flexWrap:"wrap",gap:5 }}>
+              {studies.filter(s => s !== "Volume").map(s => (
+                <span key={s} onClick={() => toggleStudy(s)} style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",fontSize:11,
+                  background:dark?"#1e3a5f":"#eff6ff",color:dark?"#93c5fd":"#1d4ed8",borderRadius:12,cursor:"pointer",fontWeight:500 }}>
+                  {s} <span style={{ fontSize:12,opacity:.7 }}>✕</span>
+                </span>
+              ))}
+            </div>
+          )}
+          {/* SCRIPT NAME header */}
+          <div style={{ padding:"5px 16px 4px",fontSize:10,fontWeight:700,color:colDim,letterSpacing:".07em",textTransform:"uppercase" as const,background:surf2,borderBottom:`1px solid ${bdr}`,flexShrink:0 }}>SCRIPT NAME</div>
+          {/* flat list */}
+          <div style={{ overflowY:"auto",flex:1 }}>
+            {(() => {
+              const q = indSearch.toLowerCase();
+              const filtered = ALL_INDICATORS.filter(i => !q || i.toLowerCase().includes(q));
+              if (filtered.length === 0) return <div style={{ padding:24,textAlign:"center",fontSize:13,color:colDim }}>No indicators found</div>;
+              return filtered.map(ind => {
+                const on = studies.includes(ind);
+                const impl = IMPLEMENTED_INDS.has(ind);
+                return (
+                  <div key={ind} onClick={() => { if(impl) toggleStudy(ind); else toast(`${ind} — coming soon`); }}
+                    style={{ padding:"9px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",
+                      borderBottom:`1px solid ${bdr}`,
+                      background:on?(dark?"rgba(41,98,255,.12)":"rgba(41,98,255,.06)"):"transparent",
+                      transition:"background .1s" }}>
+                    <span style={{ fontSize:12,color:colDim,opacity:.35,flexShrink:0 }}>☆</span>
+                    <span style={{ fontSize:13,flex:1,fontWeight:on?600:400,
+                      color:on?(dark?"#93c5fd":"#1d4ed8"):(impl?(dark?"#c8ccd8":"#222"):(dark?"#5a6070":"#aaa")) }}>
+                      {ind}
+                      {!impl && <span style={{ fontSize:10,marginLeft:6,color:colDim,fontWeight:400 }}></span>}
+                    </span>
+                    {on && <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#2962ff" strokeWidth="2" strokeLinecap="round"><path d="M2 7l3.5 3.5 6.5-7"/></svg>}
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
       </div>
 
