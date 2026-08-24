@@ -45,6 +45,20 @@ function generateSyntheticHistory(latestClose: number, days = 500): Candle[] {
   return candles;
 }
 
+/* Hardcoded fallback prices for PSX indices & top stocks when DB is empty */
+const DEFAULT_PRICES: Record<string, number> = {
+  KSE100: 115000, KSE30: 38000, KMI30: 42000, KSEALL: 82000, KMIALL: 52000,
+  OGDC: 185,  PPL: 92,   MARI: 2250, POL: 515,  PSO: 310,
+  SNGP: 52,   SSGC: 28,  APL: 490,  HBL: 215,  UBL: 310,
+  MCB: 210,   MEBL: 185, BAHL: 88,  BAFL: 54,  NBP: 55,
+  FABL: 42,   BOP: 14,   AKBL: 22,  ABL: 125,  FFC: 130,
+  FFBL: 18,   ENGRO: 285,EFERT: 92, LUCK: 890, ACPL: 195,
+  DGKC: 95,   CHCC: 145, MLCF: 58,  KOHC: 145, FCCL: 28,
+  HUBC: 155,  KAPCO: 48, KEL: 5,    PAEL: 30,  TRG: 145,
+  SYS: 680,   NETSOL: 82,ISL: 155,  MUGHAL: 82,SEARL: 125,
+  GLAXO: 155, ABOT: 850, NML: 185,  NCL: 62,
+};
+
 /* Try to get the latest single-day close from DB for a PSX stock/index */
 async function fetchLatestPrice(symbol: string): Promise<number | null> {
   try {
@@ -61,7 +75,8 @@ async function fetchLatestPrice(symbol: string): Promise<number | null> {
       if (r[0]?.close) return parseFloat(String(r[0].close));
     }
   } catch { /* ignore */ }
-  return null;
+  // Fall back to hardcoded defaults
+  return DEFAULT_PRICES[symbol] ?? null;
 }
 
 export const dynamic = "force-dynamic";
