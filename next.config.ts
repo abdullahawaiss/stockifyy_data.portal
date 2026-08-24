@@ -4,8 +4,8 @@ const isProd = process.env.NODE_ENV === "production";
 
 // script-src: prod doesn't need 'unsafe-eval' (only needed for dev fast-refresh HMR)
 const scriptSrc = isProd
-  ? "script-src 'self' 'unsafe-inline'"
-  : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+  ? "script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s3.tradingview.com"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://s3.tradingview.com";
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control",  value: "on" },
@@ -24,9 +24,10 @@ const securityHeaders = [
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self' data:",
-      "connect-src 'self'",
+      "img-src 'self' data: blob: https://*.tradingview.com https://*.tradinview.com",
+      "font-src 'self' data: https://*.tradingview.com",
+      "connect-src 'self' https://*.tradingview.com wss://*.tradingview.com https://*.tradinview.com",
+      "frame-src https://www.tradingview.com",
       "frame-ancestors 'self'",
     ].join("; "),
   },
