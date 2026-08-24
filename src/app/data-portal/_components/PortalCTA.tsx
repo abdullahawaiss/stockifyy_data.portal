@@ -13,25 +13,25 @@ export function PortalPhones() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0, marginRight: 8 }}>
       {/* Phone */}
-      <a href="tel:+922111111721" style={{
+      <a href="tel:+923362444466" style={{
         display: "flex", alignItems: "center", gap: 5,
         textDecoration: "none", fontSize: 12.5, fontWeight: 600, color: "#1e293b",
         whiteSpace: "nowrap",
       }}>
         <span style={{ fontSize: 14 }}>📞</span>
-        <span>+9221-111-111-721</span>
+        <span>+92 336 2444466</span>
       </a>
 
       <span style={{ color: "var(--border)", fontSize: 13 }}>|</span>
 
       {/* WhatsApp */}
-      <a href="https://wa.me/923218296919" target="_blank" rel="noreferrer" style={{
+      <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{
         display: "flex", alignItems: "center", gap: 5,
         textDecoration: "none", fontSize: 12.5, fontWeight: 600, color: "#25D366",
         whiteSpace: "nowrap",
       }}>
         {WA_ICON}
-        <span>+92-321-829-6919</span>
+        <span>+92 336 2444466</span>
       </a>
     </div>
   );

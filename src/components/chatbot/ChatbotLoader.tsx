@@ -1,9 +1,11 @@
 "use client";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 
-// Lazy-load the full chatbot only after hydration — zero SSR overhead
 const StockifyChatbot = dynamic(() => import("./StockifyChatbot"), { ssr: false });
 
 export default function ChatbotLoader() {
+  const pathname = usePathname();
+  if (pathname?.includes("/technical-chart")) return null;
   return <StockifyChatbot />;
 }
