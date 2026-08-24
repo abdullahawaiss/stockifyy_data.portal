@@ -1,24 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-type MarketState = "open" | "pre-open" | "closed";
-
-function getStatus(): { state: MarketState; label: string } {
-  const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
-  const d = pkt.getDay();
-  const mins = pkt.getHours() * 60 + pkt.getMinutes();
-  if (d === 0 || d === 6) return { state: "closed", label: "Market Closed" };
-  if (mins >= 540 && mins < 570) return { state: "pre-open", label: "Pre-Open" };
-  if (mins >= 570 && mins < 930) return { state: "open", label: "Market Open" };
-  return { state: "closed", label: "Market Closed" };
-}
-
-const STATUS_CFG: Record<MarketState, { dot: string; glow: string; pulse: boolean; text: string }> = {
-  "open":     { dot: "#22c55e", glow: "0 0 7px rgba(34,197,94,0.75)",   pulse: true, text: "#D4AF37" },
-  "pre-open": { dot: "#60a5fa", glow: "0 0 6px rgba(96,165,250,0.55)",  pulse: true, text: "#D4AF37" },
-  "closed":   { dot: "#ef4444", glow: "0 0 7px rgba(239,68,68,0.75)",   pulse: true, text: "#D4AF37" },
-};
+import { getMarketStatus } from "@/app/data-portal/_data";
 
 const TICKER_ITEMS = [
   { symbol: "KSE 100",  price: "180,059.79", pct: -0.69 },
@@ -40,16 +23,19 @@ const TICKER_ITEMS = [
 const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
 export default function PortalTickerBar() {
-  const [status, setStatus] = useState<{ state: MarketState; label: string } | null>(null);
+  const [s, setS] = useState<ReturnType<typeof getMarketStatus> | null>(null);
 
   useEffect(() => {
-    setStatus(getStatus());
-    const id = setInterval(() => setStatus(getStatus()), 30_000);
+    setS(getMarketStatus());
+    const id = setInterval(() => setS(getMarketStatus()), 30_000);
     return () => clearInterval(id);
   }, []);
 
-  const cfg = status ? STATUS_CFG[status.state] : STATUS_CFG.closed;
-  const isOpen = status?.state === "open";
+  const open = s?.open ?? false;
+  const label = s?.label ?? "Market Closed";
+  const cfg = open
+    ? { dot: "#22c55e", glow: "0 0 7px rgba(34,197,94,0.75)", text: "#D4AF37" }
+    : { dot: "#ef4444", glow: "0 0 7px rgba(239,68,68,0.75)", text: "#D4AF37" };
 
   return (
     <div
@@ -60,43 +46,43 @@ export default function PortalTickerBar() {
         borderBottom: "1px solid rgba(212,175,55,0.15)",
       }}
     >
-      {/* ── Market Status ─────────────────── */}
+      {/* ── Market Status — width matches sidebar so no gap ── */}
       <div
         className="flex items-center gap-1.5 shrink-0"
         style={{
           padding: "0 10px 0 12px",
           background: "rgba(255,255,255,0.022)",
           borderRight: "1px solid rgba(212,175,55,0.16)",
+          justifyContent: "flex-start",
         }}
       >
-        <span
-          className={status ? "ticker-status-pulse" : ""}
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
+        <span style={{ position: "relative", display: "inline-flex", width: 6, height: 6, flexShrink: 0 }}>
+          <span style={{
+            position: "absolute", inset: 0, borderRadius: "50%",
+            background: s ? cfg.dot : "#f59e0b",
+            animation: "tickerPulse 1.4s ease-in-out infinite",
+            opacity: 0.6,
+          }} />
+          <span style={{
+            position: "relative", width: 6, height: 6, borderRadius: "50%",
+            background: s ? cfg.dot : "#f59e0b",
+            boxShadow: s ? cfg.glow : "none",
             display: "inline-block",
-            flexShrink: 0,
-            background: status ? cfg.dot : "#f59e0b",
-            boxShadow: status ? cfg.glow : "none",
-            transition: "background 250ms ease, box-shadow 250ms ease",
-          }}
-        />
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            letterSpacing: "0.025em",
-            whiteSpace: "nowrap",
-            color: status ? cfg.text : "#fbbf24",
-            transition: "color 250ms ease",
-          }}
-        >
-          {status ? status.label : "Market Closed"}
+          }} />
+          <style>{`@keyframes tickerPulse { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(2.2);opacity:0} }`}</style>
+        </span>
+        <span style={{
+          fontSize: 10.5,
+          fontWeight: 600,
+          letterSpacing: "0.025em",
+          whiteSpace: "nowrap",
+          color: s ? cfg.text : "#fbbf24",
+        }}>
+          {label}
         </span>
       </div>
 
-      {/* ── Scrolling Ticker ──────────────── */}
+      {/* ── Scrolling Ticker ── */}
       <div className="flex-1 overflow-hidden flex items-center">
         <div className="ticker-premium">
           {doubled.map((item, i) => {
@@ -113,7 +99,7 @@ export default function PortalTickerBar() {
                   {item.price}
                 </span>
                 <span style={{ fontSize: 10, fontWeight: 600, color, fontVariantNumeric: "tabular-nums" }}>
-                  {arrow}{neutral ? "" : ` ${Math.abs(item.pct).toFixed(2)}%`}
+                  {arrow}{neutral ? "" : ` ${Math.abs(item.pct).toFixed(2)}%`}
                 </span>
                 <span style={{ color: "rgba(212,175,55,0.18)", marginLeft: 2, fontSize: 11, lineHeight: 1 }}>|</span>
               </span>

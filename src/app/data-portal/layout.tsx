@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PortalSidebar from "@/components/portal/PortalSidebar";
 import PortalFooter from "@/components/portal/PortalFooter";
 import PortalTickerBar from "@/components/portal/PortalTickerBar";
+import PortalConditionalShell from "@/components/portal/PortalConditionalShell";
 import { getSession } from "@/lib/auth";
 import ChatbotLoader from "@/components/chatbot/ChatbotLoader";
 import BackToTop from "@/components/portal/BackToTop";
@@ -28,16 +29,15 @@ export default async function DataPortalLayout({ children }: { children: React.R
       {/* Right content area — offset by sidebar on desktop, full-width on mobile */}
       <div
         className="flex flex-col min-h-screen transition-[margin] duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ marginLeft: "var(--sidebar-w, 155px)", overflowX: "hidden", minWidth: 0 }}
+        style={{ marginLeft: "var(--sidebar-w, 168px)", overflowX: "hidden", minWidth: 0 }}
         id="portal-main"
       >
-        {/* Premium ticker bar */}
-        <div className="portal-fade-down" style={{ animationDelay: "80ms" }}>
-          <PortalTickerBar />
-        </div>
-
-        <main className="flex-1">{children}</main>
-        <PortalFooter />
+        <PortalConditionalShell
+          ticker={<PortalTickerBar />}
+          footer={<PortalFooter />}
+        >
+          {children}
+        </PortalConditionalShell>
       </div>
 
       <ChatbotLoader />
@@ -45,4 +45,3 @@ export default async function DataPortalLayout({ children }: { children: React.R
     </div>
   );
 }
-

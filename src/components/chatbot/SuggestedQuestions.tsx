@@ -36,17 +36,17 @@ export default function SuggestedQuestions({ route, onSelect, visible }: Props) 
     DEFAULT;
 
   return (
-    <div className="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 shrink-0" style={{ borderTop: "1px solid var(--border)", background: "white" }}>
-      <p className="w-full text-[10px] font-semibold mb-0.5" style={{ color: "var(--text-muted)" }}>Suggested questions</p>
+    <div className="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 shrink-0" style={{ borderTop: "1px solid rgba(212,175,55,0.15)", background: "#0D1E30" }}>
+      <p className="w-full text-[10px] font-semibold mb-0.5" style={{ color: "rgba(212,175,55,0.6)" }}>Suggested questions</p>
       {suggestions.map(q => (
         <button
           key={q}
           onClick={() => onSelect(q)}
           className="text-[11px] px-2.5 py-1 rounded-full transition-colors hover:border-yellow-400"
           style={{
-            background: "var(--light-bg)",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(212,175,55,0.25)",
+            color: "rgba(255,255,255,0.75)",
             whiteSpace: "nowrap",
           }}
         >

@@ -16,9 +16,11 @@ function usePKTTime() {
 
 function StatusDot({ open }: { open: boolean }) {
   return (
-    <span className="relative flex h-2 w-2 shrink-0">
-      {open && <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "#16A34A" }} />}
-      <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: open ? "#16A34A" : "#94a3b8" }} />
+    <span className="relative flex shrink-0" style={{ width: 10, height: 10 }}>
+      <span className="animate-ping absolute inline-flex rounded-full opacity-70"
+        style={{ width: 10, height: 10, background: open ? "#16A34A" : "#dc2626" }} />
+      <span className="relative inline-flex rounded-full"
+        style={{ width: 10, height: 10, background: open ? "#16A34A" : "#dc2626" }} />
     </span>
   );
 }
@@ -172,7 +174,7 @@ export default function MarketCommandCenter() {
       <div className="flex items-center gap-3 px-4 sm:px-6" style={{ height: 38, borderBottom: "1px solid var(--border)", background: "var(--light-bg)" }}>
         <div className="flex items-center gap-1.5">
           <StatusDot open={mktOpen} />
-          <span className="text-[11px] font-semibold" style={{ color: mktOpen ? "#16A34A" : "#94a3b8" }}>
+          <span className="text-[11px] font-semibold" style={{ color: mktOpen ? "#16A34A" : "#dc2626" }}>
             {mktOpen ? "Market Open" : "Market Closed"}
           </span>
         </div>

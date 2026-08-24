@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --sidebar-w: 182px;
+  --sidebar-w: 168px;
   /* Stockifyy Design Tokens */
   --navy:     #07111F;
   --navy-bg:  #07111F;   /* chip/badge backgrounds — never changes */
@@ -81,20 +81,42 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+/* Ultra-smooth momentum scrolling on all scrollable containers */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Smooth scroll for all overflow containers in data portal */
+#portal-main,
+#portal-main *,
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto,
+[style*="overflow"] {
+  scroll-behavior: smooth;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--light-bg); }
-::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 10px; transition: background 0.2s; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A4A6A; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3D6A8A; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3A6090; }
 
 /* Table responsive wrapper */
@@ -399,6 +421,82 @@ body {
   border-color: var(--border) !important;
 }
 [data-theme="dark"] #portal-main input::placeholder { color: var(--text-muted) !important; }
+
+/* Chatbot dark theme textarea placeholder */
+.stockify-chat-input::placeholder { color: rgba(255,255,255,0.35) !important; }
+
+/* ── Portal CTA card — always dark, both themes ─────────────────────────── */
+.portal-cta-card {
+  border: 1px solid rgba(212,175,55,0.4);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 0 rgba(212,175,55,0.15) inset;
+}
+.portal-cta-card:hover {
+  border-color: rgba(212,175,55,0.6);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12), 0 0 16px rgba(212,175,55,0.1);
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+/* ── Heatmap theme-aware classes ───────────────────────────────────────── */
+.hm-page       { background: var(--background); color: var(--text-primary); }
+.hm-title      { color: var(--text-primary); }
+.hm-subtitle   { color: var(--text-muted); }
+.hm-stat-green { color: #16a34a; }
+.hm-stat-red   { color: #dc2626; }
+.hm-stat-gold  { color: #D4AF37; }
+.hm-legend-lbl { color: var(--text-muted); }
+.hm-divider    { background: var(--border); }
+.hm-count      { color: var(--text-muted); }
+
+.hm-view-toggle {
+  border: 2px solid #D4AF37;
+  border-radius: 8px;
+  overflow: hidden;
+  display: inline-flex;
+}
+.hm-view-btn {
+  padding: 7px 16px; font-size: 12px; font-weight: 700;
+  border: none; cursor: pointer; transition: all 0.15s;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary);
+}
+.hm-view-btn:hover { background: rgba(212,175,55,0.15); }
+.hm-view-btn.active { background: #D4AF37; color: #07111F; }
+
+.hm-idx-btn {
+  padding: 6px 14px; font-size: 11.5px; font-weight: 700; border-radius: 20px;
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em;
+  border: 2px solid #D4AF37;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary);
+}
+.hm-idx-btn:hover { background: rgba(212,175,55,0.15); }
+.hm-idx-btn.active { background: #D4AF37; color: #07111F; border-color: #D4AF37; }
+
+.hm-sector-card {
+  background: var(--card-bg);
+  border: 1.5px solid #c8cdd5;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: none;
+}
+[data-theme="dark"] .hm-sector-card {
+  border-color: #2e3747;
+  box-shadow: none;
+}
+.hm-sector-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e0e4ea;
+}
+[data-theme="dark"] .hm-sector-header { border-bottom-color: #2e3747; }
+.hm-sector-name { font-size: 13.5px; font-weight: 900; color: var(--navy, #071C41); letter-spacing: 0.07em; text-transform: uppercase; line-height: 1.2; -webkit-text-stroke: 0.3px currentColor; }
+.hm-sector-meta { font-size: 9.5px; font-weight: 600; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; }
+
+.hm-combined-bg { background: var(--background); }
+
+/* Dark overrides — keep sector labels readable on treemap */
+[data-theme="dark"] .hm-sector-label { color: rgba(255,255,255,0.65); }
+:root:not([data-theme="dark"]) .hm-sector-label { color: rgba(0,0,0,0.55); }
 
 /* Loading skeleton */
 @keyframes shimmer {

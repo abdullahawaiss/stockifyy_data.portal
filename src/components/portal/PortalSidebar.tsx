@@ -11,26 +11,26 @@ function MarketStatusPill({ collapsed }: { collapsed: boolean }) {
     const id = setInterval(() => setS(getMarketStatus()), 30_000);
     return () => clearInterval(id);
   }, []);
+  const color = s.open ? "#4ade80" : "#94a3b8";
   return (
     <div
       style={{
-        display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start",
-        gap: 6, padding: collapsed ? "6px 0" : "6px 10px",
-        margin: "4px 6px",
-        borderRadius: 8,
-        background: s.open ? "rgba(22,163,74,0.10)" : "rgba(100,116,139,0.10)",
-        border: `1px solid ${s.open ? "rgba(22,163,74,0.20)" : "rgba(100,116,139,0.15)"}`,
+        display: "flex", alignItems: "center", gap: 5,
+        padding: "3px 7px",
+        borderRadius: 20,
+        flexShrink: 0,
+        background: s.open ? "rgba(22,163,74,0.12)" : "rgba(100,116,139,0.12)",
+        border: `1px solid ${s.open ? "rgba(22,163,74,0.25)" : "rgba(100,116,139,0.2)"}`,
       }}
     >
       <span style={{
-        width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-        background: s.open ? "#4ade80" : "#94a3b8",
-        boxShadow: s.open ? "0 0 6px #4ade80" : "none",
-        animation: s.open ? "pulse 2s infinite" : "none",
+        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+        background: color,
+        boxShadow: s.open ? `0 0 6px ${color}` : "none",
         display: "inline-block",
       }} />
       {!collapsed && (
-        <span style={{ fontSize: 10.5, fontWeight: 700, color: s.open ? "#4ade80" : "#94a3b8", letterSpacing: "0.04em" }}>
+        <span style={{ fontSize: 9.5, fontWeight: 700, color, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
           {s.label}
         </span>
       )}
@@ -44,17 +44,9 @@ const NAV = [
     label: "Dashboard",
     href: "/data-portal",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path d="M2 4a2 2 0 012-2h3a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm0 10a2 2 0 012-2h3a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm9-10a2 2 0 012-2h3a2 2 0 012 2v2a2 2 0 01-2 2h-3a2 2 0 01-2-2V4zm0 8a2 2 0 012-2h3a2 2 0 012 2v4a2 2 0 01-2 2h-3a2 2 0 01-2-2v-4z" />
-      </svg>
-    ),
-  },
-  {
-    label: "My Portfolio",
-    href: "/data-portal/portfolio",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
       </svg>
     ),
   },
@@ -62,81 +54,77 @@ const NAV = [
     label: "Stocks",
     href: "/data-portal/stocks",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clipRule="evenodd"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
       </svg>
     ),
   },
   {
-    label: "Market",
+    label: "Watch-List",
+    href: "/data-portal/watchlist",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
       </svg>
     ),
-    items: [
-      { label: "Today's Summary",          href: "/data-portal/market/summary"         },
-      { label: "Market Indices",            href: "/data-portal/market/indices"         },
-      { label: "Fixed Income Securities",   href: "/data-portal/market/fixed-income"    },
-      { label: "Sector Summary",            href: "/data-portal/market/sectors"         },
-      { label: "Stock Screener",            href: "/data-portal/market/screener"        },
-      { label: "Historical Data",           href: "/data-portal/market/historical"      },
-      { label: "Eligible Scrips",           href: "/data-portal/market/eligible-scrips" },
-      { label: "Graphical View",            href: "/data-portal/market/graphical"       },
-    ],
   },
   {
-    label: "Announcements",
+    label: "Portfolio",
+    href: "/data-portal/portfolio",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
       </svg>
     ),
-    items: [
-      { label: "PSX Notices",                  href: "/data-portal/announcements/psx-notices"       },
-      { label: "Company Announcements",         href: "/data-portal/announcements/company"           },
-      { label: "Corporate Briefing (CBS)",      href: "/data-portal/announcements/cbs"               },
-      { label: "CDC Notices",                   href: "/data-portal/announcements/cdc"               },
-      { label: "SECP Notices",                  href: "/data-portal/announcements/secp"              },
-      { label: "NCCPL Notices",                 href: "/data-portal/announcements/nccpl"             },
-      { label: "AGM/EOGM Calendar",             href: "/data-portal/announcements/agm"               },
-      { label: "Payouts",                       href: "/data-portal/announcements/payouts"           },
-      { label: "GIS Auction Results",           href: "/data-portal/announcements/gis-auction"       },
-    ],
   },
   {
-    label: "Companies",
+    label: "Heatmap",
+    href: "/data-portal/heatmap",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+        <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
       </svg>
     ),
-    items: [
-      { label: "Listing Status",               href: "/data-portal/companies/listing-status"  },
-      { label: "Circuit Breakers",              href: "/data-portal/companies/circuit-breakers"},
-    ],
   },
   {
-    label: "Reports",
+    label: "Technical Chart",
+    href: "/data-portal/technical-chart",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <polyline points="2 20 7 13 12 17 17 8 22 4"/>
+        <line x1="2" y1="20" x2="22" y2="20"/>
       </svg>
     ),
-    items: [
-      { label: "Downloads",                    href: "/data-portal/reports/downloads"          },
-      { label: "Financial Reports",             href: "/data-portal/reports/financial"          },
-      { label: "Analysis Reports",              href: "/data-portal/reports/analysis"           },
-      { label: "ND Verification",               href: "/data-portal/reports/nd-verification"   },
-      { label: "PSX Indices Div. Discount",     href: "/data-portal/reports/indices-discount"  },
-      { label: "Monthly Reports",               href: "/data-portal/reports/monthly"            },
-      { label: "5 Years Progress Report",       href: "/data-portal/reports/5yr-progress"      },
-    ],
+  },
+  {
+    label: "Screener",
+    href: "/data-portal/screener",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Alerts",
+    href: "/data-portal/alerts",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+    ),
   },
 ];
 
 // ── Sidebar widths ─────────────────────────────────────────────
-const W_EXPANDED = 168;
+const W_EXPANDED = 148;
 const W_COLLAPSED = 56;
 
 // ── Tooltip (collapsed mode hover) ────────────────────────────
@@ -174,153 +162,42 @@ function NavItem({
   onMobileClose?: () => void;
 }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const hasChildren = "items" in item && !!item.items?.length;
-
-  const isActive = hasChildren
-    ? item.items!.some(i => pathname === i.href)
-    : pathname === item.href || (item.href === "/dashboard" && pathname === "/dashboard");
-
-  const isChildActive = hasChildren && item.items!.some(i => pathname === i.href);
-
-  // Auto-open group if a child is active
-  useEffect(() => {
-    if (isChildActive) setOpen(true);
-  }, [isChildActive]);
-
+  const isActive = pathname === item.href || (item.href === "/data-portal" && pathname === "/data-portal");
   const activeColor = "#D4AF37";
 
-  if (!hasChildren) {
-    const row = (
-      <Link
-        href={item.href!}
-        onClick={onMobileClose}
-        className="group flex items-center gap-2.5 px-2.5 rounded-lg relative"
-        style={{
-          transition: "background 160ms ease, color 160ms ease",
-          height: 36,
-          background: isActive ? "rgba(212,175,55,0.12)" : "transparent",
-          color: isActive ? activeColor : "rgba(255,255,255,0.72)",
-        }}
-      >
-        {/* Active indicator bar */}
-        {isActive && (
-          <span
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
-            style={{ height: 22, background: activeColor, boxShadow: `0 0 6px ${activeColor}` }}
-          />
-        )}
-        <span
-          className="flex-shrink-0 transition-all duration-200"
-          style={{
-            color: isActive ? activeColor : "rgba(255,255,255,0.55)",
-            transform: "translateX(0)",
-          }}
-          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.transform = "translateX(2px)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateX(0)"; }}
-        >
-          {item.icon}
-        </span>
-        {!collapsed && (
-          <span className="text-[12px] font-medium tracking-tight truncate">
-            {item.label}
-          </span>
-        )}
-      </Link>
-    );
-
-    return collapsed ? <Tooltip label={item.label}>{row}</Tooltip> : row;
-  }
-
-  // Group with children
-  const trigger = (
-    <button
-      onClick={() => !collapsed && setOpen(o => !o)}
-      className="group w-full flex items-center gap-2.5 px-2.5 rounded-lg relative"
+  const row = (
+    <Link
+      href={item.href}
+      onClick={onMobileClose}
+      className="group flex items-center gap-2.5 px-2.5 rounded-lg relative"
       style={{
         transition: "background 160ms ease, color 160ms ease",
-        height: 36,
-        background: isChildActive ? "rgba(212,175,55,0.08)" : "transparent",
-        color: isChildActive ? activeColor : "rgba(255,255,255,0.72)",
-        cursor: "pointer",
+        height: 38,
+        background: isActive ? "rgba(212,175,55,0.12)" : "transparent",
+        color: isActive ? activeColor : "rgba(255,255,255,0.7)",
       }}
+      onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+      onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
     >
-      {isChildActive && (
+      {/* Active indicator bar */}
+      {isActive && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
           style={{ height: 22, background: activeColor, boxShadow: `0 0 6px ${activeColor}` }}
         />
       )}
-      <span
-        className="flex-shrink-0"
-        style={{ color: isChildActive ? activeColor : "rgba(255,255,255,0.55)" }}
-      >
+      <span className="flex-shrink-0" style={{ color: isActive ? activeColor : "rgba(255,255,255,0.5)" }}>
         {item.icon}
       </span>
       {!collapsed && (
-        <>
-          <span className="flex-1 text-left text-[12.5px] font-medium tracking-tight truncate">
-            {item.label}
-          </span>
-          <span
-            className="flex-shrink-0 transition-transform duration-200"
-            style={{
-              transform: open ? "rotate(90deg)" : "rotate(0deg)",
-              color: "rgba(255,255,255,0.35)",
-              fontSize: 10,
-            }}
-          >
-            ▶
-          </span>
-        </>
+        <span className="text-[12.5px] font-medium tracking-tight truncate">
+          {item.label}
+        </span>
       )}
-    </button>
+    </Link>
   );
 
-  return (
-    <div>
-      {collapsed ? <Tooltip label={item.label}>{trigger}</Tooltip> : trigger}
-
-      {/* Submenu */}
-      {!collapsed && (
-        <div
-          style={{
-            maxHeight: open ? `${item.items!.length * 32}px` : "0px",
-            overflow: "hidden",
-            transition: "max-height 200ms cubic-bezier(0.4,0,0.2,1)",
-          }}
-        >
-          <div className="ml-6 mt-0.5 mb-0.5 flex flex-col">
-            {item.items!.map(sub => {
-              const subActive = pathname === sub.href;
-              return (
-                <Link
-                  key={sub.href}
-                  href={sub.href}
-                  onClick={onMobileClose}
-                  className="block px-2.5 rounded-md text-[11px] leading-tight"
-                  style={{
-                    padding: "5px 10px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    color: subActive ? activeColor : "rgba(255,255,255,0.52)",
-                    background: subActive ? "rgba(212,175,55,0.1)" : "transparent",
-                    fontWeight: subActive ? 600 : 400,
-                    transition: "background 130ms ease, color 130ms ease",
-                  }}
-                  onMouseEnter={e => { if (!subActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-                  onMouseLeave={e => { if (!subActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                >
-                  {sub.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return collapsed ? <Tooltip label={item.label}>{row}</Tooltip> : row;
 }
 
 // ── Ticker tape (horizontal, inside sidebar top) ───────────────

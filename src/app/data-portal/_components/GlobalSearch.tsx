@@ -14,24 +14,39 @@ interface Result {
 
 function flatten(s: string) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 
+// Module-level cache — shared across all instances, survives re-renders
+let _cachedRows: Result[] = [];
+let _fetchPromise: Promise<void> | null = null;
+
+function prefetchRows(): Promise<void> {
+  if (_cachedRows.length) return Promise.resolve();
+  if (_fetchPromise) return _fetchPromise;
+  _fetchPromise = fetch("/api/portal/stocks")
+    .then(r => r.json())
+    .then(d => { _cachedRows = d.rows ?? []; })
+    .catch(() => {});
+  return _fetchPromise;
+}
+
+// Start loading immediately when the module loads (not on click)
+if (typeof window !== "undefined") prefetchRows();
+
 export default function GlobalSearch() {
   const t = useDarkTokens();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Result[]>([]);
-  const [allRows, setAllRows] = useState<Result[]>([]);
+  const [allRows, setAllRows] = useState<Result[]>(_cachedRows);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef  = useRef<HTMLDivElement>(null);
 
-  // Load all stocks once
+  // Load all stocks once — instant if already cached
   useEffect(() => {
-    fetch("/api/portal/stocks")
-      .then(r => r.json())
-      .then(d => setAllRows(d.rows ?? []))
-      .catch(() => {});
+    if (_cachedRows.length) { setAllRows(_cachedRows); return; }
+    prefetchRows().then(() => setAllRows(_cachedRows));
   }, []);
 
   // Search

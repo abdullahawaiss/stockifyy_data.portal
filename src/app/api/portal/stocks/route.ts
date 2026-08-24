@@ -4,7 +4,20 @@ import { dailyStockPrices, companies, sectors, dailyIndexValues, indices } from 
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 60; // cache for 60s
+
+// ── Server-side in-memory cache (survives within the same process/request pool) ──
+// Keyed by date string so stale days don't bleed through.
+const _stockCache = new Map<string, { data: unknown; ts: number }>();
+const STOCK_TTL = 5 * 60_000; // 5 minutes
+
+function getCached(key: string) {
+  const hit = _stockCache.get(key);
+  if (hit && Date.now() - hit.ts < STOCK_TTL) return hit.data;
+  return null;
+}
+function setCached(key: string, data: unknown) {
+  _stockCache.set(key, { data, ts: Date.now() });
+}
 
 // ── Demo stocks for fallback (300+ PSX listed securities) ────────────
 const DEMO_STOCKS = [
@@ -615,6 +628,13 @@ export async function GET(req: NextRequest) {
 
   const date = rawDate || new Date().toISOString().slice(0, 10);
 
+  // Cache key only for unfiltered requests (the most common case: stocks page load)
+  const cacheKey = !search && !sectorId && !indexCode ? `${date}:${sortBy}:${sortDir}` : null;
+  if (cacheKey) {
+    const hit = getCached(cacheKey);
+    if (hit) return NextResponse.json(hit, { headers: { "X-Cache": "HIT" } });
+  }
+
   try {
     // ── Build WHERE conditions ──────────────────────────────────
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -755,7 +775,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ...src, rows: filtered, date });
     }
 
-    return NextResponse.json({
+    const payload = {
       date,
       rows,
       totals: {
@@ -770,7 +790,9 @@ export async function GET(req: NextRequest) {
       },
       indices: indexRows.length ? indexRows : [],
       sectors: sectorList,
-    });
+    };
+    if (cacheKey) setCached(cacheKey, payload);
+    return NextResponse.json(payload);
 
   } catch (err) {
     console.error("[stocks api] query failed, trying PSX live:", err);

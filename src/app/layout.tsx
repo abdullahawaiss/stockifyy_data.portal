@@ -37,8 +37,9 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
   icons: {
-    icon: "/stockifyy-logo.svg",
-    shortcut: "/stockifyy-logo.svg",
+    icon: "/favicon-square.png",
+    shortcut: "/favicon-square.png",
+    apple: "/favicon-square.png",
   },
   verification: {},
 };

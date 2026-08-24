@@ -142,11 +142,16 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
   }, []);
 
   useEffect(() => {
-    // Always do one immediate fetch on mount — updates placeholder data to live,
-    // or confirms the SSR data is still current. Silent (no loading state).
-    refresh();
-    const id = setInterval(refresh, 60_000);
-    return () => clearInterval(id);
+    // If SSR gave us real data (not placeholder), wait 60s before first client refresh.
+    // If SSR gave placeholder data, refresh immediately so live data appears quickly.
+    const isPlaceholder = !initialData || initialData.source === undefined;
+    const delay = isPlaceholder ? 0 : 60_000;
+    const firstId = setTimeout(() => {
+      refresh();
+      const id = setInterval(refresh, 60_000);
+      return () => clearInterval(id);
+    }, delay);
+    return () => clearTimeout(firstId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

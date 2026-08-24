@@ -3,11 +3,11 @@ import type { MarketSummary } from "@/lib/market-data";
 
 export const STATIC_MARKET: MarketSummary = {
   indices: [
-    { code: "KSE100",    close: 180059.79, change:  823.45, pct:  0.46, vol: 312480000 },
-    { code: "KSE30",     close:  74812.34, change: -215.67, pct: -0.29, vol: 198230000 },
-    { code: "ALLSHR",    close: 125340.12, change:  512.88, pct:  0.41, vol: 285640000 },
-    { code: "KMI30",     close:  85623.44, change:  341.22, pct:  0.40, vol: 142350000 },
-    { code: "KMIALLSHR", close:  64918.76, change:  198.54, pct:  0.31, vol: 105720000 },
+    { code: "KSE-100", close: 180059.79, change:  823.45, pct:  0.46, vol: 312480000 },
+    { code: "KSE-30",  close:  74812.34, change: -215.67, pct: -0.29, vol: 198230000 },
+    { code: "KSE ALL", close: 125340.12, change:  512.88, pct:  0.41, vol: 285640000 },
+    { code: "KMI-30",  close:  85623.44, change:  341.22, pct:  0.40, vol: 142350000 },
+    { code: "KMI ALL", close:  64918.76, change:  198.54, pct:  0.31, vol: 105720000 },
   ],
   gainers: [
     { symbol: "EPCL",  name: "Engro Polymer",   close: 48.32,  change:  3.42, pct:  7.62, vol: 18240000 },

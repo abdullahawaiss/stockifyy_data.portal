@@ -1,31 +1,55 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { fmtNum, fmtVol } from "../_data";
 import type { MarketSummary } from "@/app/api/portal/market-summary/route";
 
 type Tab = "Top Active" | "Advancers" | "Decliners";
 type Row = MarketSummary["volume"][number];
 
+function MiniBar({ pct, max, color, bgColor }: { pct: number; max: number; color: string; bgColor: string }) {
+  const w = max > 0 ? Math.round((Math.abs(pct) / max) * 52) : 0;
+  return (
+    <svg width={54} height={14} style={{ display: "block", flexShrink: 0 }}>
+      <rect x={0} y={2} width={54} height={10} rx={3} fill={bgColor} />
+      <rect x={0} y={2} width={w} height={10} rx={3} fill={color} />
+    </svg>
+  );
+}
+
+// Module-level cache so re-mounts don't re-fetch
+let _mktCache: MarketSummary | null = null;
+
 export default function MarketPerformers({ initialData }: { initialData?: MarketSummary | null }) {
   const [tab, setTab] = useState<Tab>("Top Active");
-  const [summary, setSummary] = useState<MarketSummary | null>(initialData ?? null);
-  const [loading, setLoading] = useState(!initialData);
+  const seed = initialData ?? _mktCache ?? null;
+  const [summary, setSummary] = useState<MarketSummary | null>(seed);
+  const [loading, setLoading] = useState(!seed);
 
   useEffect(() => {
-    if (initialData) return;
+    if (seed) return; // already have data — skip fetch
     fetch("/api/portal/market-summary")
       .then(r => r.json())
-      .then(setSummary)
+      .then(d => { _mktCache = d; setSummary(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [initialData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const rows: Row[] =
-    tab === "Top Active"  ? (summary?.volume  ?? []).slice(0, 8) :
-    tab === "Advancers"   ? (summary?.gainers  ?? []).slice(0, 8) :
-                            (summary?.losers   ?? []).slice(0, 8);
+    tab === "Top Active" ? (summary?.volume  ?? []).slice(0, 12) :
+    tab === "Advancers"  ? (summary?.gainers  ?? []).slice(0, 10) :
+                           (summary?.losers   ?? []).slice(0, 10);
 
-  const maxAbs = rows.length ? Math.max(...rows.map(r => Math.abs(r.pct))) || 1 : 1;
+  const isActive = tab === "Top Active";
+  const maxVal = rows.length
+    ? isActive
+      ? Math.max(...rows.map(r => r.vol)) || 1
+      : Math.max(...rows.map(r => Math.abs(r.pct))) || 1
+    : 1;
+
+  const accentColor = isActive ? "var(--navy)" : tab === "Advancers" ? "#16A34A" : "#DC2626";
+  const accentBg    = isActive ? "rgba(7,17,31,0.07)" : tab === "Advancers" ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)";
 
   return (
     <div className="card overflow-hidden flex flex-col h-full">
@@ -52,13 +76,31 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
         ))}
       </div>
 
-      {/* Bar chart rows */}
-      <div className="flex-1 flex flex-col px-3 py-2 gap-1.5 overflow-auto">
+      {/* Column headers */}
+      <div className="grid px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-wide border-b"
+        style={{
+          gridTemplateColumns: "2fr 1.4fr 54px 1.2fr",
+          gap: "0 6px",
+          color: "var(--text-muted)",
+          borderColor: "var(--border)",
+          background: "var(--light-bg)",
+        }}>
+        <div>Symbol</div>
+        <div className="text-right">Price</div>
+        <div />
+        <div className="text-right">{isActive ? "Volume" : "Change"}</div>
+      </div>
+
+      {/* Rows */}
+      <div className="flex-1 divide-y" style={{ borderColor: "var(--border)" }}>
         {loading ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="animate-pulse flex items-center gap-2">
-              <div className="h-3 w-10 bg-gray-100 rounded shrink-0" />
-              <div className="h-4 bg-gray-100 rounded flex-1" />
+          Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="grid items-center px-3 py-2 animate-pulse"
+              style={{ gridTemplateColumns: "2fr 1.4fr 54px 1.2fr", gap: "0 6px" }}>
+              <div className="h-4 bg-gray-100 rounded w-12" />
+              <div className="h-4 bg-gray-100 rounded ml-auto w-10" />
+              <div className="h-3 bg-gray-100 rounded w-full" />
+              <div className="h-4 bg-gray-100 rounded ml-auto w-10" />
             </div>
           ))
         ) : rows.length === 0 ? (
@@ -66,31 +108,36 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
         ) : (
           rows.map(r => {
             const up = r.pct >= 0;
-            const barPct = (Math.abs(r.pct) / maxAbs) * 100;
-            const color = tab === "Top Active" ? "var(--navy)" : up ? "#16A34A" : "#DC2626";
-            const bgColor = tab === "Top Active"
-              ? "rgba(7,17,31,0.08)"
-              : up ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)";
+            const rowColor = isActive ? accentColor : up ? "#16A34A" : "#DC2626";
+            const rowBg    = isActive ? accentBg    : up ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)";
+            const barVal   = isActive ? r.vol : Math.abs(r.pct);
             return (
               <Link key={r.symbol} href={`/data-portal/company/${r.symbol}`}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                style={{ textDecoration: "none" }}>
-                <span className="text-[10px] font-mono font-bold shrink-0 w-16 text-right tabular-nums"
-                  style={{ color: "var(--navy)" }}>
+                className="grid items-center px-3 py-2 transition-colors"
+                style={{ gridTemplateColumns: "2fr 1.4fr 54px 1.2fr", gap: "0 6px", textDecoration: "none" }}
+                onMouseEnter={e => (e.currentTarget.style.background = rowBg)}
+                onMouseLeave={e => (e.currentTarget.style.background = "")}
+              >
+                {/* Symbol */}
+                <span className="font-mono font-semibold text-[10.5px] px-1.5 py-0.5 rounded truncate"
+                  style={{ color: "var(--navy)", background: "var(--navy-tint)" }}>
                   {r.symbol}
                 </span>
-                <div className="flex-1 relative h-5 rounded overflow-hidden"
-                  style={{ background: "var(--light-bg)" }}>
-                  <div className="absolute left-0 top-0 h-full rounded transition-all"
-                    style={{ width: `${barPct}%`, background: bgColor }} />
-                  <div className="absolute inset-0 flex items-center justify-end pr-2">
-                    <span className="text-[10px] font-bold tabular-nums" style={{ color }}>
-                      {tab === "Top Active"
-                        ? (r.vol >= 1e6 ? `${(r.vol / 1e6).toFixed(1)}M` : `${(r.vol / 1e3).toFixed(0)}K`)
-                        : `${up ? "+" : ""}${r.pct.toFixed(2)}%`}
-                    </span>
-                  </div>
-                </div>
+
+                {/* Price */}
+                <span className="text-right font-semibold text-[10.5px] tabular-nums" style={{ color: "var(--text-primary)" }}>
+                  {fmtNum(r.close)}
+                </span>
+
+                {/* Mini bar */}
+                <MiniBar pct={barVal} max={maxVal} color={rowColor} bgColor={rowBg} />
+
+                {/* Change / Volume */}
+                <span className="text-right text-[10px] font-bold tabular-nums" style={{ color: rowColor }}>
+                  {isActive
+                    ? fmtVol(r.vol)
+                    : `${up ? "+" : ""}${r.pct.toFixed(2)}%`}
+                </span>
               </Link>
             );
           })

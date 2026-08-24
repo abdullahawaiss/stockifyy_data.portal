@@ -105,17 +105,10 @@ export function useStockifyChat(pageContext: PageContext) {
         body: JSON.stringify({ message: trimmed, history: apiHistory, pageContext }),
       });
 
-      if (!res.ok) {
-        const status = res.status;
-        throw new Error(
-          status === 429
-            ? "AI assistant par filhal zyada requests aa rahi hain. Thori dair baad dobara try karein."
-            : `HTTP ${status}`
-        );
-      }
-
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
 
       setMessages(prev => [...prev, {
         id: genId(),
@@ -127,14 +120,13 @@ export function useStockifyChat(pageContext: PageContext) {
       if ((err as Error).name === "AbortError") return;
 
       const isNetworkError = err instanceof TypeError && err.message.includes("fetch");
+      const errMsg = isNetworkError
+        ? "Connection issue detect hua hai. Apna internet check karke retry karein."
+        : (err as Error).message || "Unknown error";
       setMessages(prev => [...prev, {
         id: genId(),
         role: "assistant",
-        content: isNetworkError
-          ? "Connection issue detect hua hai. Apna internet check karke retry karein."
-          : ((err as Error).message.startsWith("AI assistant") || (err as Error).message.startsWith("Sorry"))
-            ? (err as Error).message
-            : "Sorry, Stockify AI is waqt response generate nahi kar pa raha. Please dobara try karein.",
+        content: errMsg,
         timestamp: Date.now(),
         isError: true,
       }]);

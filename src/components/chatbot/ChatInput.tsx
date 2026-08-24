@@ -29,7 +29,7 @@ export default function ChatInput({ value, onChange, onSend, isLoading, disabled
   return (
     <div
       className="flex items-end gap-2 px-3 py-2.5 shrink-0"
-      style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid rgba(212,175,55,0.18)" }}
+      style={{ background: "#0D1E30", borderTop: "1px solid rgba(212,175,55,0.2)" }}
     >
       <textarea
         ref={ref}
@@ -40,17 +40,17 @@ export default function ChatInput({ value, onChange, onSend, isLoading, disabled
         disabled={disabled || isLoading}
         placeholder="Apna sawal type karein…"
         aria-label="Chat message input"
-        className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] outline-none transition-all"
+        className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] outline-none transition-all stockify-chat-input"
         style={{
-          background: "var(--light-bg)",
-          border: "1.5px solid var(--border)",
-          color: "var(--text-primary)",
+          background: "rgba(255,255,255,0.06)",
+          border: "1.5px solid rgba(212,175,55,0.25)",
+          color: "rgba(255,255,255,0.88)",
           lineHeight: "1.5",
           maxHeight: 100,
           minHeight: 38,
         }}
-        onFocus={e => (e.currentTarget.style.borderColor = "var(--gold)")}
-        onBlur={e => (e.currentTarget.style.borderColor = "var(--border)")}
+        onFocus={e => (e.currentTarget.style.borderColor = "rgba(212,175,55,0.7)")}
+        onBlur={e => (e.currentTarget.style.borderColor = "rgba(212,175,55,0.25)")}
       />
 
       <button

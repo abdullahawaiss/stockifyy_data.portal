@@ -11,38 +11,19 @@ import { useRouter } from "next/navigation";
 ═══════════════════════════════════════════════════ */
 function AnimatedBackground() {
   return (
-    <div aria-hidden="true" style={{ position:"absolute", inset:0, overflow:"hidden", background:"#0A0500" }}>
-
-      {/* Scene base — cinematic Ken Burns pan */}
-      <div className="bg-scene" />
-
-      {/* Counter-drift depth layer */}
-      <div className="bg-scene-b" />
-
-      {/* Aurora gold bands — clearly visible horizontal light */}
-      <div className="bg-aurora bg-aurora-1" />
-      <div className="bg-aurora bg-aurora-2" />
-      <div className="bg-aurora bg-aurora-3" />
-
-      {/* Floating amber/gold blobs */}
+    <div aria-hidden="true" style={{ position:"absolute", inset:0, overflow:"hidden", background:"#F0F4F8" }}>
+      {/* Soft white/blue blobs */}
       <div className="bg-blob bg-blob-1" />
       <div className="bg-blob bg-blob-2" />
       <div className="bg-blob bg-blob-3" />
       <div className="bg-blob bg-blob-4" />
+      {/* Subtle gold accent */}
       <div className="bg-blob bg-blob-5" />
-
-      {/* Diagonal golden light rays */}
-      <div className="bg-ray bg-ray-1" />
-      <div className="bg-ray bg-ray-2" />
-      <div className="bg-ray bg-ray-3" />
-
-      {/* Warm halo behind card */}
-      <div className="bg-halo" />
-
-      {/* Edge vignette */}
+      {/* Frosted glass overlay */}
       <div style={{
         position:"absolute", inset:0, pointerEvents:"none",
-        background:"radial-gradient(ellipse 110% 110% at 50% 50%, transparent 36%, rgba(5,2,0,.80) 100%)",
+        backdropFilter:"blur(40px)", WebkitBackdropFilter:"blur(40px)",
+        background:"rgba(240,244,248,0.55)",
       }} />
     </div>
   );
@@ -215,27 +196,27 @@ export default function LoginPage() {
         }
         .bg-blob-1 {
           width:72vw; height:72vw; top:-24vw; left:-18vw;
-          background:radial-gradient(circle,rgba(254,165,0,.65) 0%,rgba(212,175,55,.32) 40%,transparent 68%);
+          background:radial-gradient(circle,rgba(7,17,31,.10) 0%,rgba(7,17,31,.04) 40%,transparent 68%);
           animation:blob1 9s ease-in-out infinite;
         }
         .bg-blob-2 {
           width:62vw; height:62vw; top:10vh; right:-22vw;
-          background:radial-gradient(circle,rgba(152,99,0,.58) 0%,rgba(110,68,0,.28) 40%,transparent 68%);
+          background:radial-gradient(circle,rgba(212,175,55,.18) 0%,rgba(212,175,55,.07) 40%,transparent 68%);
           animation:blob2 12s ease-in-out infinite 1.8s;
         }
         .bg-blob-3 {
           width:54vw; height:54vw; bottom:-16vw; left:14vw;
-          background:radial-gradient(circle,rgba(212,175,55,.52) 0%,rgba(180,130,0,.26) 42%,transparent 66%);
+          background:radial-gradient(circle,rgba(7,17,31,.08) 0%,rgba(7,17,31,.03) 42%,transparent 66%);
           animation:blob3 15s ease-in-out infinite 3.5s;
         }
         .bg-blob-4 {
           width:36vw; height:36vw; top:28vh; left:33vw;
-          background:radial-gradient(circle,rgba(255,230,100,.62) 0%,rgba(212,175,55,.30) 44%,transparent 66%);
+          background:radial-gradient(circle,rgba(212,175,55,.14) 0%,rgba(212,175,55,.05) 44%,transparent 66%);
           animation:blob4 8s ease-in-out infinite 0.8s;
         }
         .bg-blob-5 {
           width:46vw; height:46vw; bottom:2vh; right:6vw;
-          background:radial-gradient(circle,rgba(180,110,0,.44) 0%,rgba(130,80,0,.22) 42%,transparent 65%);
+          background:radial-gradient(circle,rgba(100,160,220,.15) 0%,rgba(100,160,220,.05) 42%,transparent 65%);
           animation:blob5 11s ease-in-out infinite 4.2s;
         }
 
@@ -355,7 +336,7 @@ export default function LoginPage() {
         }
         .card-ring-mask {
           position:absolute; inset:1.5px; border-radius:18px;
-          background:rgba(12,7,0,.92);
+          background:rgba(255,255,255,.96);
           pointer-events:none;
         }
 
@@ -381,17 +362,17 @@ export default function LoginPage() {
         /* Inputs */
         .inp {
           width:100%; padding:11px 13px 11px 38px; box-sizing:border-box;
-          background:rgba(254,165,0,.05);
-          border:1px solid rgba(212,175,55,.22); border-radius:9px;
-          color:rgba(255,240,210,.92); font-size:13px; outline:none;
+          background:rgba(7,17,31,.03);
+          border:1px solid rgba(7,17,31,.14); border-radius:9px;
+          color:#07111F; font-size:13px; outline:none;
           transition:background .2s, border-color .22s, box-shadow .22s;
           font-family:inherit;
         }
-        .inp::placeholder { color:rgba(212,175,55,.28); }
+        .inp::placeholder { color:rgba(7,17,31,.30); }
         .inp:focus {
-          background:rgba(254,165,0,.09);
-          border-color:rgba(254,165,0,.60);
-          box-shadow:0 0 0 3px rgba(254,165,0,.13), 0 0 18px rgba(212,175,55,.10);
+          background:rgba(212,175,55,.06);
+          border-color:rgba(212,175,55,.55);
+          box-shadow:0 0 0 3px rgba(212,175,55,.10);
         }
 
         /* Submit button */
@@ -449,12 +430,12 @@ export default function LoginPage() {
         {/* Glass card surface */}
         <div style={{
           position:"relative",
-          background:"rgba(12,6,0,.80)",
-          backdropFilter:"blur(26px)", WebkitBackdropFilter:"blur(26px)",
+          background:"rgba(255,255,255,.88)",
+          backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)",
           borderRadius:18,
-          border:"1px solid rgba(212,175,55,.28)",
+          border:"1px solid rgba(212,175,55,.30)",
           overflow:"hidden",
-          boxShadow:"0 32px 90px rgba(0,0,0,.75), 0 0 60px rgba(212,175,55,.12), 0 0 0 1px rgba(255,220,100,.06) inset, 0 1px 0 rgba(255,230,120,.10) inset",
+          boxShadow:"0 20px 60px rgba(7,17,31,.12), 0 0 0 1px rgba(212,175,55,.10) inset, 0 1px 0 rgba(255,255,255,.90) inset",
         }}>
 
           {/* Glass reflection sweep */}
@@ -483,10 +464,10 @@ export default function LoginPage() {
 
             {/* Heading */}
             <div className="f2" style={{ textAlign:"center", marginBottom:14 }}>
-              <h1 style={{ margin:0, fontSize:20, fontWeight:900, color:"rgba(255,240,210,.96)", letterSpacing:"-.015em" }}>
+              <h1 style={{ margin:0, fontSize:20, fontWeight:900, color:"#07111F", letterSpacing:"-.015em" }}>
                 Welcome Back
               </h1>
-              <p style={{ margin:"4px 0 0", fontSize:9.5, color:"rgba(212,175,55,.45)", letterSpacing:".08em", textTransform:"uppercase" }}>
+              <p style={{ margin:"4px 0 0", fontSize:9.5, color:"rgba(7,17,31,.45)", letterSpacing:".08em", textTransform:"uppercase" }}>
                 Pakistan Stock Exchange · Data Portal
               </p>
             </div>
@@ -494,7 +475,7 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="f3" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
               <div style={{ flex:1, height:1, background:"rgba(212,175,55,.18)" }} />
-              <span style={{ fontSize:8.5, fontWeight:700, color:"rgba(212,175,55,.38)", letterSpacing:".18em", textTransform:"uppercase" }}>Secure Access</span>
+              <span style={{ fontSize:8.5, fontWeight:700, color:"rgba(7,17,31,.30)", letterSpacing:".18em", textTransform:"uppercase" }}>Secure Access</span>
               <div style={{ flex:1, height:1, background:"rgba(212,175,55,.18)" }} />
             </div>
 
@@ -503,12 +484,12 @@ export default function LoginPage() {
 
               {/* Username */}
               <div className="f4" style={{ marginBottom:11 }}>
-                <label style={{ display:"block", fontSize:9.5, fontWeight:700, letterSpacing:".11em", textTransform:"uppercase", color:"rgba(212,175,55,.60)", marginBottom:5 }}>
+                <label style={{ display:"block", fontSize:9.5, fontWeight:700, letterSpacing:".11em", textTransform:"uppercase", color:"rgba(7,17,31,.55)", marginBottom:5 }}>
                   Username
                 </label>
                 <div style={{ position:"relative" }}>
                   <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
-                    width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(212,175,55,.60)" strokeWidth="2" strokeLinecap="round">
+                    width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.40)" strokeWidth="2" strokeLinecap="round">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                   <input type="text" value={username} onChange={e => setUsername(e.target.value)}
@@ -518,12 +499,12 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="f5" style={{ marginBottom:16 }}>
-                <label style={{ display:"block", fontSize:9.5, fontWeight:700, letterSpacing:".11em", textTransform:"uppercase", color:"rgba(212,175,55,.60)", marginBottom:5 }}>
+                <label style={{ display:"block", fontSize:9.5, fontWeight:700, letterSpacing:".11em", textTransform:"uppercase", color:"rgba(7,17,31,.55)", marginBottom:5 }}>
                   Password
                 </label>
                 <div style={{ position:"relative" }}>
                   <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
-                    width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(212,175,55,.60)" strokeWidth="2" strokeLinecap="round">
+                    width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.40)" strokeWidth="2" strokeLinecap="round">
                     <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                   </svg>
                   <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
@@ -582,7 +563,7 @@ export default function LoginPage() {
               <p className="sg" style={{ margin:0, fontSize:9.5, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
                 Working on Data Portal by AWAIS
               </p>
-              <p style={{ margin:"4px 0 0", fontSize:8.5, color:"rgba(212,175,55,.24)", letterSpacing:".12em", textTransform:"uppercase" }}>
+              <p style={{ margin:"4px 0 0", fontSize:8.5, color:"rgba(7,17,31,.25)", letterSpacing:".12em", textTransform:"uppercase" }}>
                 PSX · SECP Certified · KSE Equities Intelligence
               </p>
             </div>
