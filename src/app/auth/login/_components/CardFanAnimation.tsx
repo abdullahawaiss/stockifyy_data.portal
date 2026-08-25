@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-// All 10 uploaded images, scattered across the right panel
-// l=left%, t=top%, r=rotate°, w=width%, d=floatDuration, dl=floatDelay, a=floatAmplitude, z=zIndex, ar=aspectRatio
 const CARDS = [
   // Top row: card1, card2, card4
   { s:"/login/card1.png",  l: 1,  t:  0,  r:-12, w:42, d:7.2, dl:0.00, a:10, z:2, ar:"3/4" },
@@ -20,7 +18,7 @@ const CARDS = [
   { s:"/login/card10.png", l:57,  t: 68,  r:-15, w:33, d:7.8, dl:2.40, a: 8, z:3, ar:"3/4" },
 ];
 
-const ENTRY_DUR = 0.9;
+const ENTRY_DUR  = 0.9;
 const ENTRY_BASE = 0.15;
 
 function buildCSS(): string {
@@ -30,7 +28,7 @@ function buildCSS(): string {
     return `
       @keyframes scIn${i}{
         from{opacity:0;transform:rotate(${c.r}deg) scale(0.88) translateY(40px)}
-        to  {opacity:1;transform:rotate(${c.r}deg) scale(1)    translateY(0px) }
+        to  {opacity:1;transform:rotate(${c.r}deg) scale(1)    translateY(0px)}
       }
       @keyframes scFl${i}{
         0%,100%{transform:rotate(${c.r}deg) translateY(0px)}
@@ -40,7 +38,7 @@ function buildCSS(): string {
         .sc-${i}{
           animation:
             scIn${i} ${ENTRY_DUR}s cubic-bezier(0.22,1,0.36,1) ${ed}s  forwards,
-            scFl${i} ${c.d}s       ease-in-out                   ${fst}s infinite;
+            scFl${i} ${c.d}s       ease-in-out                 ${fst}s  infinite;
         }
       }
       @media(prefers-reduced-motion:reduce){
@@ -51,41 +49,41 @@ function buildCSS(): string {
 }
 
 export default function CardFanAnimation() {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref     = useRef<HTMLDivElement>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const cards = el.querySelectorAll<HTMLElement>("[data-sc]");
 
-    // Visibility API — pause when tab hidden
     const onVis = () => {
       const state = document.hidden ? "paused" : "running";
       cards.forEach(c => { c.style.animationPlayState = state; });
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Hover: lift card forward, restore on leave
     const cleanups: (() => void)[] = [];
     cards.forEach((card) => {
       const rot = Number(card.dataset.rot ?? 0);
+
       const onEnter = () => {
-        card.style.transition = "transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, z-index 0s";
-        card.style.transform  = `rotate(${rot}deg) scale(1.10) translateY(-12px)`;
+        card.style.transition = "transform 0.32s cubic-bezier(0.22,1,0.36,1), box-shadow 0.32s ease";
+        card.style.transform  = `rotate(${rot}deg) scale(1.06) translateY(-8px)`;
         card.style.zIndex     = "99";
         card.style.animationPlayState = "paused";
       };
       const onLeave = () => {
-        card.style.transition = "transform 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.45s ease";
+        card.style.transition = "transform 0.42s cubic-bezier(0.22,1,0.36,1), box-shadow 0.42s ease";
         card.style.transform  = `rotate(${rot}deg) scale(1) translateY(0px)`;
         card.style.zIndex     = card.dataset.z ?? "";
-        // resume float after return transition ends
         setTimeout(() => {
           card.style.transition = "";
           card.style.transform  = "";
           card.style.animationPlayState = document.hidden ? "paused" : "running";
-        }, 460);
+        }, 450);
       };
+
       card.addEventListener("mouseenter", onEnter);
       card.addEventListener("mouseleave", onLeave);
       cleanups.push(() => {
@@ -100,11 +98,18 @@ export default function CardFanAnimation() {
     };
   }, []);
 
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLightbox(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
   return (
     <>
       <style>{`
         .sc-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-        .sc-wrap > .sc-card{pointer-events:auto}
         .sc-card{
           position:absolute;
           border-radius:6px;
@@ -115,18 +120,45 @@ export default function CardFanAnimation() {
           will-change:transform,opacity;
           transform-origin:center center;
           pointer-events:auto;
-          cursor:pointer;
+          cursor:zoom-in;
         }
         .sc-card:hover{
-          box-shadow:0 0 0 5px rgba(255,255,255,0.95),0 24px 60px rgba(0,0,0,0.72),0 8px 24px rgba(0,0,0,0.50);
-          z-index:99 !important;
-          transition:box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+          box-shadow:0 0 0 6px rgba(255,255,255,0.98),0 20px 52px rgba(0,0,0,0.70),0 6px 20px rgba(0,0,0,0.45);
         }
         .sc-card img{
           width:100%;height:100%;
           object-fit:cover;object-position:top center;
           display:block;pointer-events:none;user-select:none;-webkit-user-drag:none;
         }
+
+        /* Lightbox */
+        .sc-lb{
+          position:fixed;inset:0;z-index:9999;
+          display:flex;align-items:center;justify-content:center;
+          background:rgba(0,0,0,0.88);
+          backdrop-filter:blur(6px);
+          animation:lbIn 0.22s ease;
+          cursor:zoom-out;
+        }
+        @keyframes lbIn{from{opacity:0}to{opacity:1}}
+        .sc-lb img{
+          max-width:88vw;max-height:88vh;
+          border-radius:10px;
+          box-shadow:0 0 0 6px rgba(255,255,255,0.12),0 32px 80px rgba(0,0,0,0.80);
+          object-fit:contain;
+          animation:lbImgIn 0.28s cubic-bezier(0.22,1,0.36,1);
+          pointer-events:none;
+        }
+        @keyframes lbImgIn{from{transform:scale(0.88);opacity:0}to{transform:scale(1);opacity:1}}
+        .sc-lb-close{
+          position:absolute;top:20px;right:24px;
+          background:rgba(255,255,255,0.12);border:none;border-radius:50%;
+          width:38px;height:38px;font-size:18px;color:#fff;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
+          transition:background 0.2s;
+        }
+        .sc-lb-close:hover{background:rgba(255,255,255,0.22)}
+
         ${buildCSS()}
       `}</style>
 
@@ -139,11 +171,19 @@ export default function CardFanAnimation() {
             data-z={c.z}
             className={`sc-card sc-${i}`}
             style={{ left:`${c.l}%`, top:`${c.t}%`, width:`${c.w}%`, aspectRatio:c.ar, zIndex:c.z }}
+            onClick={() => setLightbox(c.s)}
           >
             <img src={c.s} alt="" draggable={false} />
           </div>
         ))}
       </div>
+
+      {lightbox && (
+        <div className="sc-lb" onClick={() => setLightbox(null)}>
+          <button className="sc-lb-close" onClick={() => setLightbox(null)}>✕</button>
+          <img src={lightbox} alt="" />
+        </div>
+      )}
     </>
   );
 }
