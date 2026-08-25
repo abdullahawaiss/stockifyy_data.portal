@@ -132,8 +132,23 @@ export default function LoginClient() {
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
   const [mounted,    setMounted]    = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Surface OAuth/signup errors passed via query param.
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "email_exists") {
+      setError("This email is already linked to a password account. Please sign in with your password.");
+    } else if (err === "oauth_only_account") {
+      setError("This account was created with Google. Please use 'Continue with Google' to sign in.");
+    } else if (err === "google_failed") {
+      setError("Google sign-in failed. Please try again.");
+    } else if (err === "account_inactive") {
+      setError("Your account is inactive. Please contact Stockifyy support.");
+    }
+  }, [searchParams]);
 
   const submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +167,10 @@ export default function LoginClient() {
       if (!res.ok) {
         if (data.error === "ACCOUNT_INACTIVE") {
           setError("Your account is currently inactive. Please contact Stockifyy support.");
+        } else if (data.error === "EMAIL_NOT_VERIFIED") {
+          setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+        } else if (data.error === "OAUTH_ONLY_ACCOUNT") {
+          setError("This account was created with Google. Please use 'Continue with Google' to sign in.");
         } else if (res.status === 429) {
           setError(data.error ?? "Too many login attempts. Please try again later.");
         } else {
@@ -386,6 +405,52 @@ export default function LoginClient() {
               }
             </button>
           </form>
+
+          {/* OR divider */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"14px 0 12px" }}>
+            <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
+            <span style={{ fontSize:9.5, fontWeight:600, color:"rgba(7,17,31,.30)", letterSpacing:".12em", textTransform:"uppercase" }}>or</span>
+            <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
+          </div>
+
+          {/* Continue with Google */}
+          <button
+            type="button"
+            disabled={loading || googleLoading}
+            onClick={() => {
+              setGoogleLoading(true);
+              window.location.href = `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
+            }}
+            style={{
+              width:"100%", padding:"11px 16px", boxSizing:"border-box",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+              background:"#fff", border:"1.5px solid rgba(7,17,31,.14)", borderRadius:10,
+              cursor: loading || googleLoading ? "not-allowed" : "pointer",
+              opacity: loading || googleLoading ? 0.5 : 1,
+              fontSize:13, fontWeight:600, color:"#3c4043",
+              boxShadow:"0 1px 6px rgba(7,17,31,.07)",
+              transition:"box-shadow .15s, border-color .15s",
+              fontFamily:"inherit",
+            }}
+            aria-label="Continue with Google"
+          >
+            {/* Official Google G icon */}
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            {googleLoading ? "Redirecting…" : "Continue with Google"}
+          </button>
+
+          {/* Sign up link */}
+          <p style={{ textAlign:"center", margin:"16px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
+            Don&apos;t have an account?{" "}
+            <a href="/auth/signup" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
+              Sign Up
+            </a>
+          </p>
 
         </div>
 

@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
 
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
+    // OAuth-only account: passwordHash is null. Run dummy bcrypt to preserve timing.
+    if (user && !user.passwordHash) {
+      await bcrypt.compare(password, DUMMY_HASH);
+      return NextResponse.json({ error: "OAUTH_ONLY_ACCOUNT" }, { status: 401 });
+    }
+
     // Always run bcrypt to prevent timing attacks revealing whether the email exists.
     const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
     const passwordValid = await bcrypt.compare(password, hashToCompare);
@@ -51,6 +57,10 @@ export async function POST(req: NextRequest) {
 
     if (!user.isActive) {
       return NextResponse.json({ error: "ACCOUNT_INACTIVE" }, { status: 403 });
+    }
+
+    if (!user.emailVerified) {
+      return NextResponse.json({ error: "EMAIL_NOT_VERIFIED" }, { status: 403 });
     }
 
     const durationDays = rememberMe ? 30 : 7;
