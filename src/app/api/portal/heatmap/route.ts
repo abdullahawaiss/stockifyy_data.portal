@@ -18,6 +18,92 @@ function setCached(key: string, data: unknown) {
   _cache.set(key, { data, ts: Date.now() });
 }
 
+// Fallback demo data (mirrors stocks.ts compact format)
+const DEMO: Array<{
+  sym: string; name: string; sector: string;
+  price: number; chg: number; vol: number; cap: number;
+  shariah: boolean; kse100: boolean; kse30: boolean; kmi30: boolean; kmiAll: boolean;
+}> = [
+  // helper: [sym, name, sector, price, chg, vol, cap, shariah, kse100, kse30, kmi30, kmiAll]
+  // ── Oil Exploration ────────────────────────────────────────────────────────
+  { sym:"OGDC",  name:"Oil & Gas Dev. Co.",         sector:"Oil Exploration",    price:181.50, chg:-0.66, vol:4200,  cap:762000, shariah:true,  kse100:true,  kse30:false, kmi30:false, kmiAll:true  },
+  { sym:"PPL",   name:"Pakistan Petroleum Ltd",     sector:"Oil & Gas Expl.",    price:89.30,  chg:-0.78, vol:3100,  cap:277000, shariah:true,  kse100:true,  kse30:true,  kmi30:true,  kmiAll:true  },
+  { sym:"MARI",  name:"Mari Petroleum Co.",         sector:"Oil & Gas Expl.",    price:2210.0, chg:0.68,  vol:280,   cap:619000, shariah:true,  kse100:true,  kse30:true,  kmi30:true,  kmiAll:true  },
+  { sym:"POL",   name:"Pakistan Oilfields Ltd",     sector:"Oil & Gas Expl.",    price:510.0,  chg:0.49,  vol:310,   cap:158000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"PSO",   name:"Pakistan State Oil",         sector:"Oil & Gas Mktg.",    price:478.0,  chg:0.95,  vol:1800,  cap:860000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"SNGP",  name:"Sui Northern Gas",           sector:"Oil & Gas Mktg.",    price:28.10,  chg:1.44,  vol:5600,  cap:157000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"SSGC",  name:"Sui Southern Gas",           sector:"Oil & Gas Mktg.",    price:19.20,  chg:1.59,  vol:8300,  cap:159000, shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"APL",   name:"Attock Petroleum Ltd",       sector:"Oil & Gas Mktg.",    price:718.0,  chg:0.73,  vol:220,   cap:158000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"ATRL",  name:"Attock Refinery Ltd",        sector:"Refinery",           price:348.0,  chg:0.72,  vol:290,   cap:101000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"NRL",   name:"National Refinery Ltd",      sector:"Refinery",           price:612.0,  chg:0.66,  vol:120,   cap:73000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"HBL",   name:"Habib Bank Ltd",             sector:"Commercial Banks",   price:178.50, chg:1.02,  vol:5800,  cap:1035000,shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"UBL",   name:"United Bank Ltd",            sector:"Commercial Banks",   price:232.40, chg:0.91,  vol:2900,  cap:674000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"MCB",   name:"MCB Bank Ltd",               sector:"Commercial Banks",   price:219.80, chg:-0.68, vol:2400,  cap:527000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"NBP",   name:"National Bank of Pakistan",  sector:"Commercial Banks",   price:43.20,  chg:0.70,  vol:9200,  cap:397000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"MEBL",  name:"Meezan Bank Ltd",            sector:"Commercial Banks",   price:218.50, chg:0.83,  vol:3200,  cap:699000, shariah:true,  kse100:true,  kse30:true,  kmi30:true,  kmiAll:true  },
+  { sym:"BAFL",  name:"Bank Alfalah Ltd",           sector:"Commercial Banks",   price:54.60,  chg:0.74,  vol:7100,  cap:388000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ABL",   name:"Allied Bank Ltd",            sector:"Commercial Banks",   price:136.70, chg:0.66,  vol:1800,  cap:246000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"BAHL",  name:"Bank Al Habib Ltd",          sector:"Commercial Banks",   price:91.50,  chg:-0.44, vol:2100,  cap:192000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"AKBL",  name:"Askari Bank Ltd",            sector:"Commercial Banks",   price:28.40,  chg:0.71,  vol:4900,  cap:139000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"FAYSAL",name:"Faysal Bank Ltd",            sector:"Commercial Banks",   price:39.50,  chg:0.89,  vol:4700,  cap:186000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"LUCK",  name:"Lucky Cement Ltd",           sector:"Cement",             price:1125.0, chg:0.76,  vol:520,   cap:585000, shariah:true,  kse100:true,  kse30:true,  kmi30:true,  kmiAll:true  },
+  { sym:"DGKC",  name:"D.G. Khan Cement Co.",       sector:"Cement",             price:97.80,  chg:-0.81, vol:1900,  cap:185000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"MLCF",  name:"Maple Leaf Cement",          sector:"Cement",             price:40.80,  chg:-0.97, vol:4800,  cap:196000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"FCCL",  name:"Fauji Cement Co. Ltd",       sector:"Cement",             price:22.10,  chg:0.91,  vol:7300,  cap:161000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"BWCL",  name:"Bestway Cement Ltd",         sector:"Cement",             price:312.0,  chg:0.81,  vol:380,   cap:119000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"KOHC",  name:"Kohat Cement Co. Ltd",       sector:"Cement",             price:176.0,  chg:0.86,  vol:610,   cap:107000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"ACPL",  name:"Attock Cement Pakistan",     sector:"Cement",             price:248.0,  chg:0.81,  vol:480,   cap:119000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"CHCC",  name:"Cherat Cement Co.",          sector:"Cement",             price:131.50, chg:-0.75, vol:890,   cap:117000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"PIOC",  name:"Pioneer Cement Ltd",         sector:"Cement",             price:111.20, chg:0.63,  vol:730,   cap:81000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"ENGRO", name:"Engro Corporation Ltd",      sector:"Fertilizer",         price:312.50, chg:1.13,  vol:2100,  cap:656000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"EFERT", name:"Engro Fertilizers Ltd",      sector:"Fertilizer",         price:87.60,  chg:0.69,  vol:3800,  cap:333000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"FFC",   name:"Fauji Fertilizer Co.",       sector:"Fertilizer",         price:139.30, chg:-0.64, vol:2700,  cap:376000, shariah:true,  kse100:true,  kse30:true,  kmi30:true,  kmiAll:true  },
+  { sym:"FFBL",  name:"Fauji Fertilizer Bin Qasim", sector:"Fertilizer",         price:25.10,  chg:0.80,  vol:4100,  cap:103000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"FATIMA",name:"Fatima Fertilizer Co.",      sector:"Fertilizer",         price:34.80,  chg:-0.57, vol:3400,  cap:118000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"HUBC",  name:"Hub Power Co. Ltd",          sector:"Power Gen. & Dist.",  price:107.80, chg:0.75,  vol:4900,  cap:528000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"KAPCO", name:"Kot Addu Power Co.",         sector:"Power Gen. & Dist.",  price:29.50,  chg:0.51,  vol:5200,  cap:153000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"NCPL",  name:"Nishat Chunian Power",       sector:"Power Gen. & Dist.",  price:16.20,  chg:0.62,  vol:4300,  cap:70000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"PSMC",  name:"Pak Suzuki Motor Co.",       sector:"Automobile Assembler",price:830.0,  chg:1.47,  vol:310,   cap:257000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"INDU",  name:"Indus Motor Co. Ltd",        sector:"Automobile Assembler",price:1702.0, chg:1.07,  vol:180,   cap:306000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"HCAR",  name:"Honda Atlas Cars",           sector:"Automobile Assembler",price:482.0,  chg:1.05,  vol:220,   cap:106000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"MTL",   name:"Millat Tractors Ltd",        sector:"Automobile Assembler",price:1198.0, chg:0.84,  vol:82,    cap:98000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"TRG",   name:"TRG Pakistan Ltd",           sector:"Technology & Comm.",  price:101.50, chg:1.50,  vol:7200,  cap:731000, shariah:false, kse100:true,  kse30:true,  kmi30:false, kmiAll:false },
+  { sym:"SYS",   name:"Systems Limited",            sector:"Technology & Comm.",  price:724.0,  chg:1.26,  vol:480,   cap:347000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"PTC",   name:"Pakistan Telecom Co.",       sector:"Technology & Comm.",  price:18.80,  chg:-1.05, vol:12000, cap:226000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"AVN",   name:"Avanceon Ltd",               sector:"Technology & Comm.",  price:42.30,  chg:1.20,  vol:2100,  cap:89000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"NETSOL",name:"NetSol Technologies",        sector:"Technology & Comm.",  price:160.0,  chg:1.27,  vol:540,   cap:86000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"SEARL", name:"The Searle Co. Ltd",         sector:"Pharmaceuticals",     price:228.0,  chg:0.88,  vol:310,   cap:71000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"ABOT",  name:"Abbott Laboratories",        sector:"Pharmaceuticals",     price:1002.0, chg:0.80,  vol:41,    cap:41000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"GLAXO", name:"GlaxoSmithKline Pakistan",   sector:"Pharmaceuticals",     price:248.0,  chg:0.81,  vol:78,    cap:19000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"FEROZ", name:"Ferozsons Laboratories",     sector:"Pharmaceuticals",     price:412.0,  chg:0.86,  vol:82,    cap:34000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"AGP",   name:"AGP Limited",                sector:"Pharmaceuticals",     price:312.0,  chg:0.81,  vol:48,    cap:15000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"NATF",  name:"National Foods Ltd",         sector:"Food & Personal Care",price:89.20,  chg:0.79,  vol:840,   cap:75000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"NESTLE",name:"Nestlé Pakistan Ltd",        sector:"Food & Personal Care",price:7010.0, chg:0.79,  vol:12,    cap:84000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"UNITY", name:"Unity Foods Ltd",            sector:"Sugar & Allied",      price:18.30,  chg:1.10,  vol:5600,  cap:102000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"JDW",   name:"JDW Sugar Mills Ltd",        sector:"Sugar & Allied",      price:298.0,  chg:0.84,  vol:248,   cap:74000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"NCL",   name:"Nishat Chunian Ltd",         sector:"Textile Composite",   price:21.80,  chg:-0.91, vol:3100,  cap:68000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"NML",   name:"Nishat Mills Ltd",           sector:"Textile Composite",   price:138.0,  chg:0.73,  vol:680,   cap:94000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"ILP",   name:"Interloop Ltd",              sector:"Textile Composite",   price:68.0,   chg:0.89,  vol:2100,  cap:143000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"THALL", name:"Thal Ltd",                   sector:"Textile Composite",   price:2048.0, chg:0.89,  vol:28,    cap:57000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"MUGHAL",name:"Mughal Iron & Steel",        sector:"Engineering",         price:78.50,  chg:0.90,  vol:1600,  cap:126000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ISL",   name:"International Steels Ltd",   sector:"Engineering",         price:148.0,  chg:0.82,  vol:890,   cap:132000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ASTL",  name:"Amreli Steels Ltd",          sector:"Engineering",         price:48.0,   chg:0.84,  vol:2100,  cap:101000, shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ICI",   name:"ICI Pakistan Ltd",           sector:"Chemicals",           price:832.0,  chg:0.73,  vol:98,    cap:82000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"EPCL",  name:"Engro Polymer & Chemicals",  sector:"Chemicals",           price:38.20,  chg:0.79,  vol:3100,  cap:118000, shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"LOTCHEM",name:"LOTTEChemical Pakistan",    sector:"Chemicals",           price:29.80,  chg:-1.00, vol:2900,  cap:86000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ADAMJEE",name:"Adamjee Insurance Co.",     sector:"Insurance",           price:68.0,   chg:0.74,  vol:820,   cap:56000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"EFU",   name:"EFU General Insurance",      sector:"Insurance",           price:148.0,  chg:0.82,  vol:320,   cap:47000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"JUBILEE",name:"Jubilee Life Insurance",    sector:"Insurance",           price:428.0,  chg:0.82,  vol:92,    cap:39000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"IGI",   name:"IGI Holdings Ltd",           sector:"Insurance",           price:592.0,  chg:0.77,  vol:68,    cap:40000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"PNSC",  name:"Pakistan National Shipping", sector:"Transport",           price:112.0,  chg:0.90,  vol:340,   cap:38000,  shariah:true,  kse100:true,  kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"PSEL",  name:"Pakistan Services Ltd",      sector:"Hotels & Personal",   price:3210.0, chg:0.79,  vol:12,    cap:39000,  shariah:false, kse100:false, kse30:false, kmi30:false, kmiAll:false },
+  { sym:"DAWH",  name:"Dawood Hercules Corp.",      sector:"Fertilizer",          price:148.0,  chg:0.82,  vol:1100,  cap:163000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"PKGS",  name:"Packages Ltd",               sector:"Paper & Board",       price:428.0,  chg:0.82,  vol:190,   cap:81000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"ATLH",  name:"Atlas Honda Ltd",            sector:"Automobile Parts",    price:618.0,  chg:1.14,  vol:160,   cap:99000,  shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"PAEL",  name:"Pak Elektron Ltd",           sector:"Cable & Elec. Goods", price:48.20,  chg:0.84,  vol:3400,  cap:164000, shariah:false, kse100:true,  kse30:false, kmi30:false, kmiAll:false },
+  { sym:"AREIT", name:"Arif Habib REIT",            sector:"REIT",                price:58.0,   chg:0.83,  vol:1200,  cap:70000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+  { sym:"DOLMEN",name:"Dolmen City REIT",           sector:"REIT",                price:22.80,  chg:0.84,  vol:3400,  cap:78000,  shariah:true,  kse100:false, kse30:false, kmi30:true,  kmiAll:true  },
+];
 
 export async function GET() {
   const cacheKey = "heatmap";
@@ -126,13 +212,14 @@ export async function GET() {
         setCached(cacheKey, payload);
         return NextResponse.json(payload);
       }
-    } catch { /* fall through */ }
+    } catch { /* fall through to demo */ }
 
-    // No real data available — return empty, never fabricated demo data
-    return NextResponse.json({
-      stocks: [],
+    const payload = {
+      stocks: DEMO,
       date: new Date().toISOString().slice(0, 10),
-      source: "unavailable",
-    });
+      source: "demo",
+    };
+    setCached(cacheKey, payload);
+    return NextResponse.json(payload);
   }
 }
