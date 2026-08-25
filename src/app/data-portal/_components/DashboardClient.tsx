@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fmtNum, fmtVol, getMarketStatus } from "../_data";
 import KseDetailPanel from "./KseDetailPanel";
 import SectorPanel from "./SectorPanel";
@@ -134,6 +134,8 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
     return () => clearInterval(id);
   }, []);
 
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const refresh = useCallback(() => {
     fetch("/api/portal/market-summary")
       .then(r => r.ok ? r.json() : null)
@@ -142,16 +144,17 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
   }, []);
 
   useEffect(() => {
-    // If SSR gave us real data (not placeholder), wait 60s before first client refresh.
-    // If SSR gave placeholder data, refresh immediately so live data appears quickly.
-    const isPlaceholder = !initialData || initialData.source === undefined;
-    const delay = isPlaceholder ? 0 : 60_000;
+    // null initialData → no real data from SSR → fetch immediately.
+    // real data from SSR → wait 60s before first background refresh.
+    const delay = initialData ? 60_000 : 0;
     const firstId = setTimeout(() => {
       refresh();
-      const id = setInterval(refresh, 60_000);
-      return () => clearInterval(id);
+      intervalRef.current = setInterval(refresh, 60_000);
     }, delay);
-    return () => clearTimeout(firstId);
+    return () => {
+      clearTimeout(firstId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
