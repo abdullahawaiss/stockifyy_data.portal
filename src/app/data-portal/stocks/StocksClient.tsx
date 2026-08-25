@@ -29,50 +29,6 @@ type SortDir = "asc"|"desc";
 type Board = "MAIN BOARD"|"GEM BOARD"|"DEBT";
 type MarketType = "REGULAR MARKET"|"DELIVERABLE FUTURES CONTRACT"|"CASH SETTLED FUTURES CONTRACT";
 
-// ── GEM BOARD demo data ───────────────────────────────────────────────
-const GEM_BOARD_ROWS: StockRow[] = [
-  { symbol:"OCTOPUS", companyName:"Octopus Digital Ltd.",     sectorName:"Technology",         sectorId:10, close:"38.20",  previousClose:"36.80",  open:"37.00",  high:"38.50",  low:"36.70",  priceChange:"1.40",  percentageChange:"3.80",  volume:"2100000", marketValue:"80220000",  numberOfTrades:820,  weekHigh52:"52.00",  weekLow52:"22.00",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"COLG",    companyName:"Colgate-Palmolive (Pak)",  sectorName:"Personal Care",      sectorId:11, close:"2840.00",previousClose:"2790.00", open:"2800.00",high:"2855.00",low:"2795.00",priceChange:"50.00", percentageChange:"1.79",  volume:"48000",   marketValue:"136320000", numberOfTrades:310,  weekHigh52:"3200.00",weekLow52:"2100.00",isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-  { symbol:"PMCL",    companyName:"Pakistan Mobile Comm.",    sectorName:"Telecom",            sectorId:12, close:"14.90",  previousClose:"14.60",  open:"14.65",  high:"15.05",  low:"14.55",  priceChange:"0.30",  percentageChange:"2.05",  volume:"5800000", marketValue:"86420000",  numberOfTrades:1240, weekHigh52:"22.00",  weekLow52:"10.50",  isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-  { symbol:"GLOT",    companyName:"Globe Textile Mills",      sectorName:"Textile Composite",  sectorId:13, close:"12.40",  previousClose:"12.80",  open:"12.75",  high:"12.80",  low:"12.30",  priceChange:"-0.40", percentageChange:"-3.13", volume:"980000",  marketValue:"12152000",  numberOfTrades:420,  weekHigh52:"19.50",  weekLow52:"9.80",   isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"AICL",    companyName:"Adamjee Insurance Co.",    sectorName:"Insurance",          sectorId:14, close:"55.30",  previousClose:"54.20",  open:"54.40",  high:"55.80",  low:"54.10",  priceChange:"1.10",  percentageChange:"2.03",  volume:"620000",  marketValue:"34286000",  numberOfTrades:280,  weekHigh52:"72.00",  weekLow52:"38.00",  isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-  { symbol:"SRVI",    companyName:"Service Industries Ltd.",  sectorName:"Leather & Tanneries",sectorId:15, close:"720.00", previousClose:"705.00",  open:"708.00", high:"725.00", low:"704.00", priceChange:"15.00", percentageChange:"2.13",  volume:"32000",   marketValue:"23040000",  numberOfTrades:180,  weekHigh52:"920.00", weekLow52:"580.00", isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"TPLI",    companyName:"Third Pole Ltd.",          sectorName:"Technology",         sectorId:10, close:"9.85",   previousClose:"10.20",  open:"10.10",  high:"10.25",  low:"9.78",   priceChange:"-0.35", percentageChange:"-3.43", volume:"3200000", marketValue:"31520000",  numberOfTrades:640,  weekHigh52:"18.00",  weekLow52:"6.50",   isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"MFFL",    companyName:"Maple Leaf Foods Ltd.",    sectorName:"Food & Personal Care",sectorId:16,close:"24.60",  previousClose:"24.10",  open:"24.20",  high:"24.75",  low:"24.00",  priceChange:"0.50",  percentageChange:"2.07",  volume:"1400000", marketValue:"34440000",  numberOfTrades:510,  weekHigh52:"35.00",  weekLow52:"16.00",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-];
-
-// ── DEBT BOARD demo data ──────────────────────────────────────────────
-const DEBT_BOARD_ROWS: StockRow[] = [
-  { symbol:"PKGSUKUK", companyName:"Packages Ltd. Sukuk",        sectorName:"Corporate Sukuk",   sectorId:50, close:"100.25",previousClose:"100.10",open:"100.10",high:"100.35",low:"100.05",priceChange:"0.15", percentageChange:"0.15",  volume:"50000",  marketValue:"5012500",  numberOfTrades:28,  weekHigh52:"101.50",weekLow52:"98.50",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"HBLTFC1",  companyName:"HBL TFC — I",                sectorName:"Bank TFC",          sectorId:51, close:"99.80", previousClose:"100.00",open:"100.00",high:"100.00",low:"99.75", priceChange:"-0.20",percentageChange:"-0.20", volume:"120000", marketValue:"11976000", numberOfTrades:42,  weekHigh52:"100.80",weekLow52:"97.00",  isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-  { symbol:"MEEZAN3",  companyName:"Meezan Bank Sukuk — III",    sectorName:"Bank Sukuk",        sectorId:52, close:"100.60",previousClose:"100.40",open:"100.42",high:"100.65",low:"100.38",priceChange:"0.20", percentageChange:"0.20",  volume:"80000",  marketValue:"8048000",  numberOfTrades:31,  weekHigh52:"101.20",weekLow52:"99.00",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"LUCKYTFC", companyName:"Lucky Cement TFC",           sectorName:"Corporate TFC",     sectorId:53, close:"100.10",previousClose:"100.05",open:"100.05",high:"100.20",low:"100.00",priceChange:"0.05", percentageChange:"0.05",  volume:"40000",  marketValue:"4004000",  numberOfTrades:18,  weekHigh52:"100.90",weekLow52:"98.20",  isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-  { symbol:"ENGROSKK", companyName:"Engro Corp. Sukuk",          sectorName:"Corporate Sukuk",   sectorId:50, close:"100.45",previousClose:"100.30",open:"100.32",high:"100.55",low:"100.28",priceChange:"0.15", percentageChange:"0.15",  volume:"60000",  marketValue:"6027000",  numberOfTrades:24,  weekHigh52:"101.00",weekLow52:"99.50",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"WAPDA1",   companyName:"WAPDA SUKUK — I",            sectorName:"Govt. Sukuk",       sectorId:54, close:"101.20",previousClose:"101.00",open:"101.00",high:"101.35",low:"100.95",priceChange:"0.20", percentageChange:"0.20",  volume:"200000", marketValue:"20240000", numberOfTrades:65,  weekHigh52:"102.50",weekLow52:"99.80",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:[] },
-  { symbol:"KAZTFC2",  companyName:"K-Electric TFC — II",        sectorName:"Corporate TFC",     sectorId:53, close:"99.50", previousClose:"99.70",  open:"99.70",  high:"99.75",  low:"99.40",  priceChange:"-0.20",percentageChange:"-0.20",volume:"75000",  marketValue:"7462500",  numberOfTrades:33,  weekHigh52:"100.50",weekLow52:"96.00",  isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:[] },
-];
-
-// Demo data for futures markets
-const DELIVERABLE_FUTURES: StockRow[] = [
-  { symbol:"OGDC",   companyName:"Oil & Gas Dev. Co.",    sectorName:"Oil & Gas Exploration", sectorId:1, close:"142.50", previousClose:"138.00", open:"139.00", high:"143.80", low:"138.50", priceChange:"4.50",  percentageChange:"3.26",  volume:"8500000",  marketValue:"1211250000", numberOfTrades:3200, weekHigh52:"165.00", weekLow52:"108.00", isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100"] },
-  { symbol:"PSO",    companyName:"Pakistan State Oil",    sectorName:"Oil & Gas Marketing",   sectorId:2, close:"320.00", previousClose:"312.00", open:"313.00", high:"322.50", low:"311.00", priceChange:"8.00",  percentageChange:"2.56",  volume:"6200000",  marketValue:"1984000000", numberOfTrades:2800, weekHigh52:"380.00", weekLow52:"240.00", isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:["KSE100"] },
-  { symbol:"LUCK",   companyName:"Lucky Cement Ltd.",     sectorName:"Cement",                sectorId:3, close:"896.00", previousClose:"880.00", open:"882.00", high:"900.00", low:"879.00", priceChange:"16.00", percentageChange:"1.82",  volume:"1800000",  marketValue:"1612800000", numberOfTrades:1950, weekHigh52:"1050.00",weekLow52:"720.00", isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100","KSE30"] },
-  { symbol:"ENGRO",  companyName:"Engro Corporation",     sectorName:"Fertilizer",            sectorId:4, close:"285.00", previousClose:"280.00", open:"281.00", high:"287.00", low:"279.50", priceChange:"5.00",  percentageChange:"1.79",  volume:"4100000",  marketValue:"1168500000", numberOfTrades:2100, weekHigh52:"340.00", weekLow52:"210.00", isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100","KSE30"] },
-  { symbol:"HBL",    companyName:"Habib Bank Ltd.",       sectorName:"Commercial Banks",      sectorId:5, close:"175.00", previousClose:"172.00", open:"172.50", high:"176.50", low:"171.00", priceChange:"3.00",  percentageChange:"1.74",  volume:"9800000",  marketValue:"1715000000", numberOfTrades:4200, weekHigh52:"220.00", weekLow52:"140.00", isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:["KSE100","KSE30"] },
-  { symbol:"MCB",    companyName:"MCB Bank Ltd.",         sectorName:"Commercial Banks",      sectorId:5, close:"225.00", previousClose:"221.00", open:"221.50", high:"226.00", low:"220.00", priceChange:"4.00",  percentageChange:"1.81",  volume:"5600000",  marketValue:"1260000000", numberOfTrades:2600, weekHigh52:"270.00", weekLow52:"175.00", isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:["KSE100","KSE30"] },
-  { symbol:"UBL",    companyName:"United Bank Ltd.",      sectorName:"Commercial Banks",      sectorId:5, close:"195.00", previousClose:"192.00", open:"192.50", high:"196.50", low:"191.00", priceChange:"3.00",  percentageChange:"1.56",  volume:"7200000",  marketValue:"1404000000", numberOfTrades:3100, weekHigh52:"240.00", weekLow52:"155.00", isDemo:true, tradingDate:"", shariahStatus:null,        indexCodes:["KSE100"] },
-  { symbol:"MARI",   companyName:"Mari Petroleum Co.",    sectorName:"Oil & Gas Exploration", sectorId:1, close:"2150.00",previousClose:"2100.00",open:"2105.00",high:"2165.00",low:"2098.00",priceChange:"50.00", percentageChange:"2.38",  volume:"420000",   marketValue:"903000000",  numberOfTrades:980,  weekHigh52:"2600.00",weekLow52:"1700.00",isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100"] },
-  { symbol:"EFERT",  companyName:"Engro Fertilizers",     sectorName:"Fertilizer",            sectorId:4, close:"110.00", previousClose:"107.50", open:"108.00", high:"111.00", low:"107.00", priceChange:"2.50",  percentageChange:"2.33",  volume:"11200000", marketValue:"1232000000", numberOfTrades:3800, weekHigh52:"135.00", weekLow52:"85.00",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100"] },
-  { symbol:"FCCL",   companyName:"Fauji Cement Co.",      sectorName:"Cement",                sectorId:3, close:"28.50",  previousClose:"27.80",  open:"27.90",  high:"28.80",  low:"27.70",  priceChange:"0.70",  percentageChange:"2.52",  volume:"18500000", marketValue:"527250000",  numberOfTrades:4200, weekHigh52:"38.00",  weekLow52:"20.00",  isDemo:true, tradingDate:"", shariahStatus:"compliant", indexCodes:["KSE100"] },
-];
-
-const CASH_SETTLED_FUTURES: StockRow[] = [
-  { symbol:"KSE100-FUT", companyName:"KSE-100 Index Future",   sectorName:"Index Futures", sectorId:99, close:"180200.00",previousClose:"179500.00",open:"179600.00",high:"180500.00",low:"179400.00",priceChange:"700.00",  percentageChange:"0.39",  volume:"1250",     marketValue:"225250000",  numberOfTrades:420,  weekHigh52:"195000.00",weekLow52:"145000.00",isDemo:true, tradingDate:"", shariahStatus:null, indexCodes:[] },
-  { symbol:"KMI30-FUT",  companyName:"KMI-30 Index Future",    sectorName:"Index Futures", sectorId:99, close:"253500.00",previousClose:"252800.00",open:"252900.00",high:"253900.00",low:"252700.00",priceChange:"700.00",  percentageChange:"0.28",  volume:"680",      marketValue:"172380000",  numberOfTrades:210,  weekHigh52:"275000.00",weekLow52:"200000.00",isDemo:true, tradingDate:"", shariahStatus:null, indexCodes:[] },
-  { symbol:"OGDC-FUT",   companyName:"OGDC Cash Settled Future",sectorName:"Oil Futures",  sectorId:98, close:"144.00",  previousClose:"140.50",  open:"141.00",  high:"144.50",  low:"140.00",  priceChange:"3.50",   percentageChange:"2.49",  volume:"3200000",  marketValue:"460800000",  numberOfTrades:1200, weekHigh52:"168.00", weekLow52:"110.00", isDemo:true, tradingDate:"", shariahStatus:null, indexCodes:[] },
-  { symbol:"HBL-FUT",    companyName:"HBL Cash Settled Future", sectorName:"Bank Futures",  sectorId:97, close:"177.00",  previousClose:"173.00",  open:"173.50",  high:"177.50",  low:"172.50",  priceChange:"4.00",   percentageChange:"2.31",  volume:"4800000",  marketValue:"849600000",  numberOfTrades:1800, weekHigh52:"225.00", weekLow52:"142.00", isDemo:true, tradingDate:"", shariahStatus:null, indexCodes:[] },
-  { symbol:"ENGRO-FUT",  companyName:"Engro Cash Settled Future",sectorName:"Chem Futures", sectorId:96, close:"288.00",  previousClose:"282.00",  open:"282.50",  high:"289.00",  low:"281.00",  priceChange:"6.00",   percentageChange:"2.13",  volume:"2100000",  marketValue:"604800000",  numberOfTrades:980,  weekHigh52:"348.00", weekLow52:"215.00", isDemo:true, tradingDate:"", shariahStatus:null, indexCodes:[] },
-];
 
 const INDEX_OPTIONS = [
   { code: "",         label: "All Indices" },
@@ -155,16 +111,20 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   );
 }
 
+type IndexRow = { indexCode?: string; indexName?: string; close?: string; change?: string; percentageChange?: string; high?: string; low?: string; previousClose?: string };
+
 // ── In-memory cache so revisiting the page is instant ────────────────
 let _cachedRows:    StockRow[]      = [];
 let _cachedSectors: SectorOption[]  = [];
 let _cachedDate:    string          = "";
+let _cachedIndices: IndexRow[]      = [];
 
 // ── Main component ────────────────────────────────────────────────────
 export default function StocksClient() {
   const t = useDarkTokens();
   const [allRows,  setAllRows]  = useState<StockRow[]>(_cachedRows);
   const [sectors,  setSectors]  = useState<SectorOption[]>(_cachedSectors);
+  const [indices,  setIndices]  = useState<IndexRow[]>(_cachedIndices);
   const [date,     setDate]     = useState(_cachedDate);
   const [loading,  setLoading]  = useState(_cachedRows.length === 0);
   const [error,    setError]    = useState("");
@@ -206,12 +166,15 @@ export default function StocksClient() {
       if (!Array.isArray(json.rows)) throw new Error("Unexpected response shape");
       const rows = json.rows;
       const secs = json.sectors ?? [];
+      const idxs = json.indices ?? [];
       const d    = json.date ?? dateRef.current;
       _cachedRows    = rows;
       _cachedSectors = secs;
+      _cachedIndices = idxs;
       _cachedDate    = d;
       setAllRows(rows);
       setSectors(secs);
+      setIndices(idxs);
       if (!dateRef.current && d) setDate(d);
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return; // navigated away — do nothing
@@ -333,39 +296,35 @@ export default function StocksClient() {
         </div>
       </div>
 
-      {/* ── Indices strip ── */}
-      <div className="indices-strip" style={{ marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"stretch", gap:0, background:t.bg, borderRadius:7, overflow:"hidden" }}>
-          {[
-            { label:"KSE-100", val:180034.85, chg:-1275.43, pct:-0.69, vol:"322.0M" },
-            { label:"KSE-30",  val:53634.04,  chg:-371.83,  pct:-0.69, vol:"185.4M" },
-            { label:"KSE ALL", val:108875.40, chg:-526.92,  pct:-0.46, vol:"412.0M" },
-            { label:"KMI-30",  val:253345.18, chg:-2380.01, pct:-0.94, vol:"97.2M"  },
-            { label:"KMI ALL", val:69720.49,  chg:-401.21,  pct:-0.56, vol:"75.2M"  },
-          ].map((ix, i) => {
-            const up  = ix.chg >= 0;
-            const col = up ? "#16A34A" : "#DC2626";
-            return (
-              <div key={i} style={{ flex:1, padding:"10px 14px", borderRight: i<4 ? `1px solid ${t.border}` : "none", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, textAlign:"center" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                  <span style={{ fontSize:10, fontWeight:700, color:"var(--navy)" }}>{ix.label}</span>
-                  <span style={{ fontSize:8, fontWeight:700, color:"#16A34A", background:"#dcfce7", borderRadius:3, padding:"1px 4px" }}>LIVE</span>
+      {/* ── Indices strip — real data from stocks API ── */}
+      {indices.length > 0 && (
+        <div className="indices-strip" style={{ marginBottom:14 }}>
+          <div style={{ display:"flex", alignItems:"stretch", gap:0, background:t.bg, borderRadius:7, overflow:"hidden" }}>
+            {indices.map((ix, i) => {
+              const close = parseFloat(ix.close ?? "0") || 0;
+              const chg   = parseFloat(ix.change ?? "0") || 0;
+              const pct   = parseFloat(ix.percentageChange ?? "0") || 0;
+              const up    = chg >= 0;
+              const col   = up ? "#16A34A" : "#DC2626";
+              const label = ix.indexCode ?? ix.indexName ?? "";
+              return (
+                <div key={i} style={{ flex:1, padding:"10px 14px", borderRight: i < indices.length-1 ? `1px solid ${t.border}` : "none", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, textAlign:"center" }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:"var(--navy)" }}>{label}</span>
+                  <div style={{ fontSize:12, fontWeight:800, color:t.text, fontVariantNumeric:"tabular-nums" }}>
+                    {close.toLocaleString("en-PK", { minimumFractionDigits:2 })}
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                    <span style={{ fontSize:9, fontWeight:700, color:col }}>
+                      {up?"▲":"▼"} {Math.abs(chg).toLocaleString("en-PK",{minimumFractionDigits:2})}
+                    </span>
+                    <span style={{ fontSize:9, fontWeight:600, color:col }}>({pct.toFixed(2)}%)</span>
+                  </div>
                 </div>
-                <div style={{ fontSize:12, fontWeight:800, color:t.text, fontVariantNumeric:"tabular-nums" }}>
-                  {ix.val.toLocaleString("en-PK", { minimumFractionDigits:2 })}
-                </div>
-                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                  <span style={{ fontSize:9, fontWeight:700, color:col }}>
-                    {up?"▲":"▼"} {Math.abs(ix.chg).toLocaleString("en-PK",{minimumFractionDigits:2})}
-                  </span>
-                  <span style={{ fontSize:9, fontWeight:600, color:col }}>({ix.pct.toFixed(2)}%)</span>
-                </div>
-                <div style={{ fontSize:8, color:t.textMuted }}>Vol: {ix.vol}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Filter by ── */}
       <style>{`
@@ -556,13 +515,25 @@ export default function StocksClient() {
 
       {/* ── Table ── */}
       <div style={{ background:t.bg, border:`1px solid ${t.border}`, borderRadius:6, overflow:"hidden", boxShadow:t.cardShadow }}>
-        {error && (
+        {isAlternativeBoard && (
+          <div style={{ padding:40, textAlign:"center", color:t.textMuted }}>
+            <div style={{ fontSize:32, marginBottom:8 }}>🚧</div>
+            <div style={{ fontSize:14, fontWeight:700, color:t.text, marginBottom:4 }}>
+              {marketType !== "REGULAR MARKET" ? marketType : board} — Coming Soon
+            </div>
+            <div style={{ fontSize:12 }}>
+              Live data for this market segment is not yet available. Switch to <strong>Main Board / Regular Market</strong> for real-time PSX data.
+            </div>
+          </div>
+        )}
+
+        {!isAlternativeBoard && error && (
           <div style={{ padding:24, textAlign:"center", color:"#DC2626" }}>
             ⚠ {error} <button onClick={() => fetchData()} style={{ marginLeft:8, padding:"3px 10px", border:"1px solid #d1d5db", borderRadius:4, cursor:"pointer", fontSize:12 }}>Retry</button>
           </div>
         )}
 
-        {!error && loading && (
+        {!isAlternativeBoard && !error && loading && (
           <div style={{ padding:20 }}>
             {Array.from({length:12}).map((_,i) => (
               <div key={i} style={{ display:"flex", gap:12, marginBottom:10, opacity: 1-(i*0.06) }}>
@@ -574,7 +545,7 @@ export default function StocksClient() {
           </div>
         )}
 
-        {!error && !loading && filtered.length === 0 && (
+        {!isAlternativeBoard && !error && !loading && filtered.length === 0 && (
           <div style={{ padding:60, textAlign:"center" }}>
             <div style={{ fontSize:32, marginBottom:8 }}>📊</div>
             <p style={{ fontWeight:600, color:t.text }}>No stocks found</p>
@@ -582,7 +553,7 @@ export default function StocksClient() {
           </div>
         )}
 
-        {!error && !loading && rows.length > 0 && (
+        {!isAlternativeBoard && !error && !loading && rows.length > 0 && (
           <div style={{ overflowX:"auto" }}>
             <table style={{ borderCollapse:"collapse", fontSize:12, minWidth:980, width:"100%" }}>
               <thead>
