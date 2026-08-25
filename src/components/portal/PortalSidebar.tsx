@@ -375,21 +375,22 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
 
         {/* ── Logo area ────────────────────── */}
         <div
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center shrink-0"
           style={{
             height: 54,
-            padding: collapsed ? "0 0 0 10px" : "0 8px 0 8px",
+            paddingLeft: 0,
+            paddingRight: 6,
             borderBottom: "1px solid rgba(212,175,55,0.1)",
             position: "relative", zIndex: 1,
           }}
         >
           {/* Logo — hidden when collapsed, click → dashboard */}
           {!collapsed && (
-            <Link href="/data-portal" className="portal-fade flex items-center shrink-0" style={{ animationDelay: "120ms", textDecoration: "none", marginLeft: 0 }}>
+            <Link href="/data-portal" className="portal-fade" style={{ animationDelay: "120ms", textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}>
               <img
                 src="/stockifyy-full-logo.png"
                 alt="Stockifyy — Go to Dashboard"
-                style={{ height: 40, width: "auto", maxWidth: 170, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }}
+                style={{ height: 40, width: "auto", maxWidth: 175, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }}
               />
             </Link>
           )}
