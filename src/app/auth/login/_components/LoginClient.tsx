@@ -277,23 +277,23 @@ export default function LoginClient() {
           width:"44%", minWidth:420, maxWidth:560,
           height:"100vh",
           display:"flex", flexDirection:"column",
-          justifyContent:"center", alignItems:"center",
+          justifyContent:"space-between", alignItems:"center",
           background:"#faf7f2",
-          padding:"40px 48px",
+          padding:"24px 48px 0 48px",
           position:"relative", zIndex:10, overflowY:"auto",
           boxShadow:"4px 0 40px rgba(7,17,31,0.10)",
           flexShrink:0,
         }}
       >
         {/* Top logo strip */}
-        <div className="f1" style={{ position:"absolute", top:22, left:32, display:"flex", alignItems:"center", gap:10 }}>
+        <div className="f1" style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:16 }}>
           <a href="/data-portal" style={{ textDecoration:"none", display:"flex", alignItems:"center" }}>
             <img src="/stockifyy-full-logo.png" alt="Stockifyy" className="lp" style={{ height:40, objectFit:"contain", maxWidth:180, cursor:"pointer" }} />
           </a>
         </div>
 
         {/* Card */}
-        <div className="card-in" style={{ width:"100%", maxWidth:380 }}>
+        <div className="card-in" style={{ width:"100%", maxWidth:380, flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
 
           {/* Live badge */}
           <div className="f2" style={{ display:"flex", justifyContent:"center", marginBottom:20 }}>
@@ -456,8 +456,8 @@ export default function LoginClient() {
 
         </div>
 
-        {/* Footer — absolute bottom, outside card so it doesn't affect vertical centering */}
-        <div style={{ position:"absolute", bottom:22, left:0, right:0, textAlign:"center", pointerEvents:"none" }}>
+        {/* Footer */}
+        <div style={{ textAlign:"center", paddingBottom:20, paddingTop:16, pointerEvents:"none" }}>
           <p className="sg" style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
             Stockifyy · Pakistan Stock Exchange Intelligence
           </p>
