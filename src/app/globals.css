@@ -113,11 +113,10 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 10px; transition: background 0.2s; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A4A6A; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3D6A8A; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3A6090; }
+::-webkit-scrollbar-thumb { background: #FEA500; border-radius: 10px; transition: background 0.2s; }
+::-webkit-scrollbar-thumb:hover { background: #D78B02; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #FEA500; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #D78B02; }
 
 /* Table responsive wrapper */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
