@@ -150,6 +150,7 @@ export default function MarketCommandCenter() {
   }, []);
 
   useEffect(() => {
+    // one-shot only — DashboardClient owns the 60s polling for market-summary
     function load() {
       fetch("/api/portal/market-summary")
         .then(r => r.json())
@@ -157,8 +158,6 @@ export default function MarketCommandCenter() {
         .catch(() => {});
     }
     load();
-    const id = setInterval(load, 60_000);
-    return () => clearInterval(id);
   }, []);
 
   const kse = summary?.indices?.find(i => i.code === "KSE-100" || i.code === "KSE100");

@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import CardFanAnimation from "./CardFanAnimation";
+import dynamic from "next/dynamic";
+
+const CardFanAnimation = dynamic(() => import("./CardFanAnimation"), { ssr: false });
 
 function safeReturnTo(raw: string | null): string {
   if (!raw) return "/data-portal";

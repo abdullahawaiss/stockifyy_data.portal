@@ -180,34 +180,35 @@ export default function StocksClient() {
   const [pageSize,    setPageSize]    = useState(25);
   const [page,        setPage]        = useState(1);
 
+  const dateRef = useRef(date);
+  useEffect(() => { dateRef.current = date; }, [date]);
+
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams();
-      if (date) params.set("date", date);
+      if (dateRef.current) params.set("date", dateRef.current);
       const res = await fetch(`/api/portal/stocks?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const rows = json.rows ?? [];
       const secs = json.sectors ?? [];
-      const d    = json.date ?? date;
-      // update cache
+      const d    = json.date ?? dateRef.current;
       _cachedRows    = rows;
       _cachedSectors = secs;
       _cachedDate    = d;
       setAllRows(rows);
       setSectors(secs);
-      if (!date && d) setDate(d);
+      if (!dateRef.current && d) setDate(d);
     } catch {
       if (!silent) setError("Unable to load market data.");
     } finally {
       setLoading(false);
     }
-  }, [date]);
+  }, []); // no date dep — uses dateRef to avoid double-fetch
 
   useEffect(() => {
-    // if we already have cached data, do a silent background refresh
     fetchData(_cachedRows.length > 0);
   }, [fetchData]);
 
@@ -281,17 +282,22 @@ export default function StocksClient() {
     vol: filtered.reduce((s,r) => s + parseFloat(r.volume ?? "0"), 0),
   }), [filtered]);
 
-  const TH = ({ col, label }: { col: string; label: string }) => (
-    <th onClick={() => handleSort(col)}
-      style={{
-        padding:"10px 12px", textAlign:"right", whiteSpace:"nowrap",
-        fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em",
-        color:t.textSec, background:t.tableTh, borderBottom:`2px solid ${t.border}`,
-        cursor:"pointer", userSelect:"none",
-      }}>
-      {label}<SortIcon active={sortBy===col} dir={sortDir}/>
-    </th>
-  );
+  const TH = useMemo(() => {
+    const THComp = ({ col, label }: { col: string; label: string }) => (
+      <th onClick={() => handleSort(col)}
+        style={{
+          padding:"10px 12px", textAlign:"right", whiteSpace:"nowrap",
+          fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em",
+          color:t.textSec, background:t.tableTh, borderBottom:`2px solid ${t.border}`,
+          cursor:"pointer", userSelect:"none",
+        }}>
+        {label}<SortIcon active={sortBy===col} dir={sortDir}/>
+      </th>
+    );
+    THComp.displayName = "TH";
+    return THComp;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, sortDir, t, handleSort]);
 
   return (
     <div style={{ padding:"16px 20px", fontFamily:"inherit" }}>
@@ -456,26 +462,22 @@ export default function StocksClient() {
 
           {/* Right: market breadth summary */}
           {(() => {
-            const advances  = filtered.filter(r => parseFloat(r.priceChange ?? "0") > 0).length;
-            const declines  = filtered.filter(r => parseFloat(r.priceChange ?? "0") < 0).length;
-            const unchanged = filtered.filter(r => parseFloat(r.priceChange ?? "0") === 0).length;
-            const total     = filtered.length;
-            const advPct    = total ? Math.round((advances / total) * 100) : 0;
+            const total  = filtered.length;
+            const advPct = total ? Math.round((vis.adv / total) * 100) : 0;
             return (
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: t.textMuted, marginBottom: 2 }}>Market Breadth</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {[
-                    { label: "Advances",  val: advances,  color: "#16a34a", bg: t.dark ? "rgba(22,163,74,0.12)" : "#f0fdf4" },
-                    { label: "Declines",  val: declines,  color: "#dc2626", bg: t.dark ? "rgba(220,38,38,0.12)" : "#fef2f2" },
-                    { label: "Unchanged", val: unchanged, color: t.textMuted, bg: t.dark ? "rgba(255,255,255,0.05)" : "#f8f8f8" },
+                    { label: "Advances",  val: vis.adv, color: "#16a34a", bg: t.dark ? "rgba(22,163,74,0.12)" : "#f0fdf4" },
+                    { label: "Declines",  val: vis.dec, color: "#dc2626", bg: t.dark ? "rgba(220,38,38,0.12)" : "#fef2f2" },
+                    { label: "Unchanged", val: vis.unc, color: t.textMuted, bg: t.dark ? "rgba(255,255,255,0.05)" : "#f8f8f8" },
                   ].map(item => (
                     <div key={item.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", background: item.bg, borderRadius: 6, padding: "5px 12px", minWidth: 60 }}>
                       <span style={{ fontSize: 14, fontWeight: 800, color: item.color, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{item.val}</span>
                       <span style={{ fontSize: 9, color: t.textMuted, marginTop: 2, fontWeight: 600 }}>{item.label}</span>
                     </div>
                   ))}
-                  {/* advance/decline bar */}
                   <div style={{ width: 90, display: "flex", flexDirection: "column", gap: 3 }}>
                     <div style={{ height: 6, borderRadius: 3, overflow: "hidden", background: t.dark ? "rgba(220,38,38,0.25)" : "#fecaca", display: "flex" }}>
                       <div style={{ width: `${advPct}%`, background: "#16a34a", borderRadius: 3, transition: "width 0.5s ease" }} />

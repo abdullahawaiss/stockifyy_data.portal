@@ -744,7 +744,7 @@ export async function GET(req: NextRequest) {
       .orderBy(asc(sectors.name));
 
     const dbTimeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("DB timeout")), 2000)
+      setTimeout(() => reject(new Error("DB timeout")), 5000)
     );
 
     const [rows, aggRows, indexRows, sectorList] = await Promise.race([
