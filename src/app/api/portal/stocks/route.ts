@@ -186,8 +186,8 @@ export async function GET(req: NextRequest) {
     ]);
     const agg = aggRows[0];
 
-    // ── If DB has fewer than 100 stocks, try PSX live (never fall back to demo) ──
-    if (rows.length < 100) {
+    // ── If DB has no stocks for this date, try PSX live; otherwise serve DB immediately ──
+    if (rows.length === 0) {
       const liveTimeout = new Promise<null>(r => setTimeout(() => r(null), 6_000));
       const live = await Promise.race([fetchPsxLive(date), liveTimeout]);
       if (live) {
