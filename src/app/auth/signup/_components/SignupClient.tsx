@@ -153,7 +153,7 @@ export default function SignupClient() {
 
         {/* Logo */}
         <div style={{ position:"absolute", top:22, left:32 }}>
-          <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height:34, objectFit:"contain" }} />
+          <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height:40, objectFit:"contain", maxWidth:180 }} />
         </div>
 
         <div className="su-card" style={{ width:"100%", maxWidth:380 }}>

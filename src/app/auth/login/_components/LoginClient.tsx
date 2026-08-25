@@ -287,7 +287,7 @@ export default function LoginClient() {
       >
         {/* Top logo strip */}
         <div className="f1" style={{ position:"absolute", top:22, left:32, display:"flex", alignItems:"center", gap:10 }}>
-          <img src="/stockifyy-full-logo.png" alt="Stockifyy" className="lp" style={{ height:34, objectFit:"contain" }} />
+          <img src="/stockifyy-full-logo.png" alt="Stockifyy" className="lp" style={{ height:40, objectFit:"contain", maxWidth:180 }} />
         </div>
 
         {/* Card */}

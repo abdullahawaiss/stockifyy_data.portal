@@ -291,7 +291,7 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
           }}
         >
           <div className="flex items-center gap-2.5 shrink-0" style={{ height: 54, padding: "0 14px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-            <img src="/stockifyy-full-logo.png" alt="Stockifyy" className="logo-gold" style={{ height: 38, width: "auto", maxWidth: 140, objectFit: "contain" }} />
+            <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", filter: "none" }} />
             <button onClick={() => setMobileOpen(false)} className="ml-auto" style={{ color: "rgba(255,255,255,0.4)" }}>✕</button>
           </div>
           <nav className="flex-1 overflow-y-auto py-2 px-1.5 flex flex-col gap-0" style={{ scrollbarWidth: "none" }}>
@@ -386,8 +386,8 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
             <img
               src="/stockifyy-full-logo.png"
               alt="Stockifyy"
-              className="logo-gold portal-fade"
-              style={{ height: 38, width: "auto", maxWidth: 148, objectFit: "contain", flexShrink: 0, animationDelay: "120ms" }}
+              className="portal-fade"
+              style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, animationDelay: "120ms", filter: "none" }}
             />
           )}
 
