@@ -390,7 +390,7 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
               <img
                 src="/stockifyy-full-logo.png"
                 alt="Stockifyy — Go to Dashboard"
-                style={{ height: 40, width: "auto", maxWidth: 175, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }}
+                style={{ height: 32, width: "auto", maxWidth: 145, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }}
               />
             </Link>
           )}
