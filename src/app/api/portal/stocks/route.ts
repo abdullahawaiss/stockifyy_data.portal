@@ -755,7 +755,8 @@ export async function GET(req: NextRequest) {
 
     // ── If DB has fewer than 100 stocks, use PSX live data (or demo fallback) ──
     if (rows.length < 100) {
-      const live = await fetchPsxLive(date);
+      const liveTimeout = new Promise<null>(r => setTimeout(() => r(null), 6_000));
+      const live = await Promise.race([fetchPsxLive(date), liveTimeout]);
       const src = live ?? buildDemoResponse(date);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let filtered: any[] = src.rows;
@@ -795,8 +796,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(payload);
 
   } catch (err) {
-    console.error("[stocks api] query failed, trying PSX live:", err);
-    const live = await fetchPsxLive(date);
+    console.error("[stocks api] query failed, trying PSX live:", err instanceof Error ? err.message : "unknown");
+    const liveTimeout = new Promise<null>(r => setTimeout(() => r(null), 6_000));
+    const live = await Promise.race([fetchPsxLive(date), liveTimeout]);
     const src = live ?? buildDemoResponse(date);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let filtered: any[] = src.rows;

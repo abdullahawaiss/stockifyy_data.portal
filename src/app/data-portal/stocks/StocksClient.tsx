@@ -183,16 +183,28 @@ export default function StocksClient() {
   const dateRef = useRef(date);
   useEffect(() => { dateRef.current = date; }, [date]);
 
+  // abortRef lets navigation away cancel an in-flight fetch immediately
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchData = useCallback(async (silent = false) => {
+    // cancel any prior in-flight request before starting a new one
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    // 14-second client-side hard deadline — guarantees finally always runs
+    const timer = setTimeout(() => ctrl.abort(), 14_000);
+
     if (!silent) setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams();
       if (dateRef.current) params.set("date", dateRef.current);
-      const res = await fetch(`/api/portal/stocks?${params}`);
+      const res = await fetch(`/api/portal/stocks?${params}`, { signal: ctrl.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      const rows = json.rows ?? [];
+      if (!Array.isArray(json.rows)) throw new Error("Unexpected response shape");
+      const rows = json.rows;
       const secs = json.sectors ?? [];
       const d    = json.date ?? dateRef.current;
       _cachedRows    = rows;
@@ -201,15 +213,19 @@ export default function StocksClient() {
       setAllRows(rows);
       setSectors(secs);
       if (!dateRef.current && d) setDate(d);
-    } catch {
-      if (!silent) setError("Unable to load market data.");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return; // navigated away — do nothing
+      if (!silent) setError("Unable to load market data. Please refresh.");
+      // keep previous valid rows visible on silent-refresh failure
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }, []); // no date dep — uses dateRef to avoid double-fetch
 
   useEffect(() => {
     fetchData(_cachedRows.length > 0);
+    return () => { abortRef.current?.abort(); }; // abort on unmount / navigation
   }, [fetchData]);
 
   function handleSort(col: string) {

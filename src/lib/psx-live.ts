@@ -31,13 +31,15 @@ export async function getPsxRows(): Promise<{ rows: any[]; sectors: any[] } | nu
         signal: abort.signal,
       }),
     ]);
-    clearTimeout(timer);
-
-    if (!symbolsRes.ok || !mktRes.ok) return null;
+    // keep timer alive through body reads — slow body streams can hang without this
+    if (!symbolsRes.ok || !mktRes.ok) { clearTimeout(timer); return null; }
 
     type PsxSym = { symbol: string; name: string; sectorName: string };
-    const symbolsJson: PsxSym[] = await symbolsRes.json();
-    const mktHtml: string = await mktRes.text();
+    const [symbolsJson, mktHtml] = await Promise.all([
+      symbolsRes.json() as Promise<PsxSym[]>,
+      mktRes.text(),
+    ]);
+    clearTimeout(timer); // safe to clear only after all body reads complete
     const symInfo = new Map(symbolsJson.map(s => [s.symbol, s]));
 
     const date = new Date().toISOString().slice(0, 10);
