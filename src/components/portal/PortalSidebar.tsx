@@ -291,7 +291,9 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
           }}
         >
           <div className="flex items-center gap-2.5 shrink-0" style={{ height: 54, padding: "0 14px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-            <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", filter: "none" }} />
+            <Link href="/data-portal" style={{ textDecoration: "none", flexShrink: 0 }} onClick={() => setMobileOpen(false)}>
+              <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }} />
+            </Link>
             <button onClick={() => setMobileOpen(false)} className="ml-auto" style={{ color: "rgba(255,255,255,0.4)" }}>✕</button>
           </div>
           <nav className="flex-1 overflow-y-auto py-2 px-1.5 flex flex-col gap-0" style={{ scrollbarWidth: "none" }}>
@@ -381,14 +383,15 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
             position: "relative", zIndex: 1,
           }}
         >
-          {/* Logo — hidden when collapsed */}
+          {/* Logo — hidden when collapsed, click → dashboard */}
           {!collapsed && (
-            <img
-              src="/stockifyy-full-logo.png"
-              alt="Stockifyy"
-              className="portal-fade"
-              style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, animationDelay: "120ms", filter: "none" }}
-            />
+            <Link href="/data-portal" className="portal-fade flex items-center shrink-0" style={{ animationDelay: "120ms", textDecoration: "none" }}>
+              <img
+                src="/stockifyy-full-logo.png"
+                alt="Stockifyy — Go to Dashboard"
+                style={{ height: 38, width: "auto", maxWidth: 160, objectFit: "contain", objectPosition: "left center", filter: "none", display: "block" }}
+              />
+            </Link>
           )}
 
           {/* Collapse toggle — visible only when expanded */}
