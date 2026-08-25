@@ -18,13 +18,16 @@ export const metadata: Metadata = {
 };
 
 export default async function DataPortalLayout({ children }: { children: React.ReactNode }) {
+  // Public layout — no redirect. Session is read only to pass identity to the sidebar
+  // (show logout button and admin links for authenticated users, nothing for guests).
+  // Admin pages enforce their own auth gate inside the admin layout/pages.
   const session = await getSession();
-  const isAdmin = session?.role === "admin" || session?.role === "super_admin" || session?.role === "data_manager";
+  const isAdmin = session?.role === "admin" || session?.role === "super_admin";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)", overflowX: "hidden" }}>
       {/* Sidebar — fixed left, all pages */}
-      <PortalSidebar isAdmin={isAdmin} />
+      <PortalSidebar isAdmin={isAdmin} userName={session?.fullName} userRole={session?.role} />
 
       {/* Right content area — offset by sidebar on desktop, full-width on mobile */}
       <div

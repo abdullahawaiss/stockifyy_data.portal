@@ -18,13 +18,24 @@ export type SessionUser = {
   role: string;
 };
 
-export async function createSession(userId: number): Promise<string> {
+export async function createSession(
+  userId: number,
+  durationDays = 7,
+  ctx?: { ipAddress?: string; userAgent?: string },
+): Promise<string> {
   const sessionId = randomBytes(64).toString("hex");
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await db.insert(sessions).values({ id: sessionId, userId, expiresAt: expires });
+  const expires = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+  const expiresEpoch = Math.floor(expires.getTime() / 1000);
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId,
+    expiresAt: expires,
+    ipAddress: ctx?.ipAddress,
+    userAgent: ctx?.userAgent,
+  });
   const token = await new SignJWT({ sessionId })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
+    .setExpirationTime(expiresEpoch)
     .sign(secret);
   return token;
 }
@@ -35,19 +46,8 @@ export async function getSession(): Promise<SessionUser | null> {
     const token = cookieStore.get(COOKIE)?.value;
     if (!token) return null;
     const { payload } = await jwtVerify(token, secret);
-
-    // Direct admin token (no DB session required)
-    if (payload.directAdmin === true) {
-      return {
-        id: payload.id as number,
-        email: payload.email as string,
-        fullName: payload.fullName as string,
-        role: payload.role as string,
-      };
-    }
-
-    const sessionId = payload.sessionId as string;
-    // Single JOIN query replaces the previous 2 sequential round-trips
+    const sessionId = payload.sessionId as string | undefined;
+    if (!sessionId) return null;
     const [row] = await db
       .select({
         expiresAt: sessions.expiresAt,

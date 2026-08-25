@@ -325,11 +325,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply });
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[/api/chat] error:", msg);
+    console.error("[/api/chat] error:", err instanceof Error ? err.message : err);
     if (err instanceof Error && err.name === "TimeoutError") {
       return NextResponse.json({ error: "AI response timeout. Please dobara try karein." }, { status: 504 });
     }
-    return NextResponse.json({ error: `AI Error: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: "AI service unavailable. Please dobara try karein." }, { status: 500 });
   }
 }

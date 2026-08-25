@@ -203,8 +203,40 @@ function NavItem({
 // ── Ticker tape (horizontal, inside sidebar top) ───────────────
 // Removed from sidebar — ticker remains in top utility bar
 
+// ── Logout button ──────────────────────────────────────────────
+function LogoutButton({ collapsed }: { collapsed: boolean }) {
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    // Full navigation reset — clears in-memory state and prevents Back-button replay.
+    window.location.replace("/auth/login");
+  };
+  const btn = (
+    <button
+      onClick={handleLogout}
+      aria-label="Log out"
+      className="group flex items-center gap-2.5 px-2.5 rounded-lg w-full"
+      style={{
+        height: 36, background: "transparent", border: "none", cursor: "pointer",
+        color: "rgba(255,255,255,0.45)", transition: "background 160ms ease, color 160ms ease",
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.10)"; (e.currentTarget as HTMLElement).style.color = "#FCA5A5"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)"; }}
+    >
+      <span className="flex-shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="17" height="17">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </span>
+      {!collapsed && <span className="text-[12.5px] font-medium tracking-tight truncate">Log Out</span>}
+    </button>
+  );
+  return collapsed ? <Tooltip label="Log Out">{btn}</Tooltip> : btn;
+}
+
 // ── Main Sidebar ───────────────────────────────────────────────
-export default function PortalSidebar({ isAdmin }: { isAdmin?: boolean }) {
+export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin?: boolean; userName?: string; userRole?: string }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -268,8 +300,15 @@ export default function PortalSidebar({ isAdmin }: { isAdmin?: boolean }) {
               <NavItem key={item.label} item={item} collapsed={false} onMobileClose={() => setMobileOpen(false)} />
             ))}
           </nav>
-          <div className="shrink-0 px-2 py-2.5" style={{ borderTop: "1px solid rgba(212,175,55,0.08)" }}>
-            <div className="flex items-center gap-2.5 px-1">
+          <div className="shrink-0 px-2 py-2" style={{ borderTop: "1px solid rgba(212,175,55,0.08)" }}>
+            {userName && (
+              <div style={{ padding: "4px 8px 5px", marginBottom: 3 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.70)" }}>{userName}</div>
+                <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".10em", textTransform: "uppercase", color: "rgba(212,175,55,0.60)", marginTop: 1 }}>{userRole ?? "client"}</div>
+              </div>
+            )}
+            <LogoutButton collapsed={false} />
+            <div className="flex items-center gap-2.5 px-1 mt-1">
               <ThemeToggle />
               <Link href="/" className="text-[10.5px] px-2 py-1 rounded border" style={{ color: "rgba(255,255,255,0.45)", borderColor: "rgba(255,255,255,0.1)" }}>← Main Site</Link>
             </div>
@@ -401,12 +440,28 @@ export default function PortalSidebar({ isAdmin }: { isAdmin?: boolean }) {
 
         </nav>
 
-        {/* ── Bottom: Theme + Main Site ─────── */}
+        {/* ── Bottom: User info + Logout + Theme ── */}
         <div
-          className="shrink-0 px-1.5 py-2.5"
+          className="shrink-0 px-1.5 py-2"
           style={{ borderTop: "1px solid rgba(212,175,55,0.08)", position: "relative", zIndex: 1 }}
         >
-          <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 px-1"}`}>
+          {/* User identity strip */}
+          {!collapsed && userName && (
+            <div style={{ padding: "5px 10px 6px", marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.70)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userName}
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".10em", textTransform: "uppercase", color: "rgba(212,175,55,0.60)", marginTop: 1 }}>
+                {userRole ?? "client"}
+              </div>
+            </div>
+          )}
+
+          {/* Logout */}
+          <LogoutButton collapsed={collapsed} />
+
+          {/* Theme + Main Site */}
+          <div className={`flex items-center mt-1 ${collapsed ? "justify-center" : "gap-2.5 px-1"}`}>
             <ThemeToggle />
             {!collapsed && (
               <Link
