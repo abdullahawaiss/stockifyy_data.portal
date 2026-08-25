@@ -243,9 +243,9 @@ body {
   100% { transform: translateY(-12%) translateX(-8%); opacity: 0.7; }
 }
 
-/* Stockifyy logo — force to exact brand gold #D4AF37 */
+/* Logo — no filter, display as-is with original colors */
 .logo-gold {
-  filter: brightness(0) saturate(100%) invert(76%) sepia(53%) saturate(497%) hue-rotate(7deg) brightness(103%);
+  filter: none;
 }
 
 /* Premium ticker */
