@@ -378,7 +378,7 @@ export default function PortalSidebar({ isAdmin, userName, userRole }: { isAdmin
           className="flex items-center shrink-0"
           style={{
             height: 54,
-            paddingLeft: 0,
+            paddingLeft: 10,
             paddingRight: 6,
             borderBottom: "1px solid rgba(212,175,55,0.1)",
             position: "relative", zIndex: 1,
