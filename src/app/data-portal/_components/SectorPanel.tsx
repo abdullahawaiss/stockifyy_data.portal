@@ -13,13 +13,10 @@ export default function SectorPanel({ initialData }: { initialData?: MarketSumma
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  // Purely presentational — DashboardClient owns all fetching.
+  // Update whenever the parent passes fresh data (SSR or 60s refresh).
   useEffect(() => {
-    if (initialData) { setSectors(initialData); setLoading(false); return; }
-    fetch("/api/portal/market-summary")
-      .then(r => r.json())
-      .then((d: MarketSummary) => setSectors(d.sectors ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (initialData) { setSectors(initialData); setLoading(false); }
   }, [initialData]);
 
   useEffect(() => {

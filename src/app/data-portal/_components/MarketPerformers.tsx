@@ -26,14 +26,9 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
   const [summary, setSummary] = useState<MarketSummary | null>(seed);
   const [loading, setLoading] = useState(!seed);
 
+  // Purely presentational — DashboardClient owns all fetching.
   useEffect(() => {
-    if (initialData) { _mktCache = initialData; setSummary(initialData); setLoading(false); return; }
-    if (_mktCache)   { setSummary(_mktCache);    setLoading(false);      return; }
-    fetch("/api/portal/market-summary")
-      .then(r => r.json())
-      .then(d => { _mktCache = d; setSummary(d); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (initialData) { _mktCache = initialData; setSummary(initialData); setLoading(false); }
   }, [initialData]);
 
   const rows: Row[] =

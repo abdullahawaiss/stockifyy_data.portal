@@ -83,15 +83,9 @@ export default function KseDetailPanel({
   );
   const [loading, setLoading] = useState(!initialIndices);
 
+  // Purely presentational — DashboardClient owns all fetching.
   useEffect(() => {
-    if (initialIndices) { setIndices(mapIndices(initialIndices)); setLoading(false); return; }
-    const ctrl = new AbortController();
-    fetch("/api/portal/market-summary", { signal: ctrl.signal })
-      .then(r => r.json())
-      .then(d => setIndices(mapIndices(d.indices ?? [])))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-    return () => ctrl.abort();
+    if (initialIndices) { setIndices(mapIndices(initialIndices)); setLoading(false); }
   }, [initialIndices]);
 
   const t = useDarkTokens();

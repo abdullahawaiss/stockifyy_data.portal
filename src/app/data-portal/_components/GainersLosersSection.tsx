@@ -71,13 +71,9 @@ export default function GainersLosersSection({ gainersOnly, losersOnly, initialD
   const [losers,  setLosers]  = useState<Row[]>(() => initialData?.losers  ?? []);
   const [loading, setLoading] = useState(!initialData);
 
+  // Purely presentational — DashboardClient owns all fetching.
   useEffect(() => {
-    if (initialData) { setGainers(initialData.gainers ?? []); setLosers(initialData.losers ?? []); setLoading(false); return; }
-    fetch("/api/portal/market-summary")
-      .then(r => r.json())
-      .then((d: MarketSummary) => { setGainers(d.gainers ?? []); setLosers(d.losers ?? []); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (initialData) { setGainers(initialData.gainers ?? []); setLosers(initialData.losers ?? []); setLoading(false); }
   }, [initialData]);
 
   if (gainersOnly) return <StockTable rows={gainers} positive loading={loading} />;
