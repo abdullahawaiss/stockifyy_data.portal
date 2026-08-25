@@ -753,27 +753,33 @@ export async function GET(req: NextRequest) {
     ]);
     const agg = aggRows[0];
 
-    // ── If DB has fewer than 100 stocks, use PSX live data (or demo fallback) ──
+    // ── If DB has fewer than 100 stocks, try PSX live (never fall back to demo) ──
     if (rows.length < 100) {
       const liveTimeout = new Promise<null>(r => setTimeout(() => r(null), 6_000));
       const live = await Promise.race([fetchPsxLive(date), liveTimeout]);
-      const src = live ?? buildDemoResponse(date);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let filtered: any[] = src.rows;
-      if (search) {
-        const qFlat = search.replace(/[^a-z0-9]/g, "");
-        const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (live) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        filtered = filtered.filter((r: any) =>
-          r.symbol.toLowerCase().includes(search) ||
-          (r.companyName ?? "").toLowerCase().includes(search) ||
-          flat(r.symbol).includes(qFlat) ||
-          flat(r.companyName ?? "").includes(qFlat)
-        );
+        let filtered: any[] = live.rows;
+        if (search) {
+          const qFlat = search.replace(/[^a-z0-9]/g, "");
+          const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          filtered = filtered.filter((r: any) =>
+            r.symbol.toLowerCase().includes(search) ||
+            (r.companyName ?? "").toLowerCase().includes(search) ||
+            flat(r.symbol).includes(qFlat) ||
+            flat(r.companyName ?? "").includes(qFlat)
+          );
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (sectorId) filtered = filtered.filter((r: any) => String(r.sectorId) === sectorId);
+        return NextResponse.json({ ...live, rows: filtered, date });
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (sectorId) filtered = filtered.filter((r: any) => String(r.sectorId) === sectorId);
-      return NextResponse.json({ ...src, rows: filtered, date });
+      // PSX live unavailable and DB sparse — return real empty state
+      return NextResponse.json({
+        date, rows: [], indices: [], sectors: sectorList,
+        totals: { totalVolume:0, totalValue:0, totalTrades:0, totalStocks:0, advancers:0, decliners:0, unchanged:0, avgChange:0 },
+      });
     }
 
     const payload = {
@@ -799,22 +805,28 @@ export async function GET(req: NextRequest) {
     console.error("[stocks api] query failed, trying PSX live:", err instanceof Error ? err.message : "unknown");
     const liveTimeout = new Promise<null>(r => setTimeout(() => r(null), 6_000));
     const live = await Promise.race([fetchPsxLive(date), liveTimeout]);
-    const src = live ?? buildDemoResponse(date);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let filtered: any[] = src.rows;
-    if (search) {
-      const qFlat = search.replace(/[^a-z0-9]/g, "");
-      const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (live) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      filtered = filtered.filter((r: any) =>
-        r.symbol.toLowerCase().includes(search) ||
-        (r.companyName ?? "").toLowerCase().includes(search) ||
-        flat(r.symbol).includes(qFlat) ||
-        flat(r.companyName ?? "").includes(qFlat)
-      );
+      let filtered: any[] = live.rows;
+      if (search) {
+        const qFlat = search.replace(/[^a-z0-9]/g, "");
+        const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        filtered = filtered.filter((r: any) =>
+          r.symbol.toLowerCase().includes(search) ||
+          (r.companyName ?? "").toLowerCase().includes(search) ||
+          flat(r.symbol).includes(qFlat) ||
+          flat(r.companyName ?? "").includes(qFlat)
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (sectorId) filtered = filtered.filter((r: any) => String(r.sectorId) === sectorId);
+      return NextResponse.json({ ...live, rows: filtered, date });
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (sectorId) filtered = filtered.filter((r: any) => String(r.sectorId) === sectorId);
-    return NextResponse.json({ ...src, rows: filtered, date });
+    // DB error and PSX live unavailable — return real empty state, never demo
+    return NextResponse.json(
+      { date, rows: [], indices: [], sectors: [], totals: { totalVolume:0, totalValue:0, totalTrades:0, totalStocks:0, advancers:0, decliners:0, unchanged:0, avgChange:0 } },
+      { status: 503 }
+    );
   }
 }

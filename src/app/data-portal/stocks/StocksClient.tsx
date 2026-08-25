@@ -241,14 +241,12 @@ export default function StocksClient() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Switch data source based on board + market type
+  // Only MAIN BOARD / REGULAR MARKET has real data; other boards are not yet available
+  const isAlternativeBoard = board !== "MAIN BOARD" || marketType !== "REGULAR MARKET";
   const activeRows = useMemo(() => {
-    if (marketType === "DELIVERABLE FUTURES CONTRACT") return DELIVERABLE_FUTURES;
-    if (marketType === "CASH SETTLED FUTURES CONTRACT") return CASH_SETTLED_FUTURES;
-    if (board === "GEM BOARD") return GEM_BOARD_ROWS;
-    if (board === "DEBT")      return DEBT_BOARD_ROWS;
-    return allRows; // MAIN BOARD
-  }, [marketType, board, allRows]);
+    if (isAlternativeBoard) return [];
+    return allRows;
+  }, [isAlternativeBoard, allRows]);
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();

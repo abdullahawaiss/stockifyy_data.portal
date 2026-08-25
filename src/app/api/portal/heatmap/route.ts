@@ -212,14 +212,13 @@ export async function GET() {
         setCached(cacheKey, payload);
         return NextResponse.json(payload);
       }
-    } catch { /* fall through to demo */ }
+    } catch { /* fall through */ }
 
-    const payload = {
-      stocks: DEMO,
+    // No real data available — return empty, never fabricated demo data
+    return NextResponse.json({
+      stocks: [],
       date: new Date().toISOString().slice(0, 10),
-      source: "demo",
-    };
-    setCached(cacheKey, payload);
-    return NextResponse.json(payload);
+      source: "unavailable",
+    });
   }
 }
