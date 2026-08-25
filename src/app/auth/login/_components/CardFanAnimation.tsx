@@ -20,8 +20,8 @@ const CARDS = [
   { s:"/login/card10.png", l:57,  t: 68,  r:-15, w:33, d:7.8, dl:2.40, a: 8, z:3, ar:"3/4" },
 ];
 
-const ENTRY_DUR = 0.7;
-const ENTRY_BASE = 0.08;
+const ENTRY_DUR = 0.9;
+const ENTRY_BASE = 0.15;
 
 function buildCSS(): string {
   return CARDS.map((c, i) => {
@@ -29,7 +29,7 @@ function buildCSS(): string {
     const fst = ed + ENTRY_DUR + 0.12;
     return `
       @keyframes scIn${i}{
-        from{opacity:0;transform:rotate(${c.r}deg) scale(0.80) translateY(22px)}
+        from{opacity:0;transform:rotate(${c.r}deg) scale(0.88) translateY(40px)}
         to  {opacity:1;transform:rotate(${c.r}deg) scale(1)    translateY(0px) }
       }
       @keyframes scFl${i}{
@@ -39,7 +39,7 @@ function buildCSS(): string {
       @media(prefers-reduced-motion:no-preference){
         .sc-${i}{
           animation:
-            scIn${i} ${ENTRY_DUR}s cubic-bezier(0.34,1.4,0.64,1) ${ed}s  forwards,
+            scIn${i} ${ENTRY_DUR}s cubic-bezier(0.22,1,0.36,1) ${ed}s  forwards,
             scFl${i} ${c.d}s       ease-in-out                   ${fst}s infinite;
         }
       }
@@ -57,18 +57,54 @@ export default function CardFanAnimation() {
     const el = ref.current;
     if (!el) return;
     const cards = el.querySelectorAll<HTMLElement>("[data-sc]");
+
+    // Visibility API — pause when tab hidden
     const onVis = () => {
       const state = document.hidden ? "paused" : "running";
       cards.forEach(c => { c.style.animationPlayState = state; });
     };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+
+    // Hover: lift card forward, restore on leave
+    const cleanups: (() => void)[] = [];
+    cards.forEach((card) => {
+      const rot = Number(card.dataset.rot ?? 0);
+      const onEnter = () => {
+        card.style.transition = "transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, z-index 0s";
+        card.style.transform  = `rotate(${rot}deg) scale(1.10) translateY(-12px)`;
+        card.style.zIndex     = "99";
+        card.style.animationPlayState = "paused";
+      };
+      const onLeave = () => {
+        card.style.transition = "transform 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.45s ease";
+        card.style.transform  = `rotate(${rot}deg) scale(1) translateY(0px)`;
+        card.style.zIndex     = card.dataset.z ?? "";
+        // resume float after return transition ends
+        setTimeout(() => {
+          card.style.transition = "";
+          card.style.transform  = "";
+          card.style.animationPlayState = document.hidden ? "paused" : "running";
+        }, 460);
+      };
+      card.addEventListener("mouseenter", onEnter);
+      card.addEventListener("mouseleave", onLeave);
+      cleanups.push(() => {
+        card.removeEventListener("mouseenter", onEnter);
+        card.removeEventListener("mouseleave", onLeave);
+      });
+    });
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      cleanups.forEach(fn => fn());
+    };
   }, []);
 
   return (
     <>
       <style>{`
         .sc-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+        .sc-wrap > .sc-card{pointer-events:auto}
         .sc-card{
           position:absolute;
           border-radius:6px;
@@ -78,6 +114,13 @@ export default function CardFanAnimation() {
           opacity:0;
           will-change:transform,opacity;
           transform-origin:center center;
+          pointer-events:auto;
+          cursor:pointer;
+        }
+        .sc-card:hover{
+          box-shadow:0 0 0 5px rgba(255,255,255,0.95),0 24px 60px rgba(0,0,0,0.72),0 8px 24px rgba(0,0,0,0.50);
+          z-index:99 !important;
+          transition:box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
         }
         .sc-card img{
           width:100%;height:100%;
@@ -92,6 +135,8 @@ export default function CardFanAnimation() {
           <div
             key={i}
             data-sc
+            data-rot={c.r}
+            data-z={c.z}
             className={`sc-card sc-${i}`}
             style={{ left:`${c.l}%`, top:`${c.t}%`, width:`${c.w}%`, aspectRatio:c.ar, zIndex:c.z }}
           >
