@@ -4,7 +4,8 @@ import { getSession, canAccess } from "@/lib/auth";
 
 export default async function AdminPage() {
   const session = await getSession();
-  if (!canAccess(session, "data_manager")) redirect("/login");
+  // Non-admin authenticated users are sent back to the portal, not the login page.
+  if (!canAccess(session, "admin")) redirect("/data-portal");
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
