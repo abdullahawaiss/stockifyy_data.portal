@@ -27,14 +27,14 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
   const [loading, setLoading] = useState(!seed);
 
   useEffect(() => {
-    if (seed) return; // already have data — skip fetch
+    if (initialData) { _mktCache = initialData; setSummary(initialData); setLoading(false); return; }
+    if (_mktCache)   { setSummary(_mktCache);    setLoading(false);      return; }
     fetch("/api/portal/market-summary")
       .then(r => r.json())
       .then(d => { _mktCache = d; setSummary(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialData]);
 
   const rows: Row[] =
     tab === "Top Active" ? (summary?.volume  ?? []).slice(0, 12) :

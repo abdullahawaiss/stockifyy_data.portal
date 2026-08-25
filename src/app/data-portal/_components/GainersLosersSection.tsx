@@ -72,7 +72,7 @@ export default function GainersLosersSection({ gainersOnly, losersOnly, initialD
   const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
-    if (initialData) return;
+    if (initialData) { setGainers(initialData.gainers ?? []); setLosers(initialData.losers ?? []); setLoading(false); return; }
     fetch("/api/portal/market-summary")
       .then(r => r.json())
       .then((d: MarketSummary) => { setGainers(d.gainers ?? []); setLosers(d.losers ?? []); })

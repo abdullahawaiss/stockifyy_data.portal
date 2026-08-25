@@ -14,7 +14,7 @@ export default function SectorPanel({ initialData }: { initialData?: MarketSumma
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
-    if (initialData) return;
+    if (initialData) { setSectors(initialData); setLoading(false); return; }
     fetch("/api/portal/market-summary")
       .then(r => r.json())
       .then((d: MarketSummary) => setSectors(d.sectors ?? []))

@@ -84,7 +84,7 @@ export default function KseDetailPanel({
   const [loading, setLoading] = useState(!initialIndices);
 
   useEffect(() => {
-    if (initialIndices) return;
+    if (initialIndices) { setIndices(mapIndices(initialIndices)); setLoading(false); return; }
     const ctrl = new AbortController();
     fetch("/api/portal/market-summary", { signal: ctrl.signal })
       .then(r => r.json())
