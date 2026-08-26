@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import CardFanAnimation from "./CardFanAnimation";
+import AuthAdvisoryHero from "@/components/auth/AuthAdvisoryHero";
 
 function safeReturnTo(raw: string | null): string {
   if (!raw) return "/data-portal";
@@ -469,80 +470,13 @@ export default function LoginClient() {
       </div>
 
       {/* ══════════════════════════════════════════
-          RIGHT PANEL — trading visuals + portraits
+          RIGHT PANEL — advisory visual
       ══════════════════════════════════════════ */}
       <div
         className="right-panel"
-        style={{
-          flex:1, height:"100vh", position:"relative", overflow:"hidden",
-          background:"linear-gradient(160deg, #040D18 0%, #07111F 35%, #0A1828 60%, #06101C 100%)",
-          minWidth:0,
-        }}
+        style={{ flex:1, height:"100vh", minWidth:0, position:"relative" }}
       >
-        {/* ── Subtle gold radial glow — top ── */}
-        <div style={{
-          position:"absolute", top:"-8%", left:"50%", transform:"translateX(-50%)",
-          width:500, height:320, borderRadius:"50%",
-          background:"radial-gradient(ellipse at center, rgba(212,175,55,.10) 0%, transparent 70%)",
-          pointerEvents:"none",
-        }} />
-
-        {/* ── Bottom ambient glow ── */}
-        <div style={{
-          position:"absolute", bottom:"-5%", left:"50%", transform:"translateX(-50%)",
-          width:460, height:280, borderRadius:"50%",
-          background:"radial-gradient(ellipse at center, rgba(30,80,160,.14) 0%, transparent 65%)",
-          pointerEvents:"none",
-        }} />
-
-        {/* ── Ticker badges — corners ── */}
-        <TickerBadge {...TICKERS[0]} style={{ top:"8%",  left:"5%"  }} />
-        <TickerBadge {...TICKERS[1]} style={{ top:"8%",  right:"5%" }} />
-        <TickerBadge {...TICKERS[2]} style={{ top:"28%", left:"4%"  }} />
-        <TickerBadge {...TICKERS[3]} style={{ top:"28%", right:"4%" }} />
-        <TickerBadge {...TICKERS[4]} style={{ top:"72%", left:"5%"  }} />
-        <TickerBadge {...TICKERS[5]} style={{ top:"72%", right:"5%" }} />
-
-        {/* ── Stockifyy logo watermark ── */}
-        <div style={{
-          position:"absolute", top:"3%", left:"50%", transform:"translateX(-50%)",
-          textAlign:"center", pointerEvents:"none", zIndex:5,
-        }}>
-          <img src="/stockifyy-full-logo.png" alt="" aria-hidden="true"
-            style={{ height:30, objectFit:"contain", filter:"brightness(0) invert(1)", opacity:0.20 }} />
-        </div>
-
-        {/* ── PSX ghost tagline — behind cards ── */}
-        <div style={{
-          position:"absolute", bottom:"14%", left:"50%",
-          transform:"translateX(-50%)",
-          textAlign:"center", pointerEvents:"none", zIndex:2,
-          width:"90%",
-        }}>
-          <div style={{
-            fontSize:8.5, fontWeight:700, letterSpacing:".24em", textTransform:"uppercase",
-            color:"rgba(212,175,55,.35)", marginBottom:5,
-          }}>
-            Pakistan Stock Exchange
-          </div>
-          <div style={{
-            fontSize:26, fontWeight:900, letterSpacing:"-.01em",
-            color:"rgba(255,255,255,.04)",
-            lineHeight:1.1, textTransform:"uppercase",
-          }}>
-            Market<br/>Intelligence
-          </div>
-        </div>
-
-        {/* ── Card fan animation (hero element) ── */}
-        <CardFanAnimation />
-
-        {/* ── Left edge fade — blend into white left panel ── */}
-        <div style={{
-          position:"absolute", top:0, left:0, bottom:0, width:60,
-          background:"linear-gradient(to right, rgba(7,17,31,.6) 0%, transparent 100%)",
-          pointerEvents:"none", zIndex:20,
-        }} />
+        <AuthAdvisoryHero />
       </div>
     </div>
   );

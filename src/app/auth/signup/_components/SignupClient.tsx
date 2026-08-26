@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import AuthAdvisoryHero from "@/components/auth/AuthAdvisoryHero";
 
 function PasswordStrength({ password }: { password: string }) {
   const len    = password.length;
@@ -336,40 +337,9 @@ export default function SignupClient() {
         </div>
       </div>
 
-      {/* RIGHT PANEL — matching dark trading visual */}
-      <div className="su-right" style={{
-        flex:1, height:"100vh", position:"relative", overflow:"hidden",
-        background:"linear-gradient(160deg, #040D18 0%, #07111F 35%, #0A1828 60%, #06101C 100%)",
-        minWidth:0,
-      }}>
-        <div style={{ position:"absolute", top:"-8%", left:"50%", transform:"translateX(-50%)", width:500, height:320, borderRadius:"50%", background:"radial-gradient(ellipse at center, rgba(212,175,55,.10) 0%, transparent 70%)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:"-5%", left:"50%", transform:"translateX(-50%)", width:460, height:280, borderRadius:"50%", background:"radial-gradient(ellipse at center, rgba(30,80,160,.14) 0%, transparent 65%)", pointerEvents:"none" }} />
-
-        {/* Centered message */}
-        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"0 40px" }}>
-          <img src="/stockifyy-full-logo.png" alt="" aria-hidden="true" style={{ height:36, objectFit:"contain", filter:"brightness(0) invert(1)", opacity:0.18, marginBottom:28 }} />
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:".22em", textTransform:"uppercase", color:"rgba(212,175,55,.40)", marginBottom:14 }}>
-            Pakistan Stock Exchange
-          </div>
-          <div style={{ fontSize:36, fontWeight:900, color:"rgba(255,255,255,.05)", textTransform:"uppercase", letterSpacing:"-.01em", lineHeight:1.1 }}>
-            Market<br/>Intelligence
-          </div>
-          <div style={{ marginTop:40, display:"flex", flexDirection:"column", gap:14, alignItems:"center", width:"80%", maxWidth:320 }}>
-            {[
-              ["Real-Time PSX Data", "Live KSE-100 equity feeds"],
-              ["Secure by Design", "HTTP-only sessions, bcrypt, PKCE"],
-              ["Institutional Insights", "Sector analytics & technicals"],
-            ].map(([title, sub]) => (
-              <div key={title} style={{ display:"flex", alignItems:"center", gap:12, background:"rgba(255,255,255,.03)", border:"1px solid rgba(212,175,55,.10)", borderRadius:10, padding:"10px 16px", width:"100%" }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#D4AF37", opacity:0.6, flexShrink:0 }} />
-                <div style={{ textAlign:"left" }}>
-                  <div style={{ fontSize:11.5, fontWeight:700, color:"rgba(255,255,255,.65)" }}>{title}</div>
-                  <div style={{ fontSize:10, color:"rgba(255,255,255,.28)", marginTop:1 }}>{sub}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* RIGHT PANEL — advisory visual */}
+      <div className="su-right" style={{ flex:1, height:"100vh", minWidth:0, position:"relative" }}>
+        <AuthAdvisoryHero />
       </div>
     </div>
   );
