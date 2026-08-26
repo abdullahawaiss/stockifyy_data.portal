@@ -18,7 +18,7 @@ export default function ChatHeader({ onMinimize, onClose, onClear }: ChatHeaderP
           style={{ background: "linear-gradient(135deg,rgba(212,175,55,0.25),rgba(212,175,55,0.1))", border: "1px solid rgba(212,175,55,0.35)" }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 2L13.09 8.26L19 6L15.45 11.09L21 12L15.45 12.91L19 18L13.09 15.74L12 22L10.91 15.74L5 18L8.55 12.91L3 12L8.55 11.09L5 6L10.91 8.26L12 2Z" fill="#D4AF37"/>
+            <path d="M12 2L13.09 8.26L19 6L15.45 11.09L21 12L15.45 12.91L19 18L13.09 15.74L12 22L10.91 15.74L5 18L8.55 12.91L3 12L8.55 11.09L5 6L10.91 8.26L12 2Z" fill="#D4971A"/>
           </svg>
         </div>
 

@@ -353,7 +353,7 @@ export default function StocksClient() {
           position: relative;
           border-radius: 8px;
           padding: 1.5px;
-          background: linear-gradient(90deg, transparent 0%, #D4AF37 25%, #F5D87A 50%, #D4AF37 75%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, #D4971A 25%, #F5D87A 50%, #D4971A 75%, transparent 100%);
           background-size: 300% 100%;
           animation: indicesGoldLine 2s linear infinite;
         }
@@ -683,7 +683,7 @@ export default function StocksClient() {
           <div style={{ padding:"10px 16px", borderTop:`1px solid ${t.border}`, background:t.tableTh }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <div style={{ width:36, height:36, borderRadius:4, background:"var(--navy,#071C41)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" width="20" height="20">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D4971A" strokeWidth="2" width="20" height="20">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
               </div>

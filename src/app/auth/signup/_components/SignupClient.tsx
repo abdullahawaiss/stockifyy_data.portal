@@ -100,7 +100,7 @@ export default function SignupClient() {
           <p style={{ margin:"0 0 20px", fontSize:13, color:"rgba(7,17,31,.55)", lineHeight:1.6 }}>
             We&apos;ve sent a verification link to <strong>{email}</strong>. Click the link to activate your account and sign in.
           </p>
-          <a href="/auth/login" style={{ display:"inline-block", padding:"10px 24px", background:"#D4AF37", color:"#07111F", fontWeight:800, fontSize:13, borderRadius:9, textDecoration:"none", letterSpacing:".04em" }}>
+          <a href="/auth/login" style={{ display:"inline-block", padding:"10px 24px", background:"#D4971A", color:"#07111F", fontWeight:800, fontSize:13, borderRadius:9, textDecoration:"none", letterSpacing:".04em" }}>
             Go to Sign In
           </a>
         </div>
@@ -129,15 +129,15 @@ export default function SignupClient() {
         @keyframes btnShine { 0%{transform:translateX(-130%) skewX(-22deg)} 100%{transform:translateX(230%) skewX(-22deg)} }
 
         .su-inp:focus { background:rgba(212,175,55,.05)!important; border-color:rgba(212,175,55,.55)!important; box-shadow:0 0 0 3px rgba(212,175,55,.10)!important; }
-        .su-sbtn { position:relative;overflow:hidden;width:100%;padding:10px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25);font-family:inherit }
+        .su-sbtn { position:relative;overflow:hidden;width:100%;padding:10px;border:none;border-radius:10px;background:#C88A00;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25);font-family:inherit }
         .su-sbtn::after { content:'';position:absolute;top:0;left:-100%;height:100%;width:55%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:btnShine 3s ease-in-out infinite .5s }
         .su-sbtn:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 10px 38px rgba(212,175,55,.65) }
         .su-sbtn:disabled { opacity:.38;cursor:not-allowed }
         .su-sbtn:disabled::after { display:none }
         .su-card { animation:cardIn .55s cubic-bezier(.22,1.1,.36,1) .05s both }
-        .su-sg { background:linear-gradient(90deg,#7A5600 0%,#D4AF37 22%,#FEA500 50%,#D4AF37 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite }
+        .su-sg { background:linear-gradient(90deg,#7A5600 0%,#D4971A 22%,#FEA500 50%,#D4971A 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite }
         .su-check { width:15px;height:15px;border:1.5px solid rgba(7,17,31,.20);border-radius:4px;background:rgba(7,17,31,.03);cursor:pointer;appearance:none;-webkit-appearance:none;flex-shrink:0;transition:background .15s;position:relative }
-        .su-check:checked { background:#D4AF37;border-color:#D4AF37 }
+        .su-check:checked { background:#D4971A;border-color:#D4971A }
         .su-check:checked::after { content:'';position:absolute;left:3px;top:0px;width:5px;height:9px;border:2px solid #07111F;border-top:none;border-left:none;transform:rotate(45deg) }
 
         @media(max-width:900px) { .su-right { display:none!important } .su-left { width:100%!important;min-width:0!important;max-width:100%!important } }
@@ -217,7 +217,7 @@ export default function SignupClient() {
                   required autoComplete="new-password" placeholder="Min 8 chars, mixed case + number"
                   className="su-inp" style={{ ...inputStyle, paddingRight:38, ...(fieldErr.password ? errStyle : {}) }} disabled={loading} />
                 <button type="button" onClick={()=>setShowPw(v=>!v)} tabIndex={-1}
-                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4AF37" }}
+                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4971A" }}
                   aria-label={showPw?"Hide password":"Show password"}>
                   {showPw
                     ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -239,7 +239,7 @@ export default function SignupClient() {
                   required autoComplete="new-password" placeholder="Re-enter your password"
                   className="su-inp" style={{ ...inputStyle, paddingRight:38, ...(fieldErr.confirmPassword ? errStyle : {}) }} disabled={loading} />
                 <button type="button" onClick={()=>setShowCf(v=>!v)} tabIndex={-1}
-                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4AF37" }}
+                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4971A" }}
                   aria-label={showCf?"Hide confirm password":"Show confirm password"}>
                   {showCf
                     ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -319,7 +319,7 @@ export default function SignupClient() {
           {/* Sign in link */}
           <p style={{ textAlign:"center", margin:"5px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
             Already have an account?{" "}
-            <a href="/auth/login" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
+            <a href="/auth/login" style={{ color:"#D4971A", fontWeight:700, textDecoration:"none" }}>
               Sign In
             </a>
           </p>

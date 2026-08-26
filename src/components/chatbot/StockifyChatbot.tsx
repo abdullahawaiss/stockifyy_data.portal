@@ -177,32 +177,32 @@ export default function StockifyChatbot() {
               className={!prefersReducedMotion ? "robot-bob" : ""}
             >
               {/* Antenna stem */}
-              <line x1="19" y1="4" x2="19" y2="9" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="19" y1="4" x2="19" y2="9" stroke="#D4971A" strokeWidth="1.8" strokeLinecap="round"/>
               {/* Antenna dot */}
-              <circle className="antenna-dot" cx="19" cy="2.5" r="2.5" fill="#D4AF37"/>
+              <circle className="antenna-dot" cx="19" cy="2.5" r="2.5" fill="#D4971A"/>
 
               {/* Head */}
-              <rect x="7" y="9" width="24" height="16" rx="5" fill="#0D2137" stroke="#D4AF37" strokeWidth="1.4"/>
+              <rect x="7" y="9" width="24" height="16" rx="5" fill="#0D2137" stroke="#D4971A" strokeWidth="1.4"/>
 
               {/* Left eye socket */}
-              <ellipse className="robot-eye" cx="13.5" cy="17" rx="3" ry="3" fill="#D4AF37"/>
+              <ellipse className="robot-eye" cx="13.5" cy="17" rx="3" ry="3" fill="#D4971A"/>
               {/* Left pupil — moves with eye */}
               <circle className="robot-pupil" cx="13.5" cy="17" r="1.1" fill="#07111F"/>
 
               {/* Right eye socket */}
-              <ellipse className="robot-eye2" cx="24.5" cy="17" rx="3" ry="3" fill="#D4AF37"/>
+              <ellipse className="robot-eye2" cx="24.5" cy="17" rx="3" ry="3" fill="#D4971A"/>
               {/* Right pupil — moves with eye */}
               <circle className="robot-pupil" cx="24.5" cy="17" r="1.1" fill="#07111F"/>
 
               {/* Mouth — happy line */}
-              <path d="M14 22 Q19 25.5 24 22" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+              <path d="M14 22 Q19 25.5 24 22" stroke="#D4971A" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
 
               {/* Body */}
-              <rect x="11" y="25" width="16" height="9" rx="3.5" fill="#0D2137" stroke="#D4AF37" strokeWidth="1.2"/>
+              <rect x="11" y="25" width="16" height="9" rx="3.5" fill="#0D2137" stroke="#D4971A" strokeWidth="1.2"/>
               {/* Body panel dots */}
-              <circle cx="16" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.7"/>
-              <circle cx="19" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.5"/>
-              <circle cx="22" cy="29.5" r="1.2" fill="#D4AF37" opacity="0.3"/>
+              <circle cx="16" cy="29.5" r="1.2" fill="#D4971A" opacity="0.7"/>
+              <circle cx="19" cy="29.5" r="1.2" fill="#D4971A" opacity="0.5"/>
+              <circle cx="22" cy="29.5" r="1.2" fill="#D4971A" opacity="0.3"/>
             </svg>
           </span>
 
@@ -211,7 +211,7 @@ export default function StockifyChatbot() {
             className="transition-all duration-200"
             style={{ opacity: isOpen ? 1 : 0, transform: isOpen ? "scale(1) rotate(0)" : "scale(0.4) rotate(-15deg)", position: "absolute" }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4971A" strokeWidth="2.5" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </span>

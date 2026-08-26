@@ -58,7 +58,7 @@ function CandlestickChart() {
       {/* Price line */}
       <polyline
         points={CANDLES.map((c,i) => `${14 + i*(CW+GAP) + CW/2},${sy((c.o+c.c)/2)}`).join(" ")}
-        fill="none" stroke="#D4AF37" strokeWidth={1.2} opacity={0.5}
+        fill="none" stroke="#D4971A" strokeWidth={1.2} opacity={0.5}
       />
       {/* Candles */}
       {CANDLES.map((c, i) => {
@@ -236,7 +236,7 @@ export default function LoginClient() {
         .f7{animation:fUp .35s ease .58s both}
         .lp{animation:lp 3.4s ease-in-out infinite}
         .gdot{animation:gdot 2.2s ease-in-out infinite}
-        .sg{background:linear-gradient(90deg,#7A5600 0%,#D4AF37 22%,#FEA500 50%,#D4AF37 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite}
+        .sg{background:linear-gradient(90deg,#7A5600 0%,#D4971A 22%,#FEA500 50%,#D4971A 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite}
 
         /* ── Form elements ── */
         .inp{width:100%;padding:9px 13px 9px 38px;box-sizing:border-box;background:rgba(7,17,31,.04);border:1.5px solid rgba(7,17,31,.12);border-radius:9px;color:#07111F;font-size:13px;outline:none;transition:background .2s,border-color .22s,box-shadow .22s;font-family:inherit}
@@ -244,7 +244,7 @@ export default function LoginClient() {
         .inp:focus{background:rgba(212,175,55,.05);border-color:rgba(212,175,55,.55);box-shadow:0 0 0 3px rgba(212,175,55,.10)}
         .inp.err{border-color:rgba(239,68,68,.45)}
 
-        .sbtn{position:relative;overflow:hidden;width:100%;padding:11px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45),0 2px 10px rgba(180,100,0,.30);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+        .sbtn{position:relative;overflow:hidden;width:100%;padding:11px;border:none;border-radius:10px;background:#C88A00;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45),0 2px 10px rgba(180,100,0,.30);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25)}
         .sbtn::after{content:'';position:absolute;top:0;left:-100%;height:100%;width:55%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:btnShine 3s ease-in-out infinite .5s}
         .sbtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 38px rgba(212,175,55,.65),0 4px 16px rgba(152,99,0,.40)}
         .sbtn:active:not(:disabled){transform:translateY(0)}
@@ -252,7 +252,7 @@ export default function LoginClient() {
         .sbtn:disabled::after{display:none}
 
         .check-box{width:15px;height:15px;border:1.5px solid rgba(7,17,31,.20);border-radius:4px;background:rgba(7,17,31,.03);cursor:pointer;appearance:none;-webkit-appearance:none;flex-shrink:0;transition:background .15s,border-color .15s;position:relative}
-        .check-box:checked{background:#D4AF37;border-color:#D4AF37}
+        .check-box:checked{background:#D4971A;border-color:#D4971A}
         .check-box:checked::after{content:'';position:absolute;left:3px;top:0px;width:5px;height:9px;border:2px solid #07111F;border-top:none;border-left:none;transform:rotate(45deg)}
 
         /* ── Right panel ── */
@@ -361,7 +361,7 @@ export default function LoginClient() {
                   className="inp" style={{ paddingRight:38 }} disabled={loading}
                   aria-describedby={error?"login-error":undefined} />
                 <button type="button" onClick={()=>setShowPw(v=>!v)} aria-label={showPw?"Hide password":"Show password"}
-                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4AF37" }} tabIndex={-1}>
+                  style={{ position:"absolute", right:11, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:2, opacity:.5, color:"#D4971A" }} tabIndex={-1}>
                   {showPw
                     ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -450,7 +450,7 @@ export default function LoginClient() {
           {/* Sign up link */}
           <p style={{ textAlign:"center", margin:"8px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
             Don&apos;t have an account?{" "}
-            <a href="/auth/signup" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
+            <a href="/auth/signup" style={{ color:"#D4971A", fontWeight:700, textDecoration:"none" }}>
               Sign Up
             </a>
           </p>

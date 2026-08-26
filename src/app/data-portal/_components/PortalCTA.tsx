@@ -45,7 +45,7 @@ export default function PortalCTA() {
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
       <style>{`
         @keyframes gold-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); border-color: #D4AF37; }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); border-color: #D4971A; }
           50%       { box-shadow: 0 0 10px 3px rgba(212,175,55,0.45); border-color: #f0cc5a; }
         }
         .cta-open-account, .cta-client-login {
@@ -53,9 +53,9 @@ export default function PortalCTA() {
         }
         .cta-open-account:hover, .cta-client-login:hover {
           animation: none;
-          background: #D4AF37 !important;
+          background: #D4971A !important;
           color: #07111F !important;
-          border-color: #D4AF37 !important;
+          border-color: #D4971A !important;
           box-shadow: 0 0 18px 5px rgba(212,175,55,0.55);
         }
       `}</style>
@@ -68,7 +68,7 @@ export default function PortalCTA() {
           padding: "8px 30px", borderRadius: 7,
           background: "transparent", color: "#07111F",
           fontWeight: 700, fontSize: 13, textDecoration: "none",
-          border: "1.5px solid #D4AF37",
+          border: "1.5px solid #D4971A",
           whiteSpace: "nowrap", letterSpacing: "0.03em",
           display: "inline-block",
           transition: "background 150ms, color 150ms, box-shadow 150ms",
@@ -83,7 +83,7 @@ export default function PortalCTA() {
           padding: "8px 20px", borderRadius: 7,
           background: "transparent", color: "#07111F",
           fontWeight: 700, fontSize: 13, textDecoration: "none",
-          border: "1.5px solid #D4AF37",
+          border: "1.5px solid #D4971A",
           whiteSpace: "nowrap",
           transition: "background 150ms, color 150ms, box-shadow 150ms",
           display: "inline-block",

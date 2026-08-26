@@ -227,7 +227,7 @@ function DividendPayoutCard() {
 type Tab = "meetings" | "results" | "dividends";
 
 const TABS: { key: Tab; label: string; badge: string; color: string }[] = [
-  { key: "meetings",  label: "Upcoming Board Meetings",  badge: "SCHEDULED", color: "#D4AF37" },
+  { key: "meetings",  label: "Upcoming Board Meetings",  badge: "SCHEDULED", color: "#D4971A" },
   { key: "results",   label: "Latest Financial Results", badge: "LIVE",      color: "#16A34A" },
   { key: "dividends", label: "Dividend Payout",          badge: "LATEST",    color: "#16A34A" },
 ];
@@ -263,7 +263,7 @@ export default function FinancialsSection() {
             <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
               style={{
                 background: active === t.key
-                  ? (t.color === "#D4AF37" ? "rgba(212,175,55,0.1)" : "rgba(22,163,74,0.1)")
+                  ? (t.color === "#D4971A" ? "rgba(212,175,55,0.1)" : "rgba(22,163,74,0.1)")
                   : "transparent",
                 color: active === t.key ? t.color : "var(--text-muted)",
               }}>

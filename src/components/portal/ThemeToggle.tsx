@@ -27,7 +27,7 @@ export default function ThemeToggle() {
         height: 34,
         background: dark ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.08)",
         border: `1px solid ${dark ? "rgba(212,175,55,0.35)" : "rgba(255,255,255,0.12)"}`,
-        color: dark ? "#D4AF37" : "rgba(255,255,255,0.7)",
+        color: dark ? "#D4971A" : "rgba(255,255,255,0.7)",
         fontSize: 16,
       }}
     >

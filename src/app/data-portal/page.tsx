@@ -60,17 +60,17 @@ export default async function DataPortalPage() {
               <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 90" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="ctaGoldBar" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#D4AF37" stopOpacity="0.35" />
-                    <stop offset="50%"  stopColor="#D4AF37" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="#D4AF37" stopOpacity="0.0" />
+                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0.35" />
+                    <stop offset="50%"  stopColor="#D4971A" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#D4971A" stopOpacity="0.0" />
                   </linearGradient>
                   <radialGradient id="ctaNavyGlow" cx="5%" cy="100%" r="55%">
                     <stop offset="0%"   stopColor="#07111F" stopOpacity="0.09" />
                     <stop offset="100%" stopColor="#07111F" stopOpacity="0" />
                   </radialGradient>
                   <radialGradient id="ctaGoldGlow" cx="95%" cy="0%" r="50%">
-                    <stop offset="0%"   stopColor="#D4AF37" stopOpacity="0.13" />
-                    <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0.13" />
+                    <stop offset="100%" stopColor="#D4971A" stopOpacity="0" />
                   </radialGradient>
                 </defs>
 

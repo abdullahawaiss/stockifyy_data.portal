@@ -34,8 +34,8 @@ export default function PortalTickerBar() {
   const open = s?.open ?? false;
   const label = s?.label ?? "Market Closed";
   const cfg = open
-    ? { dot: "#22c55e", glow: "0 0 7px rgba(34,197,94,0.75)", text: "#D4AF37" }
-    : { dot: "#ef4444", glow: "0 0 7px rgba(239,68,68,0.75)", text: "#D4AF37" };
+    ? { dot: "#22c55e", glow: "0 0 7px rgba(34,197,94,0.75)", text: "#D4971A" }
+    : { dot: "#ef4444", glow: "0 0 7px rgba(239,68,68,0.75)", text: "#D4971A" };
 
   return (
     <div

@@ -61,12 +61,12 @@ export default function ChatInput({ value, onChange, onSend, isLoading, disabled
         style={{ background: "linear-gradient(135deg,#07111F,#0D2137)", border: "1px solid rgba(212,175,55,0.4)" }}
       >
         {isLoading ? (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4971A" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.3"/>
             <path d="M21 12a9 9 0 00-9-9"/>
           </svg>
         ) : (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4971A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
           </svg>
         )}

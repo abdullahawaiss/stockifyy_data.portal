@@ -163,7 +163,7 @@ function NavItem({
 }) {
   const pathname = usePathname();
   const isActive = pathname === item.href || (item.href === "/data-portal" && pathname === "/data-portal");
-  const activeColor = "#D4AF37";
+  const activeColor = "#D4971A";
 
   const row = (
     <Link

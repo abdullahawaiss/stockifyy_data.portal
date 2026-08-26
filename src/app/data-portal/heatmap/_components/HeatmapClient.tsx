@@ -470,7 +470,7 @@ function CombinedView({ stocks, onHover, onLeave }: {
                     contain: "paint" as React.CSSProperties["contain"],
                     padding: "2px",
                     textAlign: "center",
-                    outline: isHov ? "2px solid #D4AF37" : "none",
+                    outline: isHov ? "2px solid #D4971A" : "none",
                     outlineOffset: "-1px",
                     filter: isHov ? "brightness(1.15)" : "none",
                     transition: "filter 0.10s, outline 0.08s, left 0.30s ease, top 0.30s ease, width 0.30s ease, height 0.30s ease",
@@ -819,7 +819,7 @@ export default function HeatmapClient() {
             <button key={v} onClick={() => setView(v)} style={{
               padding: "5px 14px", fontSize: 11, fontWeight: 700, borderRadius: 6, cursor: "pointer",
               border: "1px solid var(--border-dark)", transition: "all 0.15s",
-              background: view === v ? "#D4AF37" : "var(--card-bg)",
+              background: view === v ? "#D4971A" : "var(--card-bg)",
               color: view === v ? "#07111F" : "var(--text-primary)",
             }}>
               {v === "combined" ? "Combined View" : "Sector View"}
@@ -835,7 +835,7 @@ export default function HeatmapClient() {
             <button key={tab.key} onClick={() => setIdx(tab.key)} style={{
               padding: "5px 12px", fontSize: 11, fontWeight: 700, borderRadius: 6, cursor: "pointer",
               border: "1px solid var(--border-dark)", transition: "all 0.15s",
-              background: idx === tab.key ? "#D4AF37" : "var(--card-bg)",
+              background: idx === tab.key ? "#D4971A" : "var(--card-bg)",
               color: idx === tab.key ? "#07111F" : "var(--text-primary)",
             }}>
               {tab.label}

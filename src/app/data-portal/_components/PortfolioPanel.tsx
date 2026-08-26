@@ -54,7 +54,7 @@ function PortfolioChart({ data }: { data: typeof PORTFOLIO_FIPI }) {
         <polyline
           points={linePoints.join(" ")}
           fill="none"
-          stroke="#D4AF37"
+          stroke="#D4971A"
           strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -65,7 +65,7 @@ function PortfolioChart({ data }: { data: typeof PORTFOLIO_FIPI }) {
         <polyline
           points={linePoints.join(" ")}
           fill="none"
-          stroke="#D4AF37"
+          stroke="#D4971A"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -81,8 +81,8 @@ function PortfolioChart({ data }: { data: typeof PORTFOLIO_FIPI }) {
           const y = H * 0.9 - ((d.cumulative - cumMin) / cumRange) * (H * 0.75);
           return (
             <g key={i}>
-              <circle cx={x} cy={y} r="3.5" fill="#D4AF37" opacity="0.2" />
-              <circle cx={x} cy={y} r="2" fill="#D4AF37" opacity="0.9" />
+              <circle cx={x} cy={y} r="3.5" fill="#D4971A" opacity="0.2" />
+              <circle cx={x} cy={y} r="2" fill="#D4971A" opacity="0.9" />
             </g>
           );
         })}
@@ -133,7 +133,7 @@ export default function PortfolioPanel() {
       <div className="flex items-center gap-3 px-4 pb-2 text-[9px]" style={{ color: "var(--text-muted)" }}>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: "#16A34A" }} /> Net Positive</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: "#DC2626" }} /> Net Negative</span>
-        <span className="flex items-center gap-1"><span className="w-4 h-px inline-block border-t-2 border-dashed" style={{ borderColor: "#D4AF37" }} /> Cumulative</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-px inline-block border-t-2 border-dashed" style={{ borderColor: "#D4971A" }} /> Cumulative</span>
         <span className="ml-auto text-[9px]">Net foreign (in $USD)</span>
       </div>
 
