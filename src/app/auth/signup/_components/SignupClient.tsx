@@ -108,7 +108,7 @@ export default function SignupClient() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width:"100%", padding:"11px 13px 11px 38px", boxSizing:"border-box",
+    width:"100%", padding:"8px 13px 8px 38px", boxSizing:"border-box",
     background:"rgba(7,17,31,.04)", border:"1.5px solid rgba(7,17,31,.12)",
     borderRadius:9, color:"#07111F", fontSize:13, outline:"none",
     fontFamily:"inherit", transition:"border-color .2s, box-shadow .2s",
@@ -116,7 +116,7 @@ export default function SignupClient() {
   const errStyle: React.CSSProperties = { borderColor:"rgba(239,68,68,.45)" };
   const labelStyle: React.CSSProperties = {
     display:"block", fontSize:10, fontWeight:700, letterSpacing:".11em",
-    textTransform:"uppercase", color:"rgba(7,17,31,.50)", marginBottom:5,
+    textTransform:"uppercase", color:"rgba(7,17,31,.50)", marginBottom:3,
   };
 
   return (
@@ -128,7 +128,7 @@ export default function SignupClient() {
         @keyframes btnShine { 0%{transform:translateX(-130%) skewX(-22deg)} 100%{transform:translateX(230%) skewX(-22deg)} }
 
         .su-inp:focus { background:rgba(212,175,55,.05)!important; border-color:rgba(212,175,55,.55)!important; box-shadow:0 0 0 3px rgba(212,175,55,.10)!important; }
-        .su-sbtn { position:relative;overflow:hidden;width:100%;padding:13px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25);font-family:inherit }
+        .su-sbtn { position:relative;overflow:hidden;width:100%;padding:10px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25);font-family:inherit }
         .su-sbtn::after { content:'';position:absolute;top:0;left:-100%;height:100%;width:55%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:btnShine 3s ease-in-out infinite .5s }
         .su-sbtn:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 10px 38px rgba(212,175,55,.65) }
         .su-sbtn:disabled { opacity:.38;cursor:not-allowed }
@@ -146,30 +146,30 @@ export default function SignupClient() {
       {/* LEFT PANEL */}
       <div className="su-left" style={{
         width:"44%", minWidth:420, maxWidth:560, height:"100vh",
-        display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center",
-        background:"#faf7f2", padding:"40px 48px", position:"relative",
-        zIndex:10, overflowY:"auto", boxShadow:"4px 0 40px rgba(7,17,31,0.10)", flexShrink:0,
+        display:"flex", flexDirection:"column", justifyContent:"space-between", alignItems:"center",
+        background:"#faf7f2", padding:"14px 48px 10px 48px", position:"relative",
+        zIndex:10, overflowY:"hidden", boxShadow:"4px 0 40px rgba(7,17,31,0.10)", flexShrink:0,
       }}>
 
         {/* Logo */}
-        <div style={{ position:"absolute", top:22, left:32 }}>
+        <div style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:6 }}>
           <a href="/data-portal" style={{ textDecoration:"none", display:"flex", alignItems:"center" }}>
-            <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height:40, objectFit:"contain", maxWidth:180, cursor:"pointer" }} />
+            <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height:36, objectFit:"contain", maxWidth:160, cursor:"pointer" }} />
           </a>
         </div>
 
-        <div className="su-card" style={{ width:"100%", maxWidth:380 }}>
+        <div className="su-card" style={{ width:"100%", maxWidth:380, flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
 
           {/* Heading */}
-          <div style={{ textAlign:"center", marginBottom:20 }}>
-            <h1 style={{ margin:0, fontSize:22, fontWeight:900, color:"#07111F", letterSpacing:"-.02em" }}>Create Account</h1>
-            <p style={{ margin:"5px 0 0", fontSize:10, color:"rgba(7,17,31,.42)", letterSpacing:".10em", textTransform:"uppercase" }}>
+          <div style={{ textAlign:"center", marginBottom:8 }}>
+            <h1 style={{ margin:0, fontSize:20, fontWeight:900, color:"#07111F", letterSpacing:"-.02em" }}>Create Account</h1>
+            <p style={{ margin:"3px 0 0", fontSize:10, color:"rgba(7,17,31,.42)", letterSpacing:".10em", textTransform:"uppercase" }}>
               Stockifyy Data Portal · Free Access
             </p>
           </div>
 
           {/* Divider */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
             <div style={{ flex:1, height:1, background:"rgba(212,175,55,.15)" }} />
             <span style={{ fontSize:8.5, fontWeight:700, color:"rgba(7,17,31,.25)", letterSpacing:".20em", textTransform:"uppercase" }}>New Account</span>
             <div style={{ flex:1, height:1, background:"rgba(212,175,55,.15)" }} />
@@ -178,7 +178,7 @@ export default function SignupClient() {
           <form onSubmit={submit} noValidate>
 
             {/* Full Name */}
-            <div style={{ marginBottom:12 }}>
+            <div style={{ marginBottom:8 }}>
               <label htmlFor="fullName" style={labelStyle}>Full Name</label>
               <div style={{ position:"relative" }}>
                 <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.35)" strokeWidth="2" strokeLinecap="round">
@@ -192,7 +192,7 @@ export default function SignupClient() {
             </div>
 
             {/* Email */}
-            <div style={{ marginBottom:12 }}>
+            <div style={{ marginBottom:8 }}>
               <label htmlFor="email" style={labelStyle}>Email Address</label>
               <div style={{ position:"relative" }}>
                 <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.35)" strokeWidth="2" strokeLinecap="round">
@@ -206,7 +206,7 @@ export default function SignupClient() {
             </div>
 
             {/* Password */}
-            <div style={{ marginBottom:12 }}>
+            <div style={{ marginBottom:8 }}>
               <label htmlFor="password" style={labelStyle}>Password</label>
               <div style={{ position:"relative" }}>
                 <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.35)" strokeWidth="2" strokeLinecap="round">
@@ -228,7 +228,7 @@ export default function SignupClient() {
             </div>
 
             {/* Confirm Password */}
-            <div style={{ marginBottom:12 }}>
+            <div style={{ marginBottom:8 }}>
               <label htmlFor="confirm" style={labelStyle}>Confirm Password</label>
               <div style={{ position:"relative" }}>
                 <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.35)" strokeWidth="2" strokeLinecap="round">
@@ -249,7 +249,7 @@ export default function SignupClient() {
             </div>
 
             {/* Terms */}
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:8 }}>
               <label style={{ display:"flex", alignItems:"flex-start", gap:8, cursor:"pointer", fontSize:12, color:"rgba(7,17,31,.55)", fontWeight:500, userSelect:"none" }}>
                 <input type="checkbox" className="su-check" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{ marginTop:1 }} />
                 I agree to Stockifyy&apos;s Terms of Service and Privacy Policy.
@@ -279,7 +279,7 @@ export default function SignupClient() {
           </form>
 
           {/* OR divider */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"14px 0 12px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"8px 0 8px" }}>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
             <span style={{ fontSize:9.5, fontWeight:600, color:"rgba(7,17,31,.30)", letterSpacing:".12em", textTransform:"uppercase" }}>or</span>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
@@ -294,7 +294,7 @@ export default function SignupClient() {
               window.location.href = "/api/auth/google/start?returnTo=%2Fdata-portal";
             }}
             style={{
-              width:"100%", padding:"11px 16px", boxSizing:"border-box",
+              width:"100%", padding:"9px 16px", boxSizing:"border-box",
               display:"flex", alignItems:"center", justifyContent:"center", gap:10,
               background:"#fff", border:"1.5px solid rgba(7,17,31,.14)", borderRadius:10,
               cursor: loading || googleLoad ? "not-allowed" : "pointer",
@@ -316,7 +316,7 @@ export default function SignupClient() {
           </button>
 
           {/* Sign in link */}
-          <p style={{ textAlign:"center", margin:"16px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
+          <p style={{ textAlign:"center", margin:"8px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
             Already have an account?{" "}
             <a href="/auth/login" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
               Sign In
@@ -326,7 +326,7 @@ export default function SignupClient() {
         </div>
 
         {/* Footer */}
-        <div style={{ position:"absolute", bottom:22, left:0, right:0, textAlign:"center", pointerEvents:"none" }}>
+        <div style={{ textAlign:"center", paddingBottom:10, paddingTop:8, pointerEvents:"none", width:"100%" }}>
           <p className="su-sg" style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
             Stockifyy · Pakistan Stock Exchange Intelligence
           </p>

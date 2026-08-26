@@ -238,12 +238,12 @@ export default function LoginClient() {
         .sg{background:linear-gradient(90deg,#7A5600 0%,#D4AF37 22%,#FEA500 50%,#D4AF37 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite}
 
         /* ── Form elements ── */
-        .inp{width:100%;padding:11px 13px 11px 38px;box-sizing:border-box;background:rgba(7,17,31,.04);border:1.5px solid rgba(7,17,31,.12);border-radius:9px;color:#07111F;font-size:13px;outline:none;transition:background .2s,border-color .22s,box-shadow .22s;font-family:inherit}
+        .inp{width:100%;padding:9px 13px 9px 38px;box-sizing:border-box;background:rgba(7,17,31,.04);border:1.5px solid rgba(7,17,31,.12);border-radius:9px;color:#07111F;font-size:13px;outline:none;transition:background .2s,border-color .22s,box-shadow .22s;font-family:inherit}
         .inp::placeholder{color:rgba(7,17,31,.28)}
         .inp:focus{background:rgba(212,175,55,.05);border-color:rgba(212,175,55,.55);box-shadow:0 0 0 3px rgba(212,175,55,.10)}
         .inp.err{border-color:rgba(239,68,68,.45)}
 
-        .sbtn{position:relative;overflow:hidden;width:100%;padding:13px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45),0 2px 10px rgba(180,100,0,.30);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+        .sbtn{position:relative;overflow:hidden;width:100%;padding:11px;border:none;border-radius:10px;background:#D78B02;color:#fff;font-size:13.5px;font-weight:900;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 28px rgba(215,139,2,.45),0 2px 10px rgba(180,100,0,.30);transition:transform .15s,box-shadow .15s;text-shadow:0 1px 3px rgba(0,0,0,.25)}
         .sbtn::after{content:'';position:absolute;top:0;left:-100%;height:100%;width:55%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:btnShine 3s ease-in-out infinite .5s}
         .sbtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 38px rgba(212,175,55,.65),0 4px 16px rgba(152,99,0,.40)}
         .sbtn:active:not(:disabled){transform:translateY(0)}
@@ -279,14 +279,14 @@ export default function LoginClient() {
           display:"flex", flexDirection:"column",
           justifyContent:"space-between", alignItems:"center",
           background:"#faf7f2",
-          padding:"24px 48px 0 48px",
-          position:"relative", zIndex:10, overflowY:"auto",
+          padding:"16px 48px 12px 48px",
+          position:"relative", zIndex:10, overflowY:"hidden",
           boxShadow:"4px 0 40px rgba(7,17,31,0.10)",
           flexShrink:0,
         }}
       >
         {/* Top logo strip */}
-        <div className="f1" style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:16 }}>
+        <div className="f1" style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:8 }}>
           <a href="/data-portal" style={{ textDecoration:"none", display:"flex", alignItems:"center" }}>
             <img src="/stockifyy-full-logo.png" alt="Stockifyy" className="lp" style={{ height:40, objectFit:"contain", maxWidth:180, cursor:"pointer" }} />
           </a>
@@ -296,7 +296,7 @@ export default function LoginClient() {
         <div className="card-in" style={{ width:"100%", maxWidth:380, flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
 
           {/* Live badge */}
-          <div className="f2" style={{ display:"flex", justifyContent:"center", marginBottom:20 }}>
+          <div className="f2" style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
             <div style={{
               display:"flex", alignItems:"center", gap:6,
               padding:"4px 14px", borderRadius:999,
@@ -311,7 +311,7 @@ export default function LoginClient() {
           </div>
 
           {/* Heading */}
-          <div className="f3" style={{ textAlign:"center", marginBottom:20 }}>
+          <div className="f3" style={{ textAlign:"center", marginBottom:10 }}>
             <h1 style={{ margin:0, fontSize:22, fontWeight:900, color:"#07111F", letterSpacing:"-.02em" }}>
               Client Login
             </h1>
@@ -321,7 +321,7 @@ export default function LoginClient() {
           </div>
 
           {/* Divider */}
-          <div className="f4" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
+          <div className="f4" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
             <div style={{ flex:1, height:1, background:"rgba(212,175,55,.15)" }} />
             <span style={{ fontSize:8.5, fontWeight:700, color:"rgba(7,17,31,.25)", letterSpacing:".20em", textTransform:"uppercase" }}>Secure Sign In</span>
             <div style={{ flex:1, height:1, background:"rgba(212,175,55,.15)" }} />
@@ -409,7 +409,7 @@ export default function LoginClient() {
           </form>
 
           {/* OR divider */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"14px 0 12px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"8px 0 8px" }}>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
             <span style={{ fontSize:9.5, fontWeight:600, color:"rgba(7,17,31,.30)", letterSpacing:".12em", textTransform:"uppercase" }}>or</span>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
@@ -424,7 +424,7 @@ export default function LoginClient() {
               window.location.href = `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
             }}
             style={{
-              width:"100%", padding:"11px 16px", boxSizing:"border-box",
+              width:"100%", padding:"9px 16px", boxSizing:"border-box",
               display:"flex", alignItems:"center", justifyContent:"center", gap:10,
               background:"#fff", border:"1.5px solid rgba(7,17,31,.14)", borderRadius:10,
               cursor: loading || googleLoading ? "not-allowed" : "pointer",
@@ -447,7 +447,7 @@ export default function LoginClient() {
           </button>
 
           {/* Sign up link */}
-          <p style={{ textAlign:"center", margin:"16px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
+          <p style={{ textAlign:"center", margin:"8px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
             Don&apos;t have an account?{" "}
             <a href="/auth/signup" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
               Sign Up
@@ -457,7 +457,7 @@ export default function LoginClient() {
         </div>
 
         {/* Footer */}
-        <div style={{ textAlign:"center", paddingBottom:20, paddingTop:16, pointerEvents:"none" }}>
+        <div style={{ textAlign:"center", paddingBottom:10, paddingTop:8, pointerEvents:"none" }}>
           <p className="sg" style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
             Stockifyy · Pakistan Stock Exchange Intelligence
           </p>
