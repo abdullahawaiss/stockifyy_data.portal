@@ -148,12 +148,12 @@ export default function SignupClient() {
       <div className="su-left" style={{
         width:"44%", minWidth:420, maxWidth:560, height:"100vh",
         display:"flex", flexDirection:"column", justifyContent:"space-between", alignItems:"center",
-        background:"#faf7f2", padding:"14px 48px 10px 48px", position:"relative",
+        background:"#faf7f2", padding:"10px 48px 6px 48px", position:"relative",
         zIndex:10, overflowY:"hidden", boxShadow:"4px 0 40px rgba(7,17,31,0.10)", flexShrink:0,
       }}>
 
         {/* Logo */}
-        <div style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:6 }}>
+        <div style={{ width:"100%", display:"flex", alignItems:"center", paddingBottom:2 }}>
           <a href="/data-portal" style={{ textDecoration:"none", display:"flex", alignItems:"center" }}>
             <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height:36, objectFit:"contain", maxWidth:160, cursor:"pointer" }} />
           </a>
@@ -162,7 +162,7 @@ export default function SignupClient() {
         <div className="su-card" style={{ width:"100%", maxWidth:380, flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
 
           {/* Heading */}
-          <div style={{ textAlign:"center", marginBottom:8 }}>
+          <div style={{ textAlign:"center", marginBottom:5 }}>
             <h1 style={{ margin:0, fontSize:20, fontWeight:900, color:"#07111F", letterSpacing:"-.02em" }}>Create Account</h1>
             <p style={{ margin:"3px 0 0", fontSize:10, color:"rgba(7,17,31,.42)", letterSpacing:".10em", textTransform:"uppercase" }}>
               Stockifyy Data Portal · Free Access
@@ -176,10 +176,10 @@ export default function SignupClient() {
             <div style={{ flex:1, height:1, background:"rgba(212,175,55,.15)" }} />
           </div>
 
-          <form onSubmit={submit} noValidate>
+          <form style={{ marginTop:0 }} onSubmit={submit} noValidate>
 
             {/* Full Name */}
-            <div style={{ marginBottom:8 }}>
+            <div style={{ marginBottom:6 }}>
               <label htmlFor="fullName" style={labelStyle}>Full Name</label>
               <div style={{ position:"relative" }}>
                 <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(7,17,31,.35)" strokeWidth="2" strokeLinecap="round">
@@ -280,7 +280,7 @@ export default function SignupClient() {
           </form>
 
           {/* OR divider */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"8px 0 8px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"5px 0" }}>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
             <span style={{ fontSize:9.5, fontWeight:600, color:"rgba(7,17,31,.30)", letterSpacing:".12em", textTransform:"uppercase" }}>or</span>
             <div style={{ flex:1, height:1, background:"rgba(7,17,31,.10)" }} />
@@ -317,7 +317,7 @@ export default function SignupClient() {
           </button>
 
           {/* Sign in link */}
-          <p style={{ textAlign:"center", margin:"8px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
+          <p style={{ textAlign:"center", margin:"5px 0 0", fontSize:12, color:"rgba(7,17,31,.45)" }}>
             Already have an account?{" "}
             <a href="/auth/login" style={{ color:"#D4AF37", fontWeight:700, textDecoration:"none" }}>
               Sign In
@@ -327,7 +327,7 @@ export default function SignupClient() {
         </div>
 
         {/* Footer */}
-        <div style={{ textAlign:"center", paddingBottom:10, paddingTop:8, pointerEvents:"none", width:"100%" }}>
+        <div style={{ textAlign:"center", paddingBottom:6, paddingTop:4, pointerEvents:"none", width:"100%" }}>
           <p className="su-sg" style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
             Stockifyy · Pakistan Stock Exchange Intelligence
           </p>
