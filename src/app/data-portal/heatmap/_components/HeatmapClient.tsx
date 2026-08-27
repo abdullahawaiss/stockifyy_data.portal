@@ -166,12 +166,12 @@ function SectorModal({ g, onClose }: {
   );
 }
 
-// ── Combined View — Professional hierarchical treemap ────────────────────────
+// ── Combined View — PSX-style nested treemap (SCS Trade layout) ─────────────
 
-const CV_HEADER_H  = 17; // reserved sector header strip height (px)
-const CV_MARGIN    = 0;  // outer canvas margin (px) — flush edges like a terminal
-const CV_SEC_GAP   = 1;  // 1px white divider between sector frames
-const CV_STOCK_GAP = 0;  // no gap; inset box-shadow creates sharp dividers
+const CV_HEADER_H  = 20; // sector label strip height (px)
+const CV_MARGIN    = 0;  // outer canvas margin (px)
+const CV_SEC_GAP   = 3;  // white divider between sector frames
+const CV_STOCK_GAP = 1;  // 1px gap between stock tiles
 
 function buildWeightMap(allFilteredStocks: StockData[]): Map<string, number> {
   const map = new Map<string, number>();
@@ -300,10 +300,10 @@ function CombinedView({ stocks, onHover, onLeave }: {
     zoomedSector ? sectorGroups.filter(g => g.sector === zoomedSector) : sectorGroups
   , [sectorGroups, zoomedSector]);
 
-  // Wide landscape ratio: 0.45× width → forces wide, short tiles (width > height)
+  // Tall canvas: 0.65× width — fills most of the viewport without scrolling
   const canvasH = useMemo(() => {
-    if (!canvasW) return 500;
-    return Math.max(420, Math.round(canvasW * 0.45));
+    if (!canvasW) return 600;
+    return Math.max(500, Math.round(canvasW * 0.65));
   }, [canvasW]);
 
   const layout = useMemo(() => {
@@ -333,8 +333,8 @@ function CombinedView({ stocks, onHover, onLeave }: {
         width: "100%",
         height: canvasH || 600,
         position: "relative",
-        background: "#0a0a0a",
-        border: "1px solid rgba(255,255,255,0.10)",
+        background: "#000000",
+        border: "2px solid #fff",
         boxSizing: "border-box",
         overflow: "hidden",
       }}
@@ -354,22 +354,20 @@ function CombinedView({ stocks, onHover, onLeave }: {
       )}
 
       {layout.map(({ sector, sx, sy, sw, sh, stockRects }) => {
-        // Fit sector name: bold uppercase, ~0.63× char-width ratio, 7–10px range
-        const headerFs: number = Math.max(7, Math.min(10, (sw - 10) / (sector.length * 0.63)));
-        // Allow two lines only if sector is wide enough and name is long
-        const twoLine = sw >= 60 && sector.length * headerFs * 0.63 > sw - 10;
+        // Sector label: white CAPS text, fit to strip width
+        const headerFs = Math.max(7, Math.min(12, (sw - 10) / (sector.length * 0.60)));
 
         return (
           <div key={sector} style={{ position: "absolute", left: 0, top: 0, width: 0, height: 0 }}>
 
-            {/* Sector boundary — sharp white frame */}
+            {/* Sector outer boundary — 2px white border */}
             <div style={{
               position: "absolute", left: sx, top: sy, width: sw, height: sh,
-              border: "1px solid rgba(255,255,255,0.55)",
-              boxSizing: "border-box", pointerEvents: "none", zIndex: 3,
+              border: "2px solid #fff",
+              boxSizing: "border-box", pointerEvents: "none", zIndex: 4,
             }} />
 
-            {/* Sector header strip — white background, dark text (terminal style) */}
+            {/* Sector label strip — dark background, white uppercase text (SCS Trade style) */}
             <div
               onClick={() => setZoomedSector(prev => prev === sector ? null : sector)}
               onMouseEnter={() => setHoveredSector(sector)}
@@ -378,11 +376,11 @@ function CombinedView({ stocks, onHover, onLeave }: {
               style={{
                 position: "absolute",
                 left: sx, top: sy, width: sw, height: CV_HEADER_H,
-                background: hoveredSector === sector ? "#FFF6DC" : "#FFFFFF",
-                borderBottom: `1px solid rgba(0,0,0,0.18)`,
+                background: hoveredSector === sector ? "#1e3a5f" : "#07111F",
+                borderBottom: "1px solid rgba(255,255,255,0.25)",
                 boxSizing: "border-box",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "0 3px",
+                padding: "0 4px",
                 overflow: "hidden",
                 cursor: "pointer",
                 zIndex: 6,
@@ -392,26 +390,20 @@ function CombinedView({ stocks, onHover, onLeave }: {
               <span style={{
                 fontSize: headerFs,
                 fontWeight: 700,
-                color: hoveredSector === sector ? "#B87B1A" : "#1a1a1a",
+                color: "#ffffff",
                 textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                lineHeight: 1.15,
-                whiteSpace: twoLine ? "normal" : "nowrap",
+                letterSpacing: "0.05em",
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
                 overflow: "hidden",
-                textOverflow: "clip",
+                textOverflow: "ellipsis",
                 textAlign: "center",
-                transition: "color 0.15s",
-                ...(twoLine ? {
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                } : {}),
-              } as React.CSSProperties}>
+              }}>
                 {sector}
               </span>
             </div>
 
-            {/* Stock tiles — volume-sized; progressive text display */}
+            {/* Stock tiles — SCS Trade style: Symbol / Price / chgAmt (chg%) / vol */}
             {stockRects.map(({ stock: s, x, y, w, h }) => {
               const tx = x + CV_STOCK_GAP, ty = y + CV_STOCK_GAP;
               const tw = Math.max(0, w - CV_STOCK_GAP * 2);
@@ -420,66 +412,51 @@ function CombinedView({ stocks, onHover, onLeave }: {
 
               const isHov       = hoveredSym === s.sym;
               const inHovSector = hoveredSector === sector;
-              const isHighVol   = s.vol >= volQ.p85;
-              const isLowVol    = s.vol <= volQ.p15;
-              const sign  = s.chg >= 0 ? "+" : "";
-              const pct   = `${sign}${s.chg.toFixed(2)}%`;
-              const arrow = s.chg >= 0 ? "▲" : "▼";
+              const sign        = s.chg >= 0 ? "+" : "";
 
-              // Dynamic padding — tiny tiles get almost no padding
-              const padH = tw < 16 ? 1 : tw < 28 ? 2 : tw < 50 ? 3 : 5;
-              const padV = th < 16 ? 1 : th < 28 ? 2 : th < 50 ? 3 : 5;
+              // Padding scales with tile size
+              const padH = tw < 20 ? 1 : tw < 40 ? 2 : tw < 70 ? 4 : 6;
+              const padV = th < 20 ? 1 : th < 40 ? 2 : th < 70 ? 3 : 5;
               const avW  = Math.max(1, tw - padH * 2);
               const avH  = Math.max(1, th - padV * 2);
               const MIN_FS = 5;
 
-              // ── SYMBOL ──
-              // Try full symbol first, then abbreviate down to 1 char
-              let symStr = s.sym;
-              let symFitW = avW / (symStr.length * 0.72);
-              let symFs   = Math.min(symFitW, avH, 30);
+              // ── SYMBOL ── largest text; abbreviates if needed
+              let symStr  = s.sym;
+              let symFs   = Math.min(avW / (symStr.length * 0.68), avH * 0.45, 44);
               if (symFs < MIN_FS && symStr.length > 3) {
-                symStr  = symStr.slice(0, 3);
-                symFitW = avW / (symStr.length * 0.72);
-                symFs   = Math.min(symFitW, avH, 30);
+                symStr = symStr.slice(0, 3);
+                symFs  = Math.min(avW / (symStr.length * 0.68), avH * 0.45, 44);
               }
-              if (symFs < MIN_FS && symStr.length > 1) {
-                symStr  = symStr.slice(0, 1);
-                symFitW = avW / (symStr.length * 0.72);
-                symFs   = Math.min(symFitW, avH, 30);
+              if (symFs < MIN_FS) {
+                symStr = symStr.slice(0, 1);
+                symFs  = Math.min(avW / 0.68, avH * 0.45, 44);
               }
               const showSym    = symFs >= MIN_FS;
               const finalSymFs = showSym ? Math.max(MIN_FS, symFs) : 0;
 
-              // ── CHANGE % ── e.g. "▲ +1.42%"
-              const chgText = `${arrow} ${pct}`;
-              const chgFs   = Math.min(
-                finalSymFs * 0.80,
-                avW / (chgText.length * 0.60),
-                16,
-              );
-              const showChg = showSym
-                && symStr === s.sym   // only when full symbol fits
-                && chgFs >= MIN_FS
-                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + 2;
+              // ── PRICE ── below symbol (e.g. "221.41")
+              const priceText = s.price.toFixed(2);
+              const priceFs   = Math.min(finalSymFs * 0.62, avW / (priceText.length * 0.60), 18);
+              const showPrice = showSym && symStr === s.sym && priceFs >= MIN_FS
+                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + 2 && tw >= 28;
 
-              // ── PRICE ── e.g. "Rs 221.41"
-              const priceText  = `Rs ${s.price.toFixed(2)}`;
-              const priceFsMax = avW / (priceText.length * 0.58);
-              const priceFs    = Math.min(9, priceFsMax);
-              const showPrice  = showChg
-                && priceFs >= MIN_FS
-                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + priceFs * 1.2 + 4
-                && tw >= 42;
+              // ── CHANGE LINE ── e.g. "-0.06 (-4.84%)"
+              const chgAmt    = s.chg >= 0
+                ? `+${((s.price * s.chg) / 100).toFixed(2)}`
+                : `${((s.price * s.chg) / 100).toFixed(2)}`;
+              const chgPct    = `${sign}${s.chg.toFixed(2)}%`;
+              const chgLine   = `${chgAmt} (${chgPct})`;
+              const chgFs     = Math.min(priceFs * 0.82, avW / (chgLine.length * 0.58), 12);
+              const showChg   = showPrice && chgFs >= MIN_FS
+                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + chgFs * 1.2 + 3;
 
-              // ── VOLUME ── e.g. "117.9 mn"
-              const volStr    = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
-              const volFsMax  = avW / (volStr.length * 0.60);
-              const volFs     = Math.min(8, volFsMax);
-              const showVol   = showPrice
-                && volFs >= MIN_FS
-                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + priceFs * 1.2 + volFs * 1.2 + 6
-                && tw >= 55;
+              // ── VOLUME ── e.g. "86.1 mn" or "450K"
+              const volStr  = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
+              const volFs   = Math.min(chgFs * 0.85, avW / (volStr.length * 0.58), 10);
+              const showVol = showChg && volFs >= MIN_FS
+                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + chgFs * 1.2 + volFs * 1.3 + 4
+                && tw >= 48;
 
               return (
                 <div
@@ -491,7 +468,7 @@ function CombinedView({ stocks, onHover, onLeave }: {
                     if (!zoomedSector) setZoomedSector(sector);
                     else window.open(`/data-portal/company/${s.sym}`, "_blank");
                   }}
-                  title={`${s.sym} — ${s.name} | ${sector}\n${sign}${s.chg.toFixed(2)}% | Rs ${s.price.toFixed(2)} | Vol ${s.vol >= 1000 ? (s.vol / 1000).toFixed(2) + "mn" : s.vol + "K"}${s.shariah ? " | Shariah ✓" : ""}`}
+                  title={`${s.sym} — ${s.name}\nRs ${s.price.toFixed(2)}   ${chgAmt} (${chgPct})\nVol: ${volStr}${s.shariah ? "  |  Shariah ✓" : ""}`}
                   style={{
                     position: "absolute",
                     left: tx, top: ty, width: tw, height: th,
@@ -504,73 +481,52 @@ function CombinedView({ stocks, onHover, onLeave }: {
                     contain: "paint" as React.CSSProperties["contain"],
                     padding: `${padV}px ${padH}px`,
                     textAlign: "center",
-                    // inset box-shadow = sharp white divider without layout shift
                     boxShadow: isHov
-                      ? "inset 0 0 0 2px #E79A00"
-                      : "inset 0 0 0 1px rgba(255,255,255,0.28)",
-                    filter: isHov ? "brightness(1.18)" : inHovSector ? "brightness(1.10)" : "none",
+                      ? "inset 0 0 0 2px #FFD700"
+                      : "inset 0 0 0 1px rgba(255,255,255,0.20)",
+                    filter: isHov ? "brightness(1.20)" : inHovSector ? "brightness(1.08)" : "none",
                     transition: "filter 0.10s, box-shadow 0.08s",
                     zIndex: isHov ? 8 : 1,
                   }}
                 >
-                  {/* Symbol — always show if it fits at >= 5px; abbreviates gracefully */}
+                  {/* Symbol */}
                   {showSym && (
                     <div style={{
-                      fontSize: finalSymFs,
-                      fontWeight: 700,
-                      color: "#fff",
-                      lineHeight: 1.0,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      maxWidth: "100%",
-                      textShadow: finalSymFs > 10 ? "0 1px 2px rgba(0,0,0,0.50)" : "none",
-                      flexShrink: 0,
-                      letterSpacing: finalSymFs > 14 ? "-0.01em" : "0",
+                      fontSize: finalSymFs, fontWeight: 800, color: "#fff",
+                      lineHeight: 1.0, whiteSpace: "nowrap",
+                      overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+                      textShadow: finalSymFs > 12 ? "0 1px 3px rgba(0,0,0,0.55)" : "none",
+                      letterSpacing: finalSymFs > 18 ? "-0.02em" : "0",
                     }}>{symStr}</div>
                   )}
 
-                  {/* ▲/▼ % change */}
-                  {showChg && (
-                    <div style={{
-                      fontSize: chgFs,
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,0.93)",
-                      lineHeight: 1.0,
-                      marginTop: 1,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      maxWidth: "100%",
-                      flexShrink: 0,
-                    }}>{arrow} {pct}</div>
-                  )}
-
-                  {/* Price — medium+ tiles only */}
+                  {/* Price */}
                   {showPrice && (
                     <div style={{
-                      fontSize: priceFs,
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,0.75)",
-                      lineHeight: 1.1,
-                      marginTop: 1,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      maxWidth: "100%",
-                      flexShrink: 0,
-                    }}>Rs {s.price.toFixed(2)}</div>
+                      fontSize: priceFs, fontWeight: 600, color: "#fff",
+                      lineHeight: 1.1, marginTop: 2,
+                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+                      textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+                    }}>{priceText}</div>
                   )}
 
-                  {/* Volume — large tiles only */}
+                  {/* Change amount (Change%) */}
+                  {showChg && (
+                    <div style={{
+                      fontSize: chgFs, fontWeight: 600,
+                      color: "rgba(255,255,255,0.90)",
+                      lineHeight: 1.1, marginTop: 1,
+                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+                    }}>{chgLine}</div>
+                  )}
+
+                  {/* Volume */}
                   {showVol && (
                     <div style={{
-                      fontSize: volFs,
-                      fontWeight: 500,
-                      color: "rgba(255,255,255,0.55)",
-                      lineHeight: 1.1,
-                      marginTop: 2,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      maxWidth: "100%",
-                      flexShrink: 0,
+                      fontSize: volFs, fontWeight: 500,
+                      color: "rgba(255,255,255,0.60)",
+                      lineHeight: 1.1, marginTop: 2,
+                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
                     }}>{volStr}</div>
                   )}
                 </div>
@@ -656,37 +612,29 @@ function SectorCard({ sector, ss, onHover, onLeave }: {
         </div>
       </div>
 
-      {/* ── Two large highlighted boxes (fixed height) ── */}
-      <div style={{ display: "flex", gap: 3, padding: "4px 4px 3px", flexShrink: 0 }}>
-        {/* Worst performer */}
-        <SectorHighlightBox s={worst} label="Worst" onHover={onHover} onLeave={onLeave} />
-        {/* Best performer (skip if same stock) */}
-        {!isSame && <SectorHighlightBox s={best} label="Best" onHover={onHover} onLeave={onLeave} />}
-      </div>
+      {/* ── Scrollable body: highlight boxes + rest ── */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "0 4px 4px" }}>
+        {/* Two large highlighted boxes */}
+        <div style={{ display: "flex", gap: 3, padding: "4px 0 3px" }}>
+          <SectorHighlightBox s={worst} label="Worst" onHover={onHover} onLeave={onLeave} />
+          {!isSame && <SectorHighlightBox s={best} label="Best" onHover={onHover} onLeave={onLeave} />}
+        </div>
 
-      {/* ── Remaining stocks — scrollable ── */}
-      {rest.length > 0 && (
-        <div style={{
-          flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden",
-          padding: "0 4px 4px",
-        }}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 3,
-          }}>
+        {/* Remaining stocks grid */}
+        {rest.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 3 }}>
             {rest.map(s => (
               <SectorSmallBox key={s.sym} s={s} onHover={onHover} onLeave={onLeave} />
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {ss.length === 0 && (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--text-muted)" }}>
-          No stocks available
-        </div>
-      )}
+        {ss.length === 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 60, fontSize: 11, color: "var(--text-muted)" }}>
+            No stocks available
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PSX_STOCKS_STATIC } from "@/lib/psx-stocks-static";
+import { PSX_STOCKS } from "@/lib/psx-stocks-static";
+import { getCompanyDetail } from "@/lib/psx-company-details";
 import { db } from "@/db";
 import { companies, dailyStockPrices, weeklyStockPrices, sectors, companyAnnouncements } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -49,11 +50,15 @@ async function getCompanyData(sym: string): Promise<{ company: any; latestDaily:
   try {
     const row = await getPsxRow(sym);
     if (row) {
+      const detail = getCompanyDetail(sym);
       const company = {
         id: null, symbol: row.symbol, name: row.companyName ?? row.symbol,
-        sectorId: row.sectorId, description: null, listingDate: null,
-        fiscalYearEnd: null, website: null, freeFloat: null,
-        shariahStatus: row.shariahStatus ?? null,
+        sectorId: row.sectorId, description: null,
+        listingDate: detail?.listingDate ?? null,
+        fiscalYearEnd: detail?.fiscalYearEnd ?? null,
+        website: detail?.website ?? null,
+        freeFloat: detail?.freeFloat ?? null,
+        shariahStatus: row.shariahStatus ?? detail?.shariahStatus ?? null,
         marketCapCategory: null, sectorName: row.sectorName ?? null,
       };
       const latestDaily = {
@@ -70,13 +75,19 @@ async function getCompanyData(sym: string): Promise<{ company: any; latestDaily:
     // live also failed
   }
 
-  // Final fallback: use static PSX list so company page always has something
-  const staticEntry = PSX_STOCKS_STATIC.find(s => s.symbol === sym);
+  // Final fallback: use static PSX list + company detail lookup
+  const staticEntry = PSX_STOCKS.find(s => s.symbol === sym);
+  const detail = getCompanyDetail(sym);
   if (staticEntry) {
     const company = {
       id: null, symbol: staticEntry.symbol, name: staticEntry.name,
-      sectorId: null, description: null, listingDate: null, fiscalYearEnd: null,
-      website: null, freeFloat: null, shariahStatus: null, marketCapCategory: null,
+      sectorId: null, description: null,
+      listingDate: detail?.listingDate ?? null,
+      fiscalYearEnd: detail?.fiscalYearEnd ?? null,
+      website: detail?.website ?? null,
+      freeFloat: detail?.freeFloat ?? null,
+      shariahStatus: detail?.shariahStatus ?? (staticEntry.shariah ? "Shariah Compliant" : null),
+      marketCapCategory: null,
       sectorName: staticEntry.sector,
     };
     return { company, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };

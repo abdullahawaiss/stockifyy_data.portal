@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { PSX_STOCKS_STATIC, searchPsxStocks } from "@/lib/psx-stocks-static";
+import { PSX_STOCKS, searchPsxStocks } from "@/lib/psx-stocks-static";
 
 interface WatchItem {
   id: string;
@@ -110,11 +110,12 @@ function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (sym: string
   const [apiResults, setApiResults] = useState<{ symbol: string; name: string }[]>([]);
   const [searching, setSearching] = useState(false);
 
-  // Always show static list immediately; try live API in background
+  // Reset API results immediately on query change, fetch live in background
   useEffect(() => {
+    setApiResults([]); // clear stale results so static list shows instantly
     const url = query
-      ? `/api/portal/companies?search=${encodeURIComponent(query)}&limit=60`
-      : `/api/portal/companies?limit=900`;
+      ? `/api/portal/companies?search=${encodeURIComponent(query)}&limit=500`
+      : `/api/portal/companies?limit=2000`;
     const t = setTimeout(() => {
       fetch(url)
         .then(r => r.json())
@@ -123,15 +124,14 @@ function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (sym: string
           if (live.length > 0) setApiResults(live);
         })
         .catch(() => {});
-    }, query ? 200 : 0);
+    }, query ? 150 : 0);
     return () => clearTimeout(t);
   }, [query]);
 
-  // Static fallback always shows — API results replace when available; deduplicate by symbol
-  const staticList = query ? searchPsxStocks(query, 100) : PSX_STOCKS_STATIC;
-  const rawFiltered = apiResults.length > 0
-    ? apiResults
-    : staticList.map(s => ({ symbol: s.symbol, name: s.name }));
+  // Static list always shows instantly; API results replace if richer
+  const staticList = query ? searchPsxStocks(query, 2000) : PSX_STOCKS;
+  const base = staticList.map(s => ({ symbol: s.symbol, name: s.name }));
+  const rawFiltered = apiResults.length > base.length ? apiResults : base;
   const seen = new Set<string>();
   const filtered = rawFiltered.filter(p => { if (seen.has(p.symbol)) return false; seen.add(p.symbol); return true; });
 

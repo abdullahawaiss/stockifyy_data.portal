@@ -1,7 +1,7 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { PSX_STOCKS_STATIC, searchPsxStocks } from "@/lib/psx-stocks-static";
+import { PSX_STOCKS, searchPsxStocks } from "@/lib/psx-stocks-static";
 
 interface ScreenerResult {
   symbol: string;
@@ -78,13 +78,45 @@ const INPUT_STYLE: React.CSSProperties = {
   background: "var(--background,#f8fafc)", color: "var(--text,#1e293b)",
 };
 
+// Build static base list from psx-stocks-static immediately (no API wait)
+function buildStaticRows(search: string): ScreenerResult[] {
+  const src = search ? searchPsxStocks(search, 2000) : PSX_STOCKS;
+  return src.map(s => ({
+    symbol: s.symbol,
+    companyName: s.name,
+    sectorName: s.sector,
+    close: "—",
+    percentageChange: "0",
+    volume: "0",
+    shariahStatus: s.shariah ? "compliant" : "non_compliant",
+    tradingDate: "—",
+  }));
+}
+
+// Avatar circle with first letter of symbol
+function SymAvatar({ symbol }: { symbol: string }) {
+  const colors = ["#C8860A","#0ea5e9","#10b981","#8b5cf6","#ef4444","#f59e0b","#06b6d4","#ec4899"];
+  const color = colors[symbol.charCodeAt(0) % colors.length];
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: "50%", background: color,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0, fontSize: 13, fontWeight: 800, color: "#fff",
+    }}>
+      {symbol[0]}
+    </div>
+  );
+}
+
 export default function ScreenerPage() {
-  const [results, setResults] = useState<ScreenerResult[]>([]);
+  // Initialize instantly with static data — no loading spinner on first render
+  const [results, setResults] = useState<ScreenerResult[]>(() => enrich(buildStaticRows("")));
   const [loading, setLoading] = useState(false);
-  const [ran, setRan] = useState(false);
+  const [ran, setRan] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
   const [sortCol, setSortCol] = useState("symbol");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showDrop, setShowDrop] = useState(false);
 
   const [filters, setFilters] = useState({
     search: "", minPrice: "", maxPrice: "",
@@ -99,17 +131,17 @@ export default function ScreenerPage() {
   const runScreener = useCallback(async () => {
     setLoading(true); setRan(true);
     try {
-      const params = new URLSearchParams({ limit: "1000" });
+      const params = new URLSearchParams({ limit: "2000" });
       if (filters.search) params.set("search", filters.search);
       if (filters.shariah) params.set("shariah", filters.shariah);
       const res = await fetch(`/api/portal/daily?${params}`);
       const json = await res.json();
       let rawData: ScreenerResult[] = json.data ?? [];
 
-      // Fallback chain: companies API → then guaranteed static list
+      // Fallback: companies API
       if (rawData.length === 0) {
         try {
-          const cParams = new URLSearchParams({ limit: "1000" });
+          const cParams = new URLSearchParams({ limit: "2000" });
           if (filters.search) cParams.set("search", filters.search);
           const cRes = await fetch(`/api/portal/companies?${cParams}`);
           const cJson = await cRes.json();
@@ -123,22 +155,12 @@ export default function ScreenerPage() {
             shariahStatus: "—",
             tradingDate: "—",
           }));
-        } catch { /* fall through to static */ }
+        } catch { /* fall through */ }
       }
 
-      // Final guaranteed fallback — static PSX list always works
+      // Final fallback — static list always works
       if (rawData.length === 0) {
-        const src = filters.search ? searchPsxStocks(filters.search, 1000) : PSX_STOCKS_STATIC;
-        rawData = src.map(s => ({
-          symbol: s.symbol,
-          companyName: s.name,
-          sectorName: s.sector,
-          close: "—",
-          percentageChange: "0",
-          volume: "0",
-          shariahStatus: "—",
-          tradingDate: "—",
-        }));
+        rawData = buildStaticRows(filters.search);
       }
 
       let data: ScreenerResult[] = enrich(rawData);
@@ -158,8 +180,21 @@ export default function ScreenerPage() {
     } catch { setResults([]); setTotal(0); } finally { setLoading(false); }
   }, [filters]);
 
-  // Auto-run on mount
-  useEffect(() => { runScreener(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // On mount: fetch live prices in background, update results silently
+  // AbortController ensures we cancel if it takes > 5s
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    fetch("/api/portal/daily?limit=2000", { signal: ctrl.signal })
+      .then(r => r.json())
+      .then(json => {
+        const live: ScreenerResult[] = json.data ?? [];
+        if (live.length > 0) { setResults(enrich(live)); setTotal(live.length); }
+      })
+      .catch(() => { /* keep static data */ })
+      .finally(() => clearTimeout(timer));
+    return () => { ctrl.abort(); clearTimeout(timer); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function downloadCsv() {
     const header = "Symbol,Company,Sector,Price,Change%,Volume,EPS,P/E,DPS,Shariah\n";
@@ -224,12 +259,61 @@ export default function ScreenerPage() {
         )}
       </div>
 
-      {/* Search bar */}
-      <div style={{ marginBottom: 16 }}>
-        <input value={filters.search} onChange={e => setF("search", e.target.value)}
-          onKeyDown={e => e.key === "Enter" && runScreener()}
+      {/* Search bar with live dropdown */}
+      <div style={{ marginBottom: 16, position: "relative" }}>
+        <input
+          value={filters.search}
+          onChange={e => { setF("search", e.target.value); setShowDrop(true); }}
+          onFocus={() => setShowDrop(true)}
+          onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+          onKeyDown={e => { if (e.key === "Enter") { setShowDrop(false); runScreener(); } if (e.key === "Escape") setShowDrop(false); }}
           placeholder="Search by symbol or company name…"
-          style={{ ...INPUT_STYLE, paddingLeft: 40, maxWidth: "100%", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "12px center" }} />
+          style={{ ...INPUT_STYLE, paddingLeft: 40, maxWidth: "100%",
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E\")",
+            backgroundRepeat: "no-repeat", backgroundPosition: "12px center" }}
+        />
+        {showDrop && filters.search.length >= 1 && (() => {
+          const q = filters.search.toLowerCase();
+          const hits = results.filter(r =>
+            r.symbol.toLowerCase().includes(q) || (r.companyName ?? "").toLowerCase().includes(q)
+          ).slice(0, 12);
+          if (!hits.length) return null;
+          return (
+            <div style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100,
+              background: "var(--card-bg)", border: "1px solid var(--border)",
+              borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.16)", overflow: "hidden",
+            }}>
+              {hits.map(r => {
+                const pct = parseFloat(r.percentageChange);
+                const price = parseFloat(r.close);
+                const hasPrice = !isNaN(price) && r.close !== "—" && r.close !== null;
+                const hasPct = !isNaN(pct);
+                const up = pct >= 0;
+                return (
+                  <div key={r.symbol}
+                    onMouseDown={() => { setF("search", r.symbol); setShowDrop(false); }}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 14px",
+                      cursor: "pointer", borderBottom: "1px solid var(--border)",
+                      transition: "background 0.08s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(200,134,10,0.07)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <SymAvatar symbol={r.symbol} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "#C8860A" }}>{r.symbol}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.companyName}</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      {hasPrice && <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>Rs {parseFloat(r.close).toLocaleString("en-PK", { minimumFractionDigits: 2 })}</div>}
+                      {hasPct && <div style={{ fontSize: 11, fontWeight: 600, color: up ? "#16a34a" : "#dc2626" }}>{up ? "+" : ""}{pct.toFixed(2)}%</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Price & Volume */}
