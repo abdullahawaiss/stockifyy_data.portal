@@ -75,5 +75,3 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Silence unused-import warning for sectorCode
-void sectorCode;

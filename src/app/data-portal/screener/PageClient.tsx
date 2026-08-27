@@ -80,7 +80,7 @@ const INPUT_STYLE: React.CSSProperties = {
 
 // Build static base list from psx-stocks-static immediately (no API wait)
 function buildStaticRows(search: string): ScreenerResult[] {
-  const src = search ? searchPsxStocks(search, 2000) : PSX_STOCKS;
+  const src = search ? searchPsxStocks(search, 2000) : (PSX_STOCKS ?? []);
   return src.map(s => ({
     symbol: s.symbol,
     companyName: s.name,
@@ -110,7 +110,9 @@ function SymAvatar({ symbol }: { symbol: string }) {
 
 export default function ScreenerPage() {
   // Initialize instantly with static data — no loading spinner on first render
-  const [results, setResults] = useState<ScreenerResult[]>(() => enrich(buildStaticRows("")));
+  const [results, setResults] = useState<ScreenerResult[]>(() => {
+    try { return enrich(buildStaticRows("")); } catch { return []; }
+  });
   const [loading, setLoading] = useState(false);
   const [ran, setRan] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
