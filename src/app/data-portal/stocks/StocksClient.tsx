@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber, formatVolume } from "@/lib/utils";
 import { useDarkTokens } from "@/hooks/useDarkMode";
-import { PSX_STOCKS_STATIC } from "@/lib/psx-stocks-static";
+import { PSX_STOCKS } from "@/lib/psx-stocks-static";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface StockRow {
@@ -195,7 +195,7 @@ export default function StocksClient() {
       const d    = json.date ?? date;
       // Merge static list so we always show 890+ stocks
       const apiSymbols = new Set(rows.map(r => r.symbol));
-      const staticExtra: StockRow[] = PSX_STOCKS_STATIC
+      const staticExtra: StockRow[] = PSX_STOCKS
         .filter(s => !apiSymbols.has(s.symbol))
         .map(s => ({
           symbol: s.symbol, companyName: s.name, sectorName: s.sector,

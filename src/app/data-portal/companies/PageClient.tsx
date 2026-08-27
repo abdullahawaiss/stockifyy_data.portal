@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PSX_STOCKS_STATIC, searchPsxStocks } from "@/lib/psx-stocks-static";
+import { PSX_STOCKS, searchPsxStocks } from "@/lib/psx-stocks-static";
 
 interface Company {
   id: number;
@@ -33,7 +33,7 @@ export default function CompaniesPage() {
       let rows: Company[] = json.data ?? [];
       // Fallback: if DB has no data, use the static PSX list
       if (rows.length === 0) {
-        const staticSrc = search ? searchPsxStocks(search, 1000) : PSX_STOCKS_STATIC;
+        const staticSrc = search ? searchPsxStocks(search, 1000) : PSX_STOCKS;
         rows = staticSrc.map((s, i) => ({
           id: i + 1, symbol: s.symbol, name: s.name,
           sectorName: s.sector, shariahStatus: "—", listingDate: "—", website: "—",
