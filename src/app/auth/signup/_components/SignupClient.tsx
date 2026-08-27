@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 function PasswordStrength({ password }: { password: string }) {
@@ -77,8 +77,26 @@ function PsxBackground() {
   );
 }
 
+function playPageChime() {
+  try {
+    const ctx  = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const t    = ctx.currentTime;
+    [[523, 0, 0.18], [659, 0.12, 0.22], [784, 0.22, 0.28]].forEach(([freq, start, dur]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine"; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t + start);
+      gain.gain.linearRampToValueAtTime(0.10, t + start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+      osc.start(t + start); osc.stop(t + start + dur);
+    });
+  } catch { /* unsupported */ }
+}
+
 export default function SignupClient() {
-  const router = useRouter();
+  const router  = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [fullName,   setFullName]   = useState("");
   const [email,      setEmail]      = useState("");
@@ -178,14 +196,18 @@ export default function SignupClient() {
     <div style={{
       position:"fixed", inset:0,
       background:"linear-gradient(150deg, #FFFFFF 0%, #FDF9F3 50%, #FAF5EC 100%)",
-      display:"flex", alignItems:"center", justifyContent:"center",
+      display:"flex", alignItems:"flex-start", justifyContent:"center",
       fontFamily:"system-ui,-apple-system,sans-serif",
-      overflow:"hidden",
+      overflowY:"auto",
+      overflowX:"hidden",
+      padding:"10px 16px",
+      boxSizing:"border-box",
     }}>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes suBgDraw   { to{stroke-dashoffset:0} }
         @keyframes suBgFadeIn { to{opacity:1} }
-        @keyframes suCardIn   { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:none} }
+        @keyframes suCardIn   { from{opacity:0;transform:translateY(32px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes suCardOut  { from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-28px) scale(.97)} }
         @keyframes spin       { to{transform:rotate(360deg)} }
         @keyframes suBtnShine { 0%{transform:translateX(-130%) skewX(-22deg)} 100%{transform:translateX(230%) skewX(-22deg)} }
         @keyframes sg         { 0%{background-position:-300% center} 100%{background-position:300% center} }
@@ -215,15 +237,15 @@ export default function SignupClient() {
       <PsxBackground />
 
       {/* ── Centered auth card ── */}
-      <div className="su-card" style={{
+      <div ref={cardRef} className="su-card" style={{
         position:"relative", zIndex:10,
-        width:"100%", maxWidth:420,
+        width:"100%", maxWidth:340,
         background:"rgba(255,255,255,0.90)",
         backdropFilter:"blur(20px)",
         border:"1px solid rgba(212,151,26,0.18)",
-        borderRadius:24,
-        boxShadow:"0 20px 60px rgba(15,27,45,0.14), 0 4px 20px rgba(200,138,0,0.10)",
-        padding:"14px 32px 12px",
+        borderRadius:20,
+        boxShadow:"0 16px 50px rgba(15,27,45,0.12), 0 4px 16px rgba(200,138,0,0.09)",
+        padding:"10px 22px 8px",
         boxSizing:"border-box",
       }}>
 
@@ -235,8 +257,8 @@ export default function SignupClient() {
         </div>
 
         {/* Heading */}
-        <div style={{ textAlign:"center", marginBottom:8 }}>
-          <h1 style={{ margin:0, fontSize:20, fontWeight:900, color:"#0F1B2D", letterSpacing:"-.03em" }}>Create Account</h1>
+        <div style={{ textAlign:"center", marginBottom:6 }}>
+          <h1 style={{ margin:0, fontSize:18, fontWeight:700, color:"#0F1B2D", letterSpacing:"-.02em" }}>Create Account</h1>
           <p style={{ margin:"2px 0 0", fontSize:10, color:"rgba(15,27,45,.42)", letterSpacing:".10em", textTransform:"uppercase" }}>
             Stockifyy Data Portal · Free Access
           </p>
@@ -245,7 +267,7 @@ export default function SignupClient() {
         <form onSubmit={submit} noValidate>
 
           {/* Full Name */}
-          <div style={{ marginBottom:7 }}>
+          <div style={{ marginBottom:5 }}>
             <label htmlFor="fullName" style={labelStyle}>Full Name</label>
             <div style={{ position:"relative" }}>
               <svg style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(15,27,45,.35)" strokeWidth="2" strokeLinecap="round">
@@ -386,7 +408,21 @@ export default function SignupClient() {
         {/* Sign in link */}
         <p style={{ textAlign:"center", margin:"7px 0 0", fontSize:12, color:"rgba(15,27,45,.48)" }}>
           Already have an account?{" "}
-          <a href="/auth/login" style={{ color:"#D4971A", fontWeight:800, textDecoration:"none" }}>
+          <a
+            href="/auth/login"
+            style={{ color:"#D4971A", fontWeight:700, textDecoration:"none" }}
+            onClick={e => {
+              e.preventDefault();
+              playPageChime();
+              const card = cardRef.current;
+              if (card) {
+                card.style.animation = "suCardOut 0.35s cubic-bezier(0.4,0,1,1) forwards";
+                setTimeout(() => { window.location.href = "/auth/login"; }, 320);
+              } else {
+                window.location.href = "/auth/login";
+              }
+            }}
+          >
             Sign In
           </a>
         </p>

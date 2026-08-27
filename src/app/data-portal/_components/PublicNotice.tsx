@@ -93,10 +93,28 @@ export default function PublicNotice() {
               </p>
             </div>
 
+            {/* Services grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 10px", marginBottom: 10 }}>
+              {[
+                { icon: "📊", label: "Investment Advisory", desc: "SECP-licensed Shariah-compliant guidance" },
+                { icon: "🎓", label: "Courses & Training",   desc: "Stock market & Islamic finance courses" },
+                { icon: "📈", label: "Market Research",      desc: "PSX analysis & sector reports" },
+                { icon: "🤝", label: "Portfolio Guidance",   desc: "Personalised Halal portfolio reviews" },
+              ].map(s => (
+                <div key={s.label} style={{ display: "flex", alignItems: "flex-start", gap: 7, background: "#FFF8ED", borderRadius: 5, padding: "6px 8px" }}>
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>{s.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "#5A3A00", lineHeight: 1.3 }}>{s.label}</div>
+                    <div style={{ fontSize: 9.5, color: "#7A5C2A", lineHeight: 1.4 }}>{s.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {/* Para 2 */}
             <p style={{ fontSize: 12, color: "#2C2A26", lineHeight: 1.65, marginBottom: 12, fontWeight: 500 }}>
-              Stockifyy provides <strong>advisory services only</strong> — we do not hold or trade client funds.
-              For investment decisions, always consult a certified Shariah financial advisor.
+              Stockifyy offers <strong>advisory, education &amp; research services</strong> — we do not hold or trade client funds.
+              All recommendations are screened under recognised Shariah criteria by our certified advisors.
             </p>
 
             <div style={{ height: 1, background: "#EDE8DE", marginBottom: 10 }} />

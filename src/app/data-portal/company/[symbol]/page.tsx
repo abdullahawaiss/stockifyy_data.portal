@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PSX_STOCKS_STATIC } from "@/lib/psx-stocks-static";
 import { db } from "@/db";
 import { companies, dailyStockPrices, weeklyStockPrices, sectors, companyAnnouncements } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -67,6 +68,18 @@ async function getCompanyData(sym: string): Promise<{ company: any; latestDaily:
     }
   } catch {
     // live also failed
+  }
+
+  // Final fallback: use static PSX list so company page always has something
+  const staticEntry = PSX_STOCKS_STATIC.find(s => s.symbol === sym);
+  if (staticEntry) {
+    const company = {
+      id: null, symbol: staticEntry.symbol, name: staticEntry.name,
+      sectorId: null, description: null, listingDate: null, fiscalYearEnd: null,
+      website: null, freeFloat: null, shariahStatus: null, marketCapCategory: null,
+      sectorName: staticEntry.sector,
+    };
+    return { company, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };
   }
 
   return { company: null, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };

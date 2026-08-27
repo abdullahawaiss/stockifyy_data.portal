@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber, formatVolume } from "@/lib/utils";
 import { useDarkTokens } from "@/hooks/useDarkMode";
+import { PSX_STOCKS_STATIC } from "@/lib/psx-stocks-static";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface StockRow {
@@ -189,9 +190,22 @@ export default function StocksClient() {
       const res = await fetch(`/api/portal/stocks?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      const rows = json.rows ?? [];
+      let rows: StockRow[] = json.rows ?? [];
       const secs = json.sectors ?? [];
       const d    = json.date ?? date;
+      // Merge static list so we always show 890+ stocks
+      const apiSymbols = new Set(rows.map(r => r.symbol));
+      const staticExtra: StockRow[] = PSX_STOCKS_STATIC
+        .filter(s => !apiSymbols.has(s.symbol))
+        .map(s => ({
+          symbol: s.symbol, companyName: s.name, sectorName: s.sector,
+          tradingDate: d, isDemo: false, sectorId: null,
+          open: null, high: null, low: null, close: null,
+          previousClose: null, priceChange: null, percentageChange: null,
+          volume: null, marketValue: null, numberOfTrades: null,
+          weekHigh52: null, weekLow52: null, shariahStatus: null, indexCodes: [],
+        }));
+      rows = [...rows, ...staticExtra];
       // update cache
       _cachedRows    = rows;
       _cachedSectors = secs;
@@ -298,7 +312,9 @@ export default function StocksClient() {
 
       {/* ── Header row ── */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-        <h1 style={{ fontSize:22, fontWeight:800, color:t.text, margin:0 }}>Market Watch</h1>
+        <h1 style={{ fontSize:22, fontWeight:800, color:t.text, margin:0 }}>
+          Market <span style={{ color:"#D4971A" }}>Watch</span>
+        </h1>
         <div style={{ display:"flex", gap:0, borderRadius:4, overflow:"hidden", border:`1px solid ${t.border}` }}>
           {(["MAIN BOARD","GEM BOARD","DEBT"] as Board[]).map(b => (
             <button key={b} onClick={() => setBoard(b)}
@@ -546,7 +562,7 @@ export default function StocksClient() {
           </div>
         )}
 
-        {!error && loading && (
+        {!error && loading && rows.length === 0 && (
           <div style={{ padding:20 }}>
             {Array.from({length:12}).map((_,i) => (
               <div key={i} style={{ display:"flex", gap:12, marginBottom:10, opacity: 1-(i*0.06) }}>
@@ -566,7 +582,7 @@ export default function StocksClient() {
           </div>
         )}
 
-        {!error && !loading && rows.length > 0 && (
+        {!error && rows.length > 0 && (
           <div style={{ overflowX:"auto" }}>
             <table style={{ borderCollapse:"collapse", fontSize:12, minWidth:980, width:"100%" }}>
               <thead>

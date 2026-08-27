@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const sp = req.nextUrl.searchParams;
     const date = await getLatestDate(sp.get("date"));
     const page = Math.max(1, parseInt(sp.get("page") ?? "1"));
-    const limit = Math.min(100, Math.max(10, parseInt(sp.get("limit") ?? "50")));
+    const limit = Math.min(1000, Math.max(10, parseInt(sp.get("limit") ?? "50")));
     const offset = (page - 1) * limit;
     const search = sp.get("search") ?? "";
     const sectorId = sp.get("sectorId");

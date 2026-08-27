@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { filterStocks, getColor, getTextColor } from "../_data/stocks";
+import { filterStocks, getColor, getTextColor, STOCKS as DEMO_STOCKS } from "../_data/stocks";
 import type { StockData, IndexFilter } from "../_data/stocks";
 
 // ── Squarified Treemap ──────────────────────────────────────────────────────
@@ -168,28 +168,17 @@ function SectorModal({ g, onClose }: {
 
 // ── Combined View — Professional hierarchical treemap ────────────────────────
 
-const CV_HEADER_H  = 20; // reserved sector header strip height (px)
-const CV_MARGIN    = 4;  // outer canvas margin (px)
-const CV_SEC_GAP   = 3;  // gap between sector groups (px)
-const CV_STOCK_GAP = 1;  // gap between stock tiles (px)
+const CV_HEADER_H  = 17; // reserved sector header strip height (px)
+const CV_MARGIN    = 0;  // outer canvas margin (px) — flush edges like a terminal
+const CV_SEC_GAP   = 1;  // 1px white divider between sector frames
+const CV_STOCK_GAP = 0;  // no gap; inset box-shadow creates sharp dividers
 
-// Weight formula: movement 70%, volume 30%.
-// sqrt(movement) for perceptual balance; adaptive boost compresses KSE-All.
 function buildWeightMap(allFilteredStocks: StockData[]): Map<string, number> {
-  const n = allFilteredStocks.length;
-  // Normalize log-volume within this filter's stocks
-  const logVols = allFilteredStocks.map(s => Math.log1p(Math.max(0, s.vol || 0)));
-  const loV = logVols.length ? Math.min(...logVols) : 0;
-  const hiV = logVols.length ? Math.max(...logVols) : 1;
-  const rngV = Math.max(1, hiV - loV);
-  const maximumBoost = n <= 120 ? 10 : 5;
   const map = new Map<string, number>();
-  for (let i = 0; i < allFilteredStocks.length; i++) {
-    const s             = allFilteredStocks[i];
-    const movementScore = Math.sqrt(Math.min(Math.abs(s.chg || 0), 10) / 10); // 0–1
-    const volumeScore   = (logVols[i] - loV) / rngV;                          // 0–1
-    const combined      = movementScore * 0.70 + volumeScore * 0.30;
-    map.set(s.sym, 1 + combined * maximumBoost);
+  for (const s of allFilteredStocks) {
+    // Size by trading volume — higher volume stocks get bigger tiles
+    const w = Math.max(1, s.vol || 1);
+    map.set(s.sym, w);
   }
   return map;
 }
@@ -256,6 +245,7 @@ function CombinedView({ stocks, onHover, onLeave }: {
   const [canvasW, setCanvasW] = useState(0);
   const [topOffset, setTopOffset] = useState(180);
   const [hoveredSym, setHoveredSym] = useState<string | null>(null);
+  const [hoveredSector, setHoveredSector] = useState<string | null>(null);
   const [zoomedSector, setZoomedSector] = useState<string | null>(null);
 
   // Measure wrapper width and its distance from viewport top (to compute available height)
@@ -282,6 +272,14 @@ function CombinedView({ stocks, onHover, onLeave }: {
   // Weight map uses all filtered stocks for normalization
   const weightMap = useMemo(() => buildWeightMap(stocks), [stocks]);
 
+  // Volume quantiles for visual emphasis
+  const volQ = useMemo(() => {
+    const vols = [...stocks].map(s => s.vol).sort((a, b) => a - b);
+    const p15 = vols[Math.floor(vols.length * 0.15)] ?? 0;
+    const p85 = vols[Math.floor(vols.length * 0.85)] ?? Infinity;
+    return { p15, p85 };
+  }, [stocks]);
+
   const sectorGroups = useMemo(() => {
     const map: Record<string, StockData[]> = {};
     for (const s of stocks) {
@@ -302,19 +300,11 @@ function CombinedView({ stocks, onHover, onLeave }: {
     zoomedSector ? sectorGroups.filter(g => g.sector === zoomedSector) : sectorGroups
   , [sectorGroups, zoomedSector]);
 
-  // Height: responds to visible stock count, uses actual available viewport space
+  // Wide landscape ratio: 0.45× width → forces wide, short tiles (width > height)
   const canvasH = useMemo(() => {
-    const n = stocks.length;
-    const availH = typeof window !== "undefined"
-      ? Math.max(500, window.innerHeight - topOffset - 16)
-      : 700;
-    let mult: number;
-    if      (n <= 40)  mult = 0.90;
-    else if (n <= 120) mult = 1.00;
-    else if (n <= 250) mult = 1.15;
-    else               mult = 1.30;
-    return Math.max(650, Math.min(1200, availH * mult));
-  }, [stocks.length, topOffset]);
+    if (!canvasW) return 500;
+    return Math.max(420, Math.round(canvasW * 0.45));
+  }, [canvasW]);
 
   const layout = useMemo(() => {
     if (!canvasW || !canvasH || !activeGroups.length) return [];
@@ -341,10 +331,12 @@ function CombinedView({ stocks, onHover, onLeave }: {
       ref={wrapRef}
       style={{
         width: "100%",
-        height: canvasH || 650,
+        height: canvasH || 600,
         position: "relative",
-        background: "#0d0d0d",
-        borderRadius: 4,
+        background: "#0a0a0a",
+        border: "1px solid rgba(255,255,255,0.10)",
+        boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
       {zoomedSector && (
@@ -370,40 +362,45 @@ function CombinedView({ stocks, onHover, onLeave }: {
         return (
           <div key={sector} style={{ position: "absolute", left: 0, top: 0, width: 0, height: 0 }}>
 
-            {/* Sector boundary outline */}
+            {/* Sector boundary — sharp white frame */}
             <div style={{
               position: "absolute", left: sx, top: sy, width: sw, height: sh,
-              border: "1px solid rgba(255,255,255,0.14)",
+              border: "1px solid rgba(255,255,255,0.55)",
               boxSizing: "border-box", pointerEvents: "none", zIndex: 3,
             }} />
 
-            {/* Sector header strip */}
+            {/* Sector header strip — white background, dark text (terminal style) */}
             <div
               onClick={() => setZoomedSector(prev => prev === sector ? null : sector)}
-              title={sector}
+              onMouseEnter={() => setHoveredSector(sector)}
+              onMouseLeave={() => setHoveredSector(null)}
+              title={`${sector} — click to zoom`}
               style={{
                 position: "absolute",
                 left: sx, top: sy, width: sw, height: CV_HEADER_H,
-                background: "#111115",
-                borderBottom: "1px solid rgba(255,255,255,0.12)",
+                background: hoveredSector === sector ? "#FFF6DC" : "#FFFFFF",
+                borderBottom: `1px solid rgba(0,0,0,0.18)`,
                 boxSizing: "border-box",
-                display: "flex", alignItems: "center",
-                padding: "0 4px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 3px",
                 overflow: "hidden",
                 cursor: "pointer",
                 zIndex: 6,
+                transition: "background 0.12s",
               }}
             >
               <span style={{
                 fontSize: headerFs,
                 fontWeight: 700,
-                color: "#cfcfcf",
+                color: hoveredSector === sector ? "#B87B1A" : "#1a1a1a",
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
                 lineHeight: 1.15,
                 whiteSpace: twoLine ? "normal" : "nowrap",
                 overflow: "hidden",
                 textOverflow: "clip",
+                textAlign: "center",
+                transition: "color 0.15s",
                 ...(twoLine ? {
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
@@ -414,38 +411,75 @@ function CombinedView({ stocks, onHover, onLeave }: {
               </span>
             </div>
 
-            {/* Stock tiles — ticker is ALWAYS rendered; chg% shown when room exists */}
+            {/* Stock tiles — volume-sized; progressive text display */}
             {stockRects.map(({ stock: s, x, y, w, h }) => {
               const tx = x + CV_STOCK_GAP, ty = y + CV_STOCK_GAP;
               const tw = Math.max(0, w - CV_STOCK_GAP * 2);
               const th = Math.max(0, h - CV_STOCK_GAP * 2);
-              if (tw < 4 || th < 4) return null; // skip sub-pixel tiles only
+              if (tw < 2 || th < 2) return null;
 
-              const isHov  = hoveredSym === s.sym;
-              const arrow  = s.chg >= 0 ? "▲" : "▼";
-              const sign   = s.chg >= 0 ? "+" : "";
-              const pct    = `${sign}${s.chg.toFixed(2)}%`;
+              const isHov       = hoveredSym === s.sym;
+              const inHovSector = hoveredSector === sector;
+              const isHighVol   = s.vol >= volQ.p85;
+              const isLowVol    = s.vol <= volQ.p15;
+              const sign  = s.chg >= 0 ? "+" : "";
+              const pct   = `${sign}${s.chg.toFixed(2)}%`;
+              const arrow = s.chg >= 0 ? "▲" : "▼";
 
-              // Responsive font sizing — four tiers matching the spec
-              // Bold uppercase: ~0.65× char-width ratio
-              const avW = Math.max(1, tw - 4);
-              const avH = Math.max(1, th - 4);
-              // Max font where entire ticker fits in one line
-              const fitW   = avW / (s.sym.length * 0.65);
-              // Max font where ticker alone fits height (1.1 line height)
-              const fitH1  = avH / 1.1;
-              // Max font where both ticker + chg% fit (2.3 combined line heights)
-              const fitH2  = avH / 2.3;
-              // Choose: try fitting two lines first, fall back to one
-              const rawFs  = Math.min(fitW, fitH2);
-              const symFs  = Math.max(7, Math.min(34, rawFs));
-              const chgFs  = Math.max(7, symFs * 0.78);
-              // Show chg% only when both lines genuinely fit
-              const showChg = symFs <= Math.min(fitW, fitH2) && avH >= symFs + chgFs + 4;
-              // If chg% won't fit, use full height for ticker (may be larger)
-              const finalSymFs = showChg
-                ? symFs
-                : Math.max(7, Math.min(34, Math.min(fitW, fitH1)));
+              // Dynamic padding — tiny tiles get almost no padding
+              const padH = tw < 16 ? 1 : tw < 28 ? 2 : tw < 50 ? 3 : 5;
+              const padV = th < 16 ? 1 : th < 28 ? 2 : th < 50 ? 3 : 5;
+              const avW  = Math.max(1, tw - padH * 2);
+              const avH  = Math.max(1, th - padV * 2);
+              const MIN_FS = 5;
+
+              // ── SYMBOL ──
+              // Try full symbol first, then abbreviate down to 1 char
+              let symStr = s.sym;
+              let symFitW = avW / (symStr.length * 0.72);
+              let symFs   = Math.min(symFitW, avH, 30);
+              if (symFs < MIN_FS && symStr.length > 3) {
+                symStr  = symStr.slice(0, 3);
+                symFitW = avW / (symStr.length * 0.72);
+                symFs   = Math.min(symFitW, avH, 30);
+              }
+              if (symFs < MIN_FS && symStr.length > 1) {
+                symStr  = symStr.slice(0, 1);
+                symFitW = avW / (symStr.length * 0.72);
+                symFs   = Math.min(symFitW, avH, 30);
+              }
+              const showSym    = symFs >= MIN_FS;
+              const finalSymFs = showSym ? Math.max(MIN_FS, symFs) : 0;
+
+              // ── CHANGE % ── e.g. "▲ +1.42%"
+              const chgText = `${arrow} ${pct}`;
+              const chgFs   = Math.min(
+                finalSymFs * 0.80,
+                avW / (chgText.length * 0.60),
+                16,
+              );
+              const showChg = showSym
+                && symStr === s.sym   // only when full symbol fits
+                && chgFs >= MIN_FS
+                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + 2;
+
+              // ── PRICE ── e.g. "Rs 221.41"
+              const priceText  = `Rs ${s.price.toFixed(2)}`;
+              const priceFsMax = avW / (priceText.length * 0.58);
+              const priceFs    = Math.min(9, priceFsMax);
+              const showPrice  = showChg
+                && priceFs >= MIN_FS
+                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + priceFs * 1.2 + 4
+                && tw >= 42;
+
+              // ── VOLUME ── e.g. "117.9 mn"
+              const volStr    = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
+              const volFsMax  = avW / (volStr.length * 0.60);
+              const volFs     = Math.min(8, volFsMax);
+              const showVol   = showPrice
+                && volFs >= MIN_FS
+                && avH >= finalSymFs * 1.1 + chgFs * 1.1 + priceFs * 1.2 + volFs * 1.2 + 6
+                && tw >= 55;
 
               return (
                 <div
@@ -468,45 +502,76 @@ function CombinedView({ stocks, onHover, onLeave }: {
                     cursor: "pointer",
                     overflow: "hidden",
                     contain: "paint" as React.CSSProperties["contain"],
-                    padding: "2px",
+                    padding: `${padV}px ${padH}px`,
                     textAlign: "center",
-                    outline: isHov ? "2px solid #D4971A" : "none",
-                    outlineOffset: "-1px",
-                    filter: isHov ? "brightness(1.15)" : "none",
-                    transition: "filter 0.10s, outline 0.08s, left 0.30s ease, top 0.30s ease, width 0.30s ease, height 0.30s ease",
-                    zIndex: isHov ? 6 : 1,
+                    // inset box-shadow = sharp white divider without layout shift
+                    boxShadow: isHov
+                      ? "inset 0 0 0 2px #E79A00"
+                      : "inset 0 0 0 1px rgba(255,255,255,0.28)",
+                    filter: isHov ? "brightness(1.18)" : inHovSector ? "brightness(1.10)" : "none",
+                    transition: "filter 0.10s, box-shadow 0.08s",
+                    zIndex: isHov ? 8 : 1,
                   }}
                 >
-                  {/* Ticker — absolute priority, always rendered, never ellipsis */}
-                  <div style={{
-                    fontSize: finalSymFs,
-                    fontWeight: 700,
-                    color: "#fff",
-                    lineHeight: 1.0,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "clip",
-                    maxWidth: "100%",
-                    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
-                    flexShrink: 0,
-                  }}>{s.sym}</div>
+                  {/* Symbol — always show if it fits at >= 5px; abbreviates gracefully */}
+                  {showSym && (
+                    <div style={{
+                      fontSize: finalSymFs,
+                      fontWeight: 700,
+                      color: "#fff",
+                      lineHeight: 1.0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      maxWidth: "100%",
+                      textShadow: finalSymFs > 10 ? "0 1px 2px rgba(0,0,0,0.50)" : "none",
+                      flexShrink: 0,
+                      letterSpacing: finalSymFs > 14 ? "-0.01em" : "0",
+                    }}>{symStr}</div>
+                  )}
 
-                  {/* ▲/▼ percentage — hidden only when tile lacks vertical room */}
+                  {/* ▲/▼ % change */}
                   {showChg && (
                     <div style={{
                       fontSize: chgFs,
                       fontWeight: 600,
-                      color: "rgba(255,255,255,0.92)",
+                      color: "rgba(255,255,255,0.93)",
                       lineHeight: 1.0,
+                      marginTop: 1,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      maxWidth: "100%",
+                      flexShrink: 0,
+                    }}>{arrow} {pct}</div>
+                  )}
+
+                  {/* Price — medium+ tiles only */}
+                  {showPrice && (
+                    <div style={{
+                      fontSize: priceFs,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.75)",
+                      lineHeight: 1.1,
+                      marginTop: 1,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      maxWidth: "100%",
+                      flexShrink: 0,
+                    }}>Rs {s.price.toFixed(2)}</div>
+                  )}
+
+                  {/* Volume — large tiles only */}
+                  {showVol && (
+                    <div style={{
+                      fontSize: volFs,
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.55)",
+                      lineHeight: 1.1,
                       marginTop: 2,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
-                      textOverflow: "clip",
                       maxWidth: "100%",
                       flexShrink: 0,
-                    }}>
-                      {arrow} {pct}
-                    </div>
+                    }}>{volStr}</div>
                   )}
                 </div>
               );
@@ -765,7 +830,7 @@ export default function HeatmapClient() {
   const [view,    setView]    = useState<"sector" | "combined">("sector");
   const [tooltip, setTooltip] = useState<{ stock: StockData; x: number; y: number } | null>(null);
   const [lastRef, setLastRef] = useState<Date | null>(null);
-  const [allStocks, setAllStocks] = useState<StockData[]>([]);
+  const [allStocks, setAllStocks] = useState<StockData[]>(DEMO_STOCKS);
   const [dataSource, setDataSource] = useState<"live" | "demo">("demo");
 
   const filtered = useMemo(() => filterStocks(allStocks, idx), [allStocks, idx]);
@@ -807,8 +872,8 @@ export default function HeatmapClient() {
 
         {/* Title */}
         <div style={{ marginRight: 4 }}>
-          <h1 className="hm-title" style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
-            Market Heatmap
+          <h1 className="hm-title" style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
+            <span style={{ color: "var(--navy, #0f172a)" }}>Market</span> <span style={{ color: "#C8860A" }}>Heatmap</span>
           </h1>
           <p className="hm-subtitle" style={{ margin: 0, fontSize: 10.5 }}>PSX · Volume-weighted · Auto-refresh 5 min</p>
         </div>

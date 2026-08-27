@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function safeReturnTo(raw: string | null): string {
@@ -71,10 +71,28 @@ function PsxBackground() {
   );
 }
 
+function playPageChime() {
+  try {
+    const ctx  = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const t    = ctx.currentTime;
+    [[523, 0, 0.18], [659, 0.12, 0.22], [784, 0.22, 0.28]].forEach(([freq, start, dur]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine"; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t + start);
+      gain.gain.linearRampToValueAtTime(0.10, t + start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+      osc.start(t + start); osc.stop(t + start + dur);
+    });
+  } catch { /* unsupported */ }
+}
+
 export default function LoginClient() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const returnTo     = safeReturnTo(searchParams.get("returnTo"));
+  const cardRef      = useRef<HTMLDivElement>(null);
 
   const [email,      setEmail]      = useState("");
   const [password,   setPassword]   = useState("");
@@ -145,10 +163,11 @@ export default function LoginClient() {
       fontFamily:"system-ui,-apple-system,sans-serif",
       overflow:"hidden",
     }}>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes bgDraw    { to{stroke-dashoffset:0} }
         @keyframes bgFadeIn  { to{opacity:1} }
-        @keyframes cardIn    { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:none} }
+        @keyframes cardIn    { from{opacity:0;transform:translateY(32px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes cardOut   { from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-28px) scale(.97)} }
         @keyframes spin      { to{transform:rotate(360deg)} }
         @keyframes gdot      { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.7)} 50%{box-shadow:0 0 0 5px rgba(34,197,94,0)} }
         @keyframes btnShine  { 0%{transform:translateX(-130%) skewX(-22deg)} 100%{transform:translateX(230%) skewX(-22deg)} }
@@ -158,7 +177,7 @@ export default function LoginClient() {
         .ln-gdot   { animation:gdot 2.2s ease-in-out infinite }
         .ln-sg     { background:linear-gradient(90deg,#7A5600 0%,#D4971A 22%,#FEA500 50%,#D4971A 78%,#7A5600 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sg 2.8s linear infinite }
 
-        .ln-inp    { width:100%;padding:10px 14px 10px 40px;box-sizing:border-box;background:rgba(15,27,45,.04);border:1.5px solid rgba(15,27,45,.13);border-radius:10px;color:#0F1B2D;font-size:13.5px;outline:none;transition:background .2s,border-color .22s,box-shadow .22s;font-family:inherit }
+        .ln-inp    { width:100%;padding:8px 14px 8px 38px;box-sizing:border-box;background:rgba(15,27,45,.04);border:1.5px solid rgba(15,27,45,.13);border-radius:10px;color:#0F1B2D;font-size:13.5px;outline:none;transition:background .2s,border-color .22s,box-shadow .22s;font-family:inherit }
         .ln-inp::placeholder { color:rgba(15,27,45,.30) }
         .ln-inp:focus { background:rgba(212,151,26,.05);border-color:rgba(212,151,26,.60);box-shadow:0 0 0 3px rgba(212,151,26,.12) }
         .ln-inp.err { border-color:rgba(239,68,68,.50) }
@@ -183,16 +202,16 @@ export default function LoginClient() {
       <PsxBackground />
 
       {/* ── Centered auth card ── */}
-      <div className="ln-card" style={{
+      <div ref={cardRef} className="ln-card" style={{
         position:"relative", zIndex:10,
-        width:"100%", maxWidth:380,
+        width:"100%", maxWidth:340,
         margin:"0 16px",
         background:"rgba(255,255,255,0.90)",
         backdropFilter:"blur(20px)",
         border:"1px solid rgba(212,151,26,0.18)",
         borderRadius:20,
         boxShadow:"0 16px 50px rgba(15,27,45,0.12), 0 4px 16px rgba(200,138,0,0.09)",
-        padding:"20px 28px 18px",
+        padding:"16px 22px 14px",
         boxSizing:"border-box",
       }}>
 
@@ -219,8 +238,8 @@ export default function LoginClient() {
         </div>
 
         {/* Heading */}
-        <div style={{ textAlign:"center", marginBottom:14 }}>
-          <h1 style={{ margin:0, fontSize:21, fontWeight:900, color:"#0F1B2D", letterSpacing:"-.03em" }}>
+        <div style={{ textAlign:"center", marginBottom:10 }}>
+          <h1 style={{ margin:0, fontSize:19, fontWeight:700, color:"#0F1B2D", letterSpacing:"-.02em" }}>
             Client Login
           </h1>
           <p style={{ margin:"3px 0 0", fontSize:10, color:"rgba(15,27,45,.42)", letterSpacing:".10em", textTransform:"uppercase" }}>
@@ -294,7 +313,7 @@ export default function LoginClient() {
           )}
 
           {/* Submit */}
-          <button type="submit" disabled={loading||!email.trim()||!password} className="ln-btn" aria-busy={loading}>
+          <button type="submit" disabled={loading} className="ln-btn" aria-busy={loading}>
             {loading
               ? <span style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
                   <svg style={{ animation:"spin 1s linear infinite" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 11-18 0"/></svg>
@@ -306,7 +325,7 @@ export default function LoginClient() {
         </form>
 
         {/* OR divider */}
-        <div style={{ display:"flex", alignItems:"center", gap:8, margin:"14px 0" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, margin:"10px 0" }}>
           <div style={{ flex:1, height:1, background:"rgba(15,27,45,.10)" }}/>
           <span style={{ fontSize:9.5, fontWeight:600, color:"rgba(15,27,45,.30)", letterSpacing:".12em", textTransform:"uppercase" }}>or</span>
           <div style={{ flex:1, height:1, background:"rgba(15,27,45,.10)" }}/>
@@ -321,7 +340,7 @@ export default function LoginClient() {
             window.location.href = `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
           }}
           style={{
-            width:"100%", padding:"10px 16px", boxSizing:"border-box",
+            width:"100%", padding:"8px 16px", boxSizing:"border-box",
             display:"flex", alignItems:"center", justifyContent:"center", gap:10,
             background:"#fff", border:"1.5px solid rgba(15,27,45,.14)", borderRadius:50,
             cursor: loading || googleLoading ? "not-allowed" : "pointer",
@@ -343,15 +362,29 @@ export default function LoginClient() {
         </button>
 
         {/* Sign up link */}
-        <p style={{ textAlign:"center", margin:"14px 0 0", fontSize:12.5, color:"rgba(15,27,45,.48)" }}>
+        <p style={{ textAlign:"center", margin:"10px 0 0", fontSize:12, color:"rgba(15,27,45,.48)" }}>
           Don&apos;t have an account?{" "}
-          <a href="/auth/signup" style={{ color:"#D4971A", fontWeight:800, textDecoration:"none" }}>
+          <a
+            href="/auth/signup"
+            style={{ color:"#D4971A", fontWeight:700, textDecoration:"none" }}
+            onClick={e => {
+              e.preventDefault();
+              playPageChime();
+              const card = cardRef.current;
+              if (card) {
+                card.style.animation = "cardOut 0.35s cubic-bezier(0.4,0,1,1) forwards";
+                setTimeout(() => { window.location.href = "/auth/signup"; }, 320);
+              } else {
+                window.location.href = "/auth/signup";
+              }
+            }}
+          >
             Sign Up Free
           </a>
         </p>
 
         {/* Footer */}
-        <div style={{ textAlign:"center", marginTop:16, paddingTop:14, borderTop:"1px solid rgba(212,151,26,.12)" }}>
+        <div style={{ textAlign:"center", marginTop:10, paddingTop:10, borderTop:"1px solid rgba(212,151,26,.12)" }}>
           <p className="ln-sg" style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:".17em", textTransform:"uppercase" }}>
             Stockifyy · Pakistan Stock Exchange Intelligence
           </p>

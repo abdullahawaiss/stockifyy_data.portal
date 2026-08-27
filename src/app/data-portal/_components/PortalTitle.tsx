@@ -47,10 +47,10 @@ export default function PortalTitle() {
         {/* Main title with shimmer */}
         <span style={{
           fontSize:13, fontWeight:800, letterSpacing:"-0.01em",
-          background:"linear-gradient(90deg, var(--navy) 0%, #1a3a6b 30%, var(--gold) 50%, #1a3a6b 70%, var(--navy) 100%)",
+          background:"linear-gradient(90deg, #B87B1A 0%, #D4971A 25%, #E8A820 50%, #D4971A 75%, #B87B1A 100%)",
           backgroundSize:"300% auto",
           WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-          animation:"titleFadeUp 600ms cubic-bezier(0.22,1,0.36,1) both, titleShimmer 5s linear 800ms infinite",
+          animation:"titleFadeUp 600ms cubic-bezier(0.22,1,0.36,1) both, titleShimmer 4s linear 800ms infinite",
         }}>
           Stockifyy Data Portal
         </span>

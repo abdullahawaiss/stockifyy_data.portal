@@ -96,9 +96,6 @@ function IdxCard({ idx, isOpen, active, onClick }: { idx: IdxRow; isOpen: boolea
             {up ? "+" : ""}{idx.pct.toFixed(2)}%
           </span>
         </div>
-        <div className="mt-1.5 -mx-1">
-          <Sparkline up={up} active={active} />
-        </div>
         {idx.vol > 0 && (
           <div className="text-[9px] tabular-nums mt-0.5" style={{ color: "var(--text-muted)" }}>
             Vol: {fmtVol(idx.vol)}

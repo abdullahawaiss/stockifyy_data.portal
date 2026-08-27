@@ -451,11 +451,6 @@ function KseDetailPanelInner({ indices, externalActiveCode }: { indices: IndexDe
 
         {/* ── Index navigation bar ── */}
         <div style={{display:"flex",alignItems:"center",gap:0}}>
-          <button onClick={()=>scrollNav("left")}
-            style={{flexShrink:0,width:28,height:28,borderRadius:"50%",border:"none",
-              background:"#16A34A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",
-              display:"flex",alignItems:"center",justifyContent:"center",marginRight:6}}>‹</button>
-
           <div ref={navRef} style={{flex:1,overflowX:"auto",scrollbarWidth:"none",display:"flex",gap:0,borderBottom:`2px solid ${t.border}`}}>
             {indices.map(ix=>(
               <button key={ix.code} onClick={()=>{ setActiveCode(ix.code); if(ix.code===indices[0].code) setLiveVal(ix.val); }}
@@ -472,10 +467,6 @@ function KseDetailPanelInner({ indices, externalActiveCode }: { indices: IndexDe
             ))}
           </div>
 
-          <button onClick={()=>scrollNav("right")}
-            style={{flexShrink:0,width:28,height:28,borderRadius:"50%",border:"none",
-              background:"#16A34A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",
-              display:"flex",alignItems:"center",justifyContent:"center",marginLeft:6}}>›</button>
         </div>
       </div>
 

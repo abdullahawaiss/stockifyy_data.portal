@@ -34,6 +34,8 @@
 
   --background: #F8F6F1;
   --foreground: var(--text-primary);
+  --text: var(--text-primary);
+  --cta-card-bg: linear-gradient(135deg, #fdf8f0 0%, #fef9f2 60%, #fff8ee 100%);
 }
 
 /* ══════════════════════════════════════
@@ -43,6 +45,8 @@
    ══════════════════════════════════════ */
 [data-theme="dark"] {
   --navy:            #BDD0E8;   /* was near-black; now readable on dark bg */
+  --text:            #BDD0E8;
+  --cta-card-bg:     linear-gradient(135deg, #0E1F30 0%, #112030 60%, #0B1A28 100%);
   --background:      #0B1622;
   --foreground:      #BDD0E8;
   --card-bg:         #0E1F30;
@@ -336,6 +340,15 @@ body {
     animation: portalFade 80ms linear both !important;
     will-change: auto !important;
   }
+}
+
+/* ── Portal CTA card dark mode ── */
+[data-theme="dark"] .portal-cta-card {
+  background: linear-gradient(135deg, #0C1C2E 0%, #0E2038 60%, #091827 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .portal-cta-btn {
+  color: var(--text-primary) !important;
 }
 
 /* ══════════════════════════════════════

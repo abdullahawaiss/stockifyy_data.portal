@@ -35,7 +35,8 @@ export default async function DataPortalPage() {
 
   // Use live data if available; placeholder data if not (client will refresh with live)
   const initialMarket     = marketData   ?? STATIC_MARKET;
-  const initialAnnouncements = announcements ?? (STATIC_ANNOUNCEMENTS as AnnouncementItem[]);
+  // Use live if non-empty; else fall back to static demo rows
+  const initialAnnouncements = (announcements && announcements.length > 0 ? announcements : STATIC_ANNOUNCEMENTS) as AnnouncementItem[];
 
   return (
     <>
@@ -44,7 +45,7 @@ export default async function DataPortalPage() {
         <div className="px-4 sm:px-5" style={{ paddingTop: 8, paddingBottom: 22 }}>
           <div style={{ display: "flex", alignItems: "stretch", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             {/* Left: Title + Search */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18, flex: 1, minWidth: 0 }}>
               <PortalTitle />
               <GlobalSearch />
             </div>
@@ -54,7 +55,7 @@ export default async function DataPortalPage() {
               display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end", justifyContent: "center",
               borderRadius: 14, padding: "14px 20px",
               flexShrink: 0, position: "relative", overflow: "hidden",
-              background: "linear-gradient(135deg, #fdf8f0 0%, #fef9f2 60%, #fff8ee 100%)",
+              background: "var(--cta-card-bg, linear-gradient(135deg, #fdf8f0 0%, #fef9f2 60%, #fff8ee 100%))",
             }}>
               {/* Themed geometric design — gold + navy, matches portal */}
               <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 90" preserveAspectRatio="none">

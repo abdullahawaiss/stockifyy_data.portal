@@ -1,327 +1,455 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+// Portfolio — personal holdings tracker (localStorage-based)
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDarkTokens } from "@/hooks/useDarkMode";
+import { searchPsxStocks } from "@/lib/psx-stocks-static";
 
-// ── seed data ──────────────────────────────────────────────────────────────────
-const FIPI_COLS = ["F-CORP", "F-INDV", "O/S PAK", "Total"];
-const LIPI_COLS = ["INDV.", "COS.", "BANKS", "NBFC", "FUNDS", "OTHER", "BROKER", "INSUR", "TOTAL"];
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface Holding {
+  id: string;
+  symbol: string;
+  name: string;
+  quantity: number;
+  avgPrice: number;
+  addedDate: string;
+}
 
-type Row = { label: string; vals: number[]; bold?: boolean; orange?: boolean; shade?: boolean };
+interface PriceInfo {
+  price: number;
+  chg: number;
+}
 
-const seed = {
-  fipiFlow: [
-    { label:"Gross Buy",     vals:[0.78, 0.00, 13.22, 14.00] },
-    { label:"Gross Sell",    vals:[-1.33, 0.00,-12.49,-13.83] },
-    { label:"NET POSITION",  vals:[-0.56, 0.00,  0.73,  0.17], bold:true, shade:true },
-  ],
-  fipiSectors: [
-    { label:"OTHER",      vals:[ 0.43, 0.00,-0.92,-0.49] },
-    { label:"CEMENT",     vals:[-0.11, 0.00, 0.02,-0.09] },
-    { label:"BANKS",      vals:[-0.45, 0.00,-0.05,-0.51] },
-    { label:"FERTILIZER", vals:[ 0.00, 0.00, 0.11, 0.11] },
-    { label:"FOOD & PC",  vals:[ 0.00, 0.00, 0.00, 0.00] },
-    { label:"O&G Exp",    vals:[-0.10, 0.00, 0.46, 0.36] },
-    { label:"O&G MKT",    vals:[-0.04, 0.00, 0.12, 0.07] },
-    { label:"POWER",      vals:[-0.13, 0.00, 1.18, 1.06] },
-    { label:"TECH.",      vals:[-0.16, 0.00,-0.26,-0.41] },
-    { label:"TEXTILE",    vals:[ 0.01, 0.00, 0.07, 0.08] },
-  ],
-  fipiBottom: [
-    { label:"NET POSITION",    vals:[-0.56, 0.00, 0.73, 0.17], bold:true, shade:true },
-    { label:"DEBT MKT.",       vals:[ 0.00, 0.00, 0.00, 0.00], bold:true },
-    { label:"NET (inc. debt)", vals:[-0.56, 0.00, 0.73, 0.17] },
-    { label:"FY27TD",          vals:[18.41,-0.03,14.31,32.70] },
-    { label:"CY26TD",          vals:[-640.23,-1.18,75.62,-565.79] },
-  ],
-  lipiFlow: [
-    { label:"Gross Buy",    vals:[150.91, 4.75,  9.40, 0.01, 37.32,  1.42, 21.93,  1.35, 227.11] },
-    { label:"Gross Sell",   vals:[-143.42,-3.25,-8.66,-0.07,-40.41,-0.59,-22.00,-8.87,-227.28] },
-    { label:"NET POSITION", vals:[  7.49, 1.50,  0.74,-0.06, -3.10,  0.84, -0.06,-7.52,  -0.17], bold:true, shade:true },
-  ],
-  lipiSectors: [
-    { label:"OTHER",      vals:[ 0.44,-0.08,-0.69,-0.03,  1.06, 0.02,  0.58,-0.80,  0.49] },
-    { label:"CEMENT",     vals:[ 0.75, 0.14,-0.07, 0.00,  0.54, 0.00, -1.00,-0.27,  0.09] },
-    { label:"BANKS",      vals:[-0.20, 0.37,-0.28, 0.00,  1.10,-0.06, -0.16,-0.25,  0.51] },
-    { label:"FERTILIZER", vals:[ 0.13, 0.00,-0.04, 0.00, -0.20,-0.02,  0.02, 0.00, -0.11] },
-    { label:"FOOD & PC",  vals:[-0.10,-0.04,-0.01, 0.00, -0.05,-0.01,  0.22,-0.01,  0.00] },
-    { label:"O&G Exp",    vals:[ 0.47, 0.19,-1.65, 0.00,  0.36, 0.28, -0.04, 0.04, -0.36] },
-    { label:"O&G MKT",    vals:[-0.10, 0.01, 0.03, 0.00, -0.28,-0.01,  0.01, 0.27, -0.07] },
-    { label:"POWER",      vals:[ 5.41, 0.92,-3.77,-0.01, -0.66, 0.02,  0.40,-3.36, -1.06] },
-    { label:"TECH.",      vals:[ 0.31, 0.06,-0.01, 0.00,  0.11, 0.00, -0.07, 0.00,  0.41] },
-    { label:"TEXTILE",    vals:[ 0.25,-0.07, 0.00, 0.00, -0.22,-0.01, -0.02, 0.00, -0.08] },
-  ],
-  lipiBottom: [
-    { label:"NET POSITION",    vals:[ 7.37, 1.50,-6.50,-0.06,  1.75, 0.20,-0.06,-4.38,-0.17], bold:true, shade:true },
-    { label:"DEBT MKT.",       vals:[ 0.12, 0.00, 7.24, 0.00, -4.85, 0.63, 0.00,-3.14, 0.00], bold:true },
-    { label:"NET (inc. debt)", vals:[ 7.49, 1.50, 0.74,-0.06, -3.10, 0.84,-0.06,-7.52,-0.17] },
-    { label:"FY27TD",          vals:[28.46,-8.25, 6.74, 1.14,-47.18,-1.10,-2.51,-10.00,-32.70] },
-    { label:"CY26TD",          vals:[136.48,491.93,-31.90,2.62,60.44,20.11,-16.07,-97.84,565.79] },
-  ],
+// ── Demo prices (from heatmap DEMO_STOCKS subset) ──────────────────────────────
+const DEMO_PRICES: Record<string, PriceInfo> = {
+  OGDC: { price: 181.50, chg: -0.66 }, PPL: { price: 89.30, chg: -0.78 },
+  MARI: { price: 2210.0, chg: 0.68 },  HBL: { price: 178.50, chg: 1.02 },
+  UBL: { price: 232.40, chg: 0.91 },   MCB: { price: 219.80, chg: -0.68 },
+  NBP: { price: 43.20, chg: 0.70 },    MEBL: { price: 218.50, chg: 0.83 },
+  LUCK: { price: 1125.0, chg: 0.76 },  DGKC: { price: 97.80, chg: -0.81 },
+  ENGRO: { price: 312.50, chg: 1.13 }, EFERT: { price: 87.60, chg: 0.69 },
+  FFC: { price: 139.30, chg: -0.64 },  HUBC: { price: 107.80, chg: 0.75 },
+  TRG: { price: 101.50, chg: 1.50 },   SYS: { price: 724.0, chg: 1.26 },
+  PTC: { price: 18.80, chg: -1.05 },   FCCL: { price: 22.10, chg: 0.91 },
+  BWCL: { price: 312.0, chg: 0.81 },   PSO: { price: 478.0, chg: 0.95 },
+  SNGP: { price: 28.10, chg: 1.44 },   SEARL: { price: 228.0, chg: 0.88 },
+  MLCF: { price: 40.80, chg: -0.97 },  PSMC: { price: 830.0, chg: 1.47 },
+  INDU: { price: 1702.0, chg: 1.07 },  FFBL: { price: 25.10, chg: 0.80 },
+  FATIMA: { price: 34.80, chg: -0.57 },ILP: { price: 68.0, chg: 0.89 },
+  NML: { price: 138.0, chg: 0.73 },    MUGHAL: { price: 78.50, chg: 0.90 },
+  EPCL: { price: 38.20, chg: 0.79 },   ICI: { price: 832.0, chg: 0.73 },
+  BAFL: { price: 54.60, chg: 0.74 },   ABL: { price: 136.70, chg: 0.66 },
 };
 
-// deep clone
-function clone<T>(x: T): T { return JSON.parse(JSON.stringify(x)); }
+const POPULAR_SYMBOLS = Object.keys(DEMO_PRICES);
 
-// apply small random drift to non-TD rows
-function drift(rows: Row[], frozen: number[]): Row[] {
-  return rows.map((r, ri) => {
-    if (frozen.includes(ri)) return r;
-    const vals = r.vals.map((v, vi) => {
-      if (vi === r.vals.length - 1) return v; // recompute total separately
-      const delta = (Math.random() - 0.5) * 0.06;
-      return Math.round((v + delta) * 100) / 100;
-    });
-    // recompute last col as sum of others
-    const total = Math.round(vals.slice(0, -1).reduce((a, b) => a + b, 0) * 100) / 100;
-    vals[vals.length - 1] = total;
-    return { ...r, vals };
-  });
+function getPrice(sym: string): PriceInfo {
+  return DEMO_PRICES[sym] ?? { price: 100, chg: 0 };
 }
 
-// format number → "(1.23)" or "1.23"
-function fmt(v: number): string {
-  if (Math.abs(v) < 0.005) return "0.00";
-  const s = Math.abs(v).toFixed(2);
-  return v < 0 ? `(${s})` : s;
+function fmt(n: number, dec = 2): string {
+  return n.toLocaleString("en-PK", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
-// ── Animated cell ──────────────────────────────────────────────────────────────
-function AnimCell({ val, bold, isTotal, dark }: { val: number; bold?: boolean; isTotal?: boolean; dark?: boolean }) {
-  const [flash, setFlash] = useState(false);
-  const prev = useRef(val);
+function pctColor(v: number): string {
+  return v > 0 ? "#16A34A" : v < 0 ? "#DC2626" : "#6b7280";
+}
 
-  useEffect(() => {
-    if (prev.current !== val) {
-      setFlash(true);
-      prev.current = val;
-      const t = setTimeout(() => setFlash(false), 500);
-      return () => clearTimeout(t);
+const LS_KEY = "stockifyy_portfolio_v1";
+function loadHoldings(): Holding[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveHoldings(h: Holding[]) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(h)); } catch {}
+}
+
+// ── Add Stock Modal ────────────────────────────────────────────────────────────
+function AddStockModal({ onClose, onAdd }: {
+  onClose: () => void;
+  onAdd: (h: Omit<Holding, "id">) => void;
+}) {
+  const t = useDarkTokens();
+  const [symbol, setSymbol] = useState("");
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const [avgPrice, setAvgPrice] = useState("");
+  const [symSuggestions, setSymSuggestions] = useState<string[]>([]);
+
+  const handleSymbolChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setSymbol(upper);
+    if (upper.length >= 1) {
+      // Search companies API for all 900+ stocks
+      // Show static fallback immediately
+      const staticSuggestions = searchPsxStocks(upper, 12).map(s => s.symbol);
+      setSymSuggestions(staticSuggestions.length > 0 ? staticSuggestions : POPULAR_SYMBOLS.filter(s => s.startsWith(upper)).slice(0, 6));
+      // Then try live API
+      fetch(`/api/portal/companies?search=${encodeURIComponent(upper)}&limit=50`)
+        .then(r => r.json())
+        .then(j => {
+          const syms = (j.data ?? []).map((c: { symbol: string }) => c.symbol);
+          if (syms.length > 0) setSymSuggestions(syms);
+        })
+        .catch(() => {});
+    } else {
+      setSymSuggestions([]);
     }
-  }, [val]);
+    // Auto-fill price if known
+    if (DEMO_PRICES[upper]) {
+      setAvgPrice(DEMO_PRICES[upper].price.toString());
+    }
+  };
 
-  const neg = val < 0;
-  const border = dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f0f0f0";
-  const baseColor = dark ? (isTotal ? "#BDD0E8" : "#7A9AB8") : (isTotal ? "#111" : "#333");
-  return (
-    <td className="tabular-nums transition-colors duration-300" style={{
-      textAlign: "right", padding: "3px 7px", fontSize: 11,
-      fontWeight: isTotal ? 700 : bold ? 600 : 400,
-      color: flash ? (neg ? "#e53e3e" : "#22863a") : neg ? "#c0392b" : baseColor,
-      background: flash ? (neg ? "rgba(220,38,38,0.06)" : "rgba(34,134,58,0.06)") : "transparent",
-      borderBottom: border, whiteSpace: "nowrap", minWidth: isTotal ? 62 : 50,
-    }}>
-      {fmt(val)}
-    </td>
-  );
-}
+  const selectSymbol = (sym: string) => {
+    setSymbol(sym);
+    setSymSuggestions([]);
+    if (DEMO_PRICES[sym]) {
+      setAvgPrice(DEMO_PRICES[sym].price.toString());
+    }
+  };
 
-// ── Table row ──────────────────────────────────────────────────────────────────
-function DataRow({ row, dark }: { row: Row; dark?: boolean }) {
-  const totalIdx = row.vals.length - 1;
-  const border = dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f0f0f0";
-  const rowBg = dark
-    ? (row.shade ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.02)")
-    : (row.shade ? "rgba(248,248,248,0.7)"  : "rgba(255,255,255,0.5)");
+  const handleSubmit = () => {
+    const q = parseFloat(qty);
+    const p = parseFloat(avgPrice);
+    if (!symbol.trim() || isNaN(q) || q <= 0 || isNaN(p) || p <= 0) return;
+    onAdd({
+      symbol: symbol.trim().toUpperCase(),
+      name: name.trim() || symbol.trim().toUpperCase(),
+      quantity: q,
+      avgPrice: p,
+      addedDate: new Date().toISOString().slice(0, 10),
+    });
+    onClose();
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "8px 12px", borderRadius: 6,
+    border: `1px solid ${t.border}`, background: t.inputBg ?? t.bg,
+    color: t.text, fontSize: 13, outline: "none", boxSizing: "border-box",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: t.textMuted, textTransform: "uppercase",
+    letterSpacing: "0.07em", display: "block", marginBottom: 5,
+  };
+
   return (
-    <tr style={{ background: rowBg }}>
-      <td style={{
-        padding: "3px 9px", fontSize: 11, fontWeight: row.bold ? 700 : 400,
-        color: dark ? (row.bold ? "#BDD0E8" : "#7A9AB8") : (row.bold ? "#111" : "#333"),
-        borderBottom: border, whiteSpace: "nowrap", minWidth: 96,
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: t.bg, borderRadius: 12, width: 360, maxWidth: "calc(100vw - 32px)",
+        padding: "22px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+        border: `1px solid ${t.border}`,
       }}>
-        {row.label}
-      </td>
-      {row.vals.map((v, i) => (
-        <AnimCell key={i} val={v} bold={row.bold} isTotal={i === totalIdx} dark={dark} />
-      ))}
-    </tr>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: t.text }}>Add Stock to Portfolio</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: t.textMuted, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Symbol */}
+        <div style={{ marginBottom: 14, position: "relative" }}>
+          <label style={labelStyle}>Stock Symbol</label>
+          <input
+            value={symbol} onChange={e => handleSymbolChange(e.target.value)}
+            placeholder="e.g. OGDC, HBL, LUCK" style={inputStyle}
+            autoFocus
+          />
+          {symSuggestions.length > 0 && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20,
+              background: t.bg, border: `1px solid ${t.border}`, borderRadius: 6,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)", overflow: "hidden",
+            }}>
+              {symSuggestions.map(s => (
+                <button key={s} onClick={() => selectSymbol(s)} style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "8px 12px", background: "none", border: "none",
+                  borderBottom: `1px solid ${t.border}`, cursor: "pointer",
+                  fontSize: 12, fontWeight: 700, color: t.text,
+                }}>
+                  {s} <span style={{ fontWeight: 400, color: t.textMuted, fontSize: 11 }}>
+                    — Rs {fmt(DEMO_PRICES[s].price)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Company Name */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Company Name (optional)</label>
+          <input value={name} onChange={e => setName(e.target.value)}
+            placeholder="e.g. Oil & Gas Dev. Co." style={inputStyle} />
+        </div>
+
+        {/* Quantity */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Quantity (Shares)</label>
+          <input value={qty} onChange={e => setQty(e.target.value)}
+            placeholder="e.g. 500" type="number" min="1" style={inputStyle} />
+        </div>
+
+        {/* Avg Buy Price */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={labelStyle}>Average Buy Price (Rs)</label>
+          <input value={avgPrice} onChange={e => setAvgPrice(e.target.value)}
+            placeholder="e.g. 175.50" type="number" min="0" step="0.01" style={inputStyle} />
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${t.border}`,
+            background: "transparent", color: t.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>Cancel</button>
+          <button onClick={handleSubmit} style={{
+            flex: 2, padding: "9px", borderRadius: 7, border: "none",
+            background: "var(--gold)", color: "#07111F", fontSize: 13, fontWeight: 800, cursor: "pointer",
+          }}>+ Add to Portfolio</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ── Table header row ───────────────────────────────────────────────────────────
-function OrangeHeader({ label, cols }: { label: string; cols: string[] }) {
-  return (
-    <tr style={{ background: "var(--gold)", backgroundImage: "linear-gradient(90deg, var(--gold) 0%, #e8c84a 50%, var(--gold) 100%)", backgroundSize: "200% 100%", animation: "goldShimmer 3s linear infinite" }}>
-      <th style={{ padding: "4px 9px", fontSize: 10, fontWeight: 800, textAlign: "left", letterSpacing: "0.05em", whiteSpace: "nowrap", color: "white" }}>{label}</th>
-      {cols.map(c => (
-        <th key={c} style={{ padding: "4px 7px", fontSize: 9.5, fontWeight: 700, textAlign: "right", letterSpacing: "0.02em", whiteSpace: "nowrap", color: "rgba(255,255,255,0.9)" }}>{c}</th>
-      ))}
-    </tr>
-  );
-}
-
-// ── Section divider ────────────────────────────────────────────────────────────
-function SectionLabel({ text, dark }: { text: string; dark?: boolean }) {
-  return (
-    <tr style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.4)" }}>
-      <td colSpan={99} style={{ padding: "5px 9px 3px", fontSize: 9, fontWeight: 800, letterSpacing: "0.14em", color: "var(--gold)", textTransform: "uppercase", borderBottom: dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(240,240,240,0.7)" }}>
-        {text}
-      </td>
-    </tr>
-  );
-}
-
-// ── PKT clock ─────────────────────────────────────────────────────────────────
-function LiveClock() {
-  const [time, setTime] = useState("");
-  useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour12: false }));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <span className="tabular-nums font-mono text-[11px]" style={{ color: "var(--gold)" }}>{time} PKT</span>;
-}
-
-// ── Main component ─────────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function PortfolioLive() {
   const t = useDarkTokens();
-  const [data, setData] = useState<typeof seed>(() => clone(seed));
-  const [tick, setTick] = useState(0);
-  const [pulse, setPulse] = useState(false);
-  const FROZEN_FIPI  = [2, seed.fipiFlow.length + seed.fipiSectors.length,     // NET POSITION rows
-                         seed.fipiFlow.length + seed.fipiSectors.length + 1];   // DEBT MKT
-  const FROZEN_LIPI  = [2, seed.lipiFlow.length + seed.lipiSectors.length,
-                         seed.lipiFlow.length + seed.lipiSectors.length + 1];
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setPulse(true);
-      setTimeout(() => setPulse(false), 400);
-      setData(d => ({
-        ...d,
-        fipiFlow:    drift(d.fipiFlow,    [2]),
-        fipiSectors: drift(d.fipiSectors, []),
-        fipiBottom:  drift(d.fipiBottom,  [0, 1, 3, 4]),
-        lipiFlow:    drift(d.lipiFlow,    [2]),
-        lipiSectors: drift(d.lipiSectors, []),
-        lipiBottom:  drift(d.lipiBottom,  [0, 1, 3, 4]),
-      }) as typeof seed);
-      setTick(t => t + 1);
-    }, 3000);
-    return () => clearInterval(id);
+    setHoldings(loadHoldings());
+    setMounted(true);
   }, []);
 
-  const date = new Date().toLocaleDateString("en-PK", {
-    timeZone: "Asia/Karachi", day: "numeric", month: "long", year: "numeric",
-  });
+  const addHolding = useCallback((h: Omit<Holding, "id">) => {
+    setHoldings(prev => {
+      // If same symbol already exists, merge (add quantity, recalculate avg)
+      const existing = prev.find(x => x.symbol === h.symbol);
+      let next: Holding[];
+      if (existing) {
+        next = prev.map(x => {
+          if (x.symbol !== h.symbol) return x;
+          const totalShares = x.quantity + h.quantity;
+          const avgP = (x.quantity * x.avgPrice + h.quantity * h.avgPrice) / totalShares;
+          return { ...x, quantity: totalShares, avgPrice: Math.round(avgP * 100) / 100 };
+        });
+      } else {
+        next = [...prev, { ...h, id: Date.now().toString() }];
+      }
+      saveHoldings(next);
+      return next;
+    });
+  }, []);
+
+  const removeHolding = useCallback((id: string) => {
+    setHoldings(prev => {
+      const next = prev.filter(h => h.id !== id);
+      saveHoldings(next);
+      return next;
+    });
+  }, []);
+
+  const summary = useMemo(() => {
+    let marketValue = 0, costBasis = 0, todayPL = 0;
+    for (const h of holdings) {
+      const { price, chg } = getPrice(h.symbol);
+      const mv  = h.quantity * price;
+      const cb  = h.quantity * h.avgPrice;
+      const prevPrice = price / (1 + chg / 100);
+      marketValue += mv;
+      costBasis   += cb;
+      todayPL     += h.quantity * (price - prevPrice);
+    }
+    const totalPL = marketValue - costBasis;
+    const totalPct = costBasis > 0 ? (totalPL / costBasis) * 100 : 0;
+    return { marketValue, costBasis, totalPL, totalPct, todayPL };
+  }, [holdings]);
+
+  const cardStyle: React.CSSProperties = {
+    background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10,
+    padding: "16px 20px", flex: 1, minWidth: 140,
+  };
+
+
+  if (!mounted) return (
+    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+      Loading portfolio…
+    </div>
+  );
 
   return (
-    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 56px)", background: "transparent", padding: "8px 12px 12px" }}>
+    <div style={{ padding: "16px 20px", fontFamily: "inherit" }} suppressHydrationWarning>
 
-      {/* ── Header bar ─────────────────────────────── */}
-      {/* Desktop: 3-col (logo | heading | badges). Mobile: stacked */}
-      <div className="mb-3 px-1 flex-shrink-0">
-        {/* Top row: logo left, badges right */}
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <div />
-
-          {/* RIGHT — Live badge + clock + date */}
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.22)" }}>
-              <span className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                style={{ background: "#16a34a", boxShadow: pulse ? "0 0 7px #16a34a" : "none", transform: pulse ? "scale(1.5)" : "scale(1)" }}/>
-              <span className="text-[9px] font-bold tracking-wide" style={{ color: "#16a34a" }}>LIVE</span>
-            </div>
-            <LiveClock />
-            <span className="hidden sm:inline" style={{ fontSize: 9.5, color: t.textMuted }}>{date}</span>
-          </div>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}><span style={{ color: t.text }}>My</span> <span style={{ color: "#C8860A" }}>Portfolio</span></h1>
+          <p style={{ margin: "3px 0 0", fontSize: 12, color: t.textMuted }}>Track your PSX holdings & P&L</p>
         </div>
-
-        {/* CENTER — Main heading, full-width centered */}
-        <div className="text-center" style={{ paddingTop: 2 }}>
-          <div style={{ fontSize: "clamp(14px,3.5vw,20px)", fontWeight: 900, color: t.text, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
-            Daily Portfolio Investments
-            <span className="ml-2" style={{ color: "var(--gold)" }}>US$mn</span>
-          </div>
-          <div style={{ fontSize: 8.5, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 3, color: t.textMuted }}>
-            FIPI &amp; LIPI · Pakistan Stock Exchange
-          </div>
-        </div>
+        <button onClick={() => setShowAdd(true)} style={{
+          padding: "9px 18px", borderRadius: 8, border: "none",
+          background: "var(--gold)", color: "#07111F",
+          fontSize: 13, fontWeight: 800, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          + Add Stock
+        </button>
       </div>
 
-      {/* ── Main panels ────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-4 flex-1">
-
-        {/* ─── FIPI ──────────── */}
-        <div className="flex flex-col lg:flex-shrink-0" style={{ flex: "0 0 auto" }}>
-          <div className="flex flex-col items-center mb-2">
-            <span style={{ fontSize: 14, fontWeight: 300, letterSpacing: "0.2em", color: t.text, textTransform: "uppercase" }}>FIPI</span>
-            <span style={{ fontSize: 8, color: t.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 1 }}>Foreign Portfolio Investment</span>
-            <div style={{ marginTop: 5, height: 1.5, width: 72, background: "linear-gradient(90deg,transparent,var(--gold),transparent)", animation: "goldPulse 2s ease-in-out infinite" }}/>
+      {/* ── Summary Cards ── */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
+        {[
+          { label: "MARKET VALUE",  value: `Rs ${fmt(summary.marketValue)}`, sub: null },
+          { label: "COST BASIS",    value: `Rs ${fmt(summary.costBasis)}`,   sub: null },
+          {
+            label: "TOTAL P&L",
+            value: `${summary.totalPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.totalPL))}`,
+            sub: `${summary.totalPct >= 0 ? "+" : ""}${fmt(summary.totalPct)}%`,
+            color: pctColor(summary.totalPL),
+          },
+          {
+            label: "TODAY P&L",
+            value: `${summary.todayPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.todayPL))}`,
+            sub: null,
+            color: pctColor(summary.todayPL),
+          },
+        ].map(c => (
+          <div key={c.label} style={cardStyle}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, letterSpacing: "0.07em", marginBottom: 6 }}>
+              {c.label}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: c.color ?? t.text, fontVariantNumeric: "tabular-nums" }}>
+              {c.value}
+            </div>
+            {c.sub && (
+              <div style={{ fontSize: 11, fontWeight: 600, color: c.color, marginTop: 2 }}>{c.sub}</div>
+            )}
           </div>
+        ))}
+      </div>
 
-          <div className="rounded-xl overflow-hidden" style={{
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            background: t.dark ? "rgba(14,31,48,0.85)" : "rgba(255,255,255,0.72)",
-            border: t.dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.55)",
-            boxShadow: t.cardShadow,
+      {/* ── Holdings Table or Empty State ── */}
+      {holdings.length === 0 ? (
+        <div style={{
+          border: `1px solid ${t.border}`, borderRadius: 12,
+          padding: "80px 20px", textAlign: "center",
+          background: t.bg,
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>💼</div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: t.text, margin: "0 0 6px" }}>No holdings yet</p>
+          <p style={{ fontSize: 12, color: t.textMuted, margin: "0 0 20px" }}>Add your first PSX stock to start tracking</p>
+          <button onClick={() => setShowAdd(true)} style={{
+            padding: "10px 24px", borderRadius: 8, border: "none",
+            background: "var(--gold)", color: "#07111F",
+            fontSize: 13, fontWeight: 800, cursor: "pointer",
           }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 300 }}>
-                <tbody>
-                  <OrangeHeader label="CLIENTWISE" cols={FIPI_COLS} />
-                  {data.fipiFlow.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                  <SectionLabel text="Sector Wise" dark={t.dark} />
-                  <OrangeHeader label="SECTOR" cols={FIPI_COLS} />
-                  {data.fipiSectors.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                  {data.fipiBottom.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                </tbody>
-              </table>
-              <div className="px-3 py-1.5" style={{ borderTop: t.dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #f0f0f0" }}>
-                <span style={{ fontSize: 8, color: t.textMuted, fontStyle: "italic" }}>Source: NCCPL · Live feed</span>
-              </div>
-            </div>
-          </div>
+            Add your first stock
+          </button>
         </div>
-
-        {/* ─── LIPI ──────────── */}
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex flex-col items-center mb-2">
-            <span style={{ fontSize: 14, fontWeight: 300, letterSpacing: "0.2em", color: t.text, textTransform: "uppercase" }}>LIPI</span>
-            <span style={{ fontSize: 8, color: t.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 1 }}>Local Portfolio Investment</span>
-            <div style={{ marginTop: 5, height: 1.5, width: 72, background: "linear-gradient(90deg,transparent,var(--gold),transparent)", animation: "goldPulse 2s ease-in-out infinite" }}/>
+      ) : (
+        <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bg, overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 720 }}>
+              <thead>
+                <tr style={{ background: t.tableTh ?? t.bg }}>
+                  {["Symbol", "Company", "Qty", "Avg Price", "Cur Price", "Invested", "Market Val", "P&L", "P&L%", "Today", ""].map(h => (
+                    <th key={h} style={{
+                      padding: "10px 12px", textAlign: h === "Symbol" || h === "Company" || h === "" ? "left" : "right",
+                      fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                      color: t.textMuted, borderBottom: `2px solid ${t.border}`, whiteSpace: "nowrap",
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {holdings.map((h, i) => {
+                  const { price, chg } = getPrice(h.symbol);
+                  const invested   = h.quantity * h.avgPrice;
+                  const marketVal  = h.quantity * price;
+                  const pl         = marketVal - invested;
+                  const plPct      = invested > 0 ? (pl / invested) * 100 : 0;
+                  const prevPrice  = price / (1 + chg / 100);
+                  const todayPL    = h.quantity * (price - prevPrice);
+                  const plColor    = pctColor(pl);
+                  const tdStyle: React.CSSProperties = {
+                    padding: "11px 12px", fontSize: 12, color: t.text,
+                    borderBottom: i < holdings.length - 1 ? `1px solid ${t.border}` : "none",
+                    whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums",
+                  };
+                  return (
+                    <tr key={h.id} style={{ transition: "background 0.1s" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = t.bgLight ?? "transparent")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <td style={{ ...tdStyle, fontWeight: 800, color: "var(--gold)" }}>{h.symbol}</td>
+                      <td style={{ ...tdStyle, color: t.textSec ?? t.textMuted, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {h.name || h.symbol}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>{h.quantity.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(h.avgPrice)}</td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(price)}</td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(invested)}</td>
+                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>Rs {fmt(marketVal)}</td>
+                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: plColor }}>
+                        {pl >= 0 ? "+" : ""}Rs {fmt(Math.abs(pl))}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: plColor }}>
+                        {plPct >= 0 ? "+" : ""}{fmt(plPct)}%
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right", color: pctColor(todayPL) }}>
+                        {todayPL >= 0 ? "+" : ""}Rs {fmt(Math.abs(todayPL))}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>
+                        <button onClick={() => removeHolding(h.id)} style={{
+                          background: "none", border: "none", color: "#DC2626",
+                          cursor: "pointer", fontSize: 14, opacity: 0.6, padding: "2px 6px",
+                          borderRadius: 4, transition: "opacity 0.1s",
+                        }}
+                          onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
+                        >✕</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
-          <div className="rounded-xl overflow-hidden" style={{
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            background: t.dark ? "rgba(14,31,48,0.85)" : "rgba(255,255,255,0.72)",
-            border: t.dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.55)",
-            boxShadow: t.cardShadow,
+          {/* Footer with totals */}
+          <div style={{
+            padding: "10px 12px", borderTop: `1px solid ${t.border}`,
+            display: "flex", justifyContent: "flex-end", gap: 24, flexWrap: "wrap",
           }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 580 }}>
-                <tbody>
-                  <OrangeHeader label="CLIENTWISE" cols={LIPI_COLS} />
-                  {data.lipiFlow.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                  <SectionLabel text="Sector Wise" dark={t.dark} />
-                  <OrangeHeader label="SECTOR" cols={LIPI_COLS} />
-                  {data.lipiSectors.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                  {data.lipiBottom.map((r) => <DataRow key={r.label} row={r} dark={t.dark} />)}
-                </tbody>
-              </table>
-              <div className="px-3 py-1.5" style={{ borderTop: t.dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #f0f0f0" }}>
-                <span style={{ fontSize: 8, color: t.textMuted, fontStyle: "italic" }}>Source: NCCPL · Live feed</span>
-              </div>
-            </div>
+            <span style={{ fontSize: 11, color: t.textMuted }}>
+              {holdings.length} holding{holdings.length !== 1 ? "s" : ""}
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: t.text }}>
+              Invested: <span style={{ color: "var(--gold)" }}>Rs {fmt(summary.costBasis)}</span>
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: t.text }}>
+              Value: <span style={{ fontVariantNumeric: "tabular-nums" }}>Rs {fmt(summary.marketValue)}</span>
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: pctColor(summary.totalPL) }}>
+              Total P&L: {summary.totalPL >= 0 ? "+" : ""}Rs {fmt(Math.abs(summary.totalPL))} ({summary.totalPct >= 0 ? "+" : ""}{fmt(summary.totalPct)}%)
+            </span>
           </div>
         </div>
+      )}
 
-      </div>
+      {/* ── Note ── */}
+      <p style={{ fontSize: 10, color: t.textMuted, marginTop: 10, textAlign: "center" }}>
+        Prices are indicative demo data · Portfolio saved locally in your browser
+      </p>
 
-      {/* ── Footer strip ───────────────────────────── */}
-      <div className="flex items-center justify-between mt-3 px-1 flex-shrink-0">
-        <span style={{ fontSize: 8.5, color: "var(--gold)" }}>
-          Updates every <strong>3s</strong> · NCCPL
-        </span>
-        <span style={{ fontSize: 8.5, color: t.textMuted }}>
-          © 2026 Stockifyy Advisory Private Limited
-        </span>
-      </div>
-
+      {showAdd && <AddStockModal onClose={() => setShowAdd(false)} onAdd={addHolding} />}
     </div>
   );
 }

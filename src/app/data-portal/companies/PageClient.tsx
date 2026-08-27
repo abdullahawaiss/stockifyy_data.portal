@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { PSX_STOCKS_STATIC, searchPsxStocks } from "@/lib/psx-stocks-static";
 
 interface Company {
   id: number;
@@ -26,11 +27,20 @@ export default function CompaniesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: "50", ...(search && { search }), ...(shariah && { shariah }) });
+      const params = new URLSearchParams({ page: String(page), limit: "900", ...(search && { search }), ...(shariah && { shariah }) });
       const res = await fetch(`/api/portal/companies?${params}`);
       const json = await res.json();
-      setData(json.data ?? []);
-      setPagination(json.pagination ?? { page: 1, total: 0, pages: 1 });
+      let rows: Company[] = json.data ?? [];
+      // Fallback: if DB has no data, use the static PSX list
+      if (rows.length === 0) {
+        const staticSrc = search ? searchPsxStocks(search, 1000) : PSX_STOCKS_STATIC;
+        rows = staticSrc.map((s, i) => ({
+          id: i + 1, symbol: s.symbol, name: s.name,
+          sectorName: s.sector, shariahStatus: "—", listingDate: "—", website: "—",
+        }));
+      }
+      setData(rows);
+      setPagination(json.pagination ?? { page: 1, total: rows.length, pages: 1 });
     } catch { setData([]); } finally { setLoading(false); }
   }, [search, shariah, page]);
 

@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useRef } from "react";
 
 const WA_ICON = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg">
@@ -8,23 +7,18 @@ const WA_ICON = (
   </svg>
 );
 
-/** Phone numbers row — title ke samne */
 export function PortalPhones() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0, marginRight: 8 }}>
-      {/* Phone */}
       <a href="tel:+923362444466" style={{
         display: "flex", alignItems: "center", gap: 5,
-        textDecoration: "none", fontSize: 12.5, fontWeight: 600, color: "#1e293b",
-        whiteSpace: "nowrap",
+        textDecoration: "none", fontSize: 12.5, fontWeight: 600,
+        whiteSpace: "nowrap", color: "var(--text)",
       }}>
         <span style={{ fontSize: 14 }}>📞</span>
         <span>+92 336 2444466</span>
       </a>
-
       <span style={{ color: "var(--border)", fontSize: 13 }}>|</span>
-
-      {/* WhatsApp */}
       <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{
         display: "flex", alignItems: "center", gap: 5,
         textDecoration: "none", fontSize: 12.5, fontWeight: 600, color: "#25D366",
@@ -37,9 +31,19 @@ export function PortalPhones() {
   );
 }
 
-/** Buttons row — search ke samne */
 export default function PortalCTA() {
-  const btnRef = useRef<HTMLAnchorElement>(null);
+  const btnStyle: React.CSSProperties = {
+    padding: "8px 20px", borderRadius: 7,
+    background: "transparent",
+    fontWeight: 700, fontSize: 13, textDecoration: "none",
+    border: "1.5px solid #D4971A",
+    whiteSpace: "nowrap",
+    display: "inline-block",
+    color: "var(--text)",
+    cursor: "pointer",
+    letterSpacing: "0.02em",
+    transition: "background 150ms, color 150ms, box-shadow 150ms",
+  };
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -48,47 +52,19 @@ export default function PortalCTA() {
           0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); border-color: #D4971A; }
           50%       { box-shadow: 0 0 10px 3px rgba(212,175,55,0.45); border-color: #f0cc5a; }
         }
-        .cta-open-account, .cta-client-login {
-          animation: gold-pulse 2s ease-in-out infinite;
-        }
-        .cta-open-account:hover, .cta-client-login:hover {
-          animation: none;
+        .portal-cta-btn { animation: gold-pulse 2s ease-in-out infinite; }
+        .portal-cta-btn:hover {
+          animation: none !important;
           background: #D4971A !important;
           color: #07111F !important;
           border-color: #D4971A !important;
-          box-shadow: 0 0 18px 5px rgba(212,175,55,0.55);
+          box-shadow: 0 0 18px 5px rgba(212,175,55,0.55) !important;
         }
       `}</style>
-
-      <a
-        ref={btnRef}
-        href="/auth/register"
-        className="cta-open-account"
-        style={{
-          padding: "8px 30px", borderRadius: 7,
-          background: "transparent", color: "#07111F",
-          fontWeight: 700, fontSize: 13, textDecoration: "none",
-          border: "1.5px solid #D4971A",
-          whiteSpace: "nowrap", letterSpacing: "0.03em",
-          display: "inline-block",
-          transition: "background 150ms, color 150ms, box-shadow 150ms",
-        }}
-      >
+      <a href="/open-account" className="portal-cta-btn" style={{ ...btnStyle, padding: "8px 24px" }}>
         Open New Account
       </a>
-      <Link
-        href="/auth/login"
-        className="cta-client-login"
-        style={{
-          padding: "8px 20px", borderRadius: 7,
-          background: "transparent", color: "#07111F",
-          fontWeight: 700, fontSize: 13, textDecoration: "none",
-          border: "1.5px solid #D4971A",
-          whiteSpace: "nowrap",
-          transition: "background 150ms, color 150ms, box-shadow 150ms",
-          display: "inline-block",
-        }}
-      >
+      <Link href="/auth/login" className="portal-cta-btn" style={btnStyle}>
         Client Login
       </Link>
     </div>
