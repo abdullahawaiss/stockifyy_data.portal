@@ -566,10 +566,10 @@ function SectorView({ stocks, onHover, onLeave }: {
           gap: 10px;
           padding: 4px 0 14px;
         }
-        @media (max-width: 1279px) {
+        @media (max-width: 900px) {
           .sv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        @media (max-width: 767px) {
+        @media (max-width: 500px) {
           .sv-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
         }
         .sv-grid > * { min-height: 0; }
