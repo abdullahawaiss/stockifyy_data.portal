@@ -171,7 +171,7 @@ function AddStockModal({ onClose, onAdd }: {
                   fontSize: 12, fontWeight: 700, color: t.text,
                 }}>
                   {s} <span style={{ fontWeight: 400, color: t.textMuted, fontSize: 11 }}>
-                    — Rs {fmt(DEMO_PRICES[s].price)}
+                    — Rs {fmt(getPrice(s).price)}
                   </span>
                 </button>
               ))}

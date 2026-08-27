@@ -50,34 +50,26 @@ export default async function DataPortalPage() {
               <GlobalSearch />
             </div>
 
-            {/* Right: Phones + Buttons card */}
+            {/* Right: Phones + Buttons */}
             <div className="portal-cta-card" style={{
               display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end", justifyContent: "center",
               borderRadius: 14, padding: "14px 20px",
               flexShrink: 0, position: "relative", overflow: "hidden",
-              background: "var(--cta-card-bg, linear-gradient(135deg, #fdf8f0 0%, #fef9f2 60%, #fff8ee 100%))",
+              background: "transparent",
             }}>
-              {/* Themed geometric design — gold + navy, matches portal */}
-              <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 90" preserveAspectRatio="none">
+              {/* empty placeholder to keep structure */}
+              <svg style={{ display: "none" }} xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="ctaGoldBar" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0.35" />
-                    <stop offset="50%"  stopColor="#D4971A" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="#D4971A" stopOpacity="0.0" />
+                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0" />
                   </linearGradient>
                   <radialGradient id="ctaNavyGlow" cx="5%" cy="100%" r="55%">
-                    <stop offset="0%"   stopColor="#07111F" stopOpacity="0.09" />
-                    <stop offset="100%" stopColor="#07111F" stopOpacity="0" />
+                    <stop offset="0%"   stopColor="#07111F" stopOpacity="0" />
                   </radialGradient>
                   <radialGradient id="ctaGoldGlow" cx="95%" cy="0%" r="50%">
-                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0.13" />
-                    <stop offset="100%" stopColor="#D4971A" stopOpacity="0" />
+                    <stop offset="0%"   stopColor="#D4971A" stopOpacity="0" />
                   </radialGradient>
                 </defs>
-
-                {/* Background glows */}
-                <rect width="500" height="90" fill="url(#ctaNavyGlow)" />
-                <rect width="500" height="90" fill="url(#ctaGoldGlow)" />
 
                 {/* Top gold accent bar */}
                 <rect x="0" y="0" width="500" height="2.5" fill="url(#ctaGoldBar)" />

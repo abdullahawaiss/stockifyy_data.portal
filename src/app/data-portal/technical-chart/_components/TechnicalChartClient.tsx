@@ -116,7 +116,7 @@ export default function TechnicalChartClient() {
     }}>
       {/* ── Header bar ── */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "8px 14px",
+        display: "flex", alignItems: "center", gap: 10, rowGap: 8, padding: "10px 14px",
         borderBottom: "1px solid var(--border)", background: "var(--card-bg)",
         flexShrink: 0, flexWrap: "wrap",
       }}>
@@ -231,19 +231,18 @@ export default function TechnicalChartClient() {
         )}
       </div>
 
-      {/* Spacer row — gives the chart visual breathing room below the header */}
-      <div style={{ height: 6, background: "var(--background)", flexShrink: 0 }} />
-
-      {/* TradingView iframe */}
-      <iframe
-        key={chartUrl}
-        src={chartUrl}
-        id="tv_chart"
-        title={`Technical Chart — PSX:${rawSymbol}`}
-        style={{ flex: 1, border: "none", display: "block", width: "100%", height: "100%" }}
-        allow="fullscreen"
-        loading="eager"
-      />
+      {/* TradingView iframe with padding on all sides */}
+      <div style={{ flex: 1, padding: "20px 20px 16px", background: "var(--background)", boxSizing: "border-box", display: "flex" }}>
+        <iframe
+          key={chartUrl}
+          src={chartUrl}
+          id="tv_chart"
+          title={`Technical Chart — PSX:${rawSymbol}`}
+          style={{ flex: 1, border: "none", display: "block", width: "100%", height: "100%", borderRadius: 10 }}
+          allow="fullscreen"
+          loading="eager"
+        />
+      </div>
     </div>
   );
 }

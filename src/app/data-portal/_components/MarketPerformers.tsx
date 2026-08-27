@@ -1,156 +1,177 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { fmtNum, fmtVol } from "../_data";
 import type { MarketSummary } from "@/app/api/portal/market-summary/route";
 
-type Tab = "Top Active" | "Advancers" | "Decliners";
 type Row = MarketSummary["volume"][number];
 
-function MiniBar({ pct, max, color, bgColor }: { pct: number; max: number; color: string; bgColor: string }) {
-  const w = max > 0 ? Math.round((Math.abs(pct) / max) * 52) : 0;
+let _cache: MarketSummary | null = null;
+
+function fmtVol(v: number) {
+  if (!v) return "—";
+  return v.toLocaleString("en-PK");
+}
+
+function fmtPrice(v: number) {
+  return v ? v.toFixed(2) : "—";
+}
+
+function Col({ title, rows, loading, type }: {
+  title: string;
+  rows: Row[];
+  loading: boolean;
+  type: "active" | "advancers" | "decliners";
+}) {
+  const accent = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
+  const headerBg = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
+
   return (
-    <svg width={54} height={14} style={{ display: "block", flexShrink: 0 }}>
-      <rect x={0} y={2} width={54} height={10} rx={3} fill={bgColor} />
-      <rect x={0} y={2} width={w} height={10} rx={3} fill={color} />
-    </svg>
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+      {/* Section header */}
+      <div style={{
+        background: headerBg, color: "#fff",
+        fontWeight: 800, fontSize: 11.5, letterSpacing: "0.06em",
+        textTransform: "uppercase", padding: "7px 10px",
+        display: "flex", alignItems: "center", gap: 6,
+      }}>
+        {type === "advancers" ? "▲" : type === "decliners" ? "▼" : "●"} {title}
+      </div>
+
+      {/* Column headers */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
+        padding: "4px 8px", background: "var(--light-bg)",
+        borderBottom: "1px solid var(--border)",
+        fontSize: 9.5, fontWeight: 700, color: "var(--text-muted)",
+        letterSpacing: "0.05em", textTransform: "uppercase",
+        gap: "0 4px",
+      }}>
+        <div>Symbol</div>
+        <div style={{ textAlign: "right" }}>Price</div>
+        <div style={{ textAlign: "right" }}>Change</div>
+        <div style={{ textAlign: "right" }}>Volume</div>
+      </div>
+
+      {/* Rows */}
+      <div style={{ flex: 1 }}>
+        {loading
+          ? Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} style={{
+                display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
+                padding: "5px 8px", gap: "0 4px", borderBottom: "1px solid var(--border)",
+                opacity: 0.5,
+              }}>
+                {[80, 50, 60, 70].map((w, j) => (
+                  <div key={j} style={{ height: 10, background: "var(--border)", borderRadius: 3, width: `${w}%`, marginLeft: j > 0 ? "auto" : 0 }} />
+                ))}
+              </div>
+            ))
+          : rows.length === 0
+          ? <div style={{ padding: "20px 10px", textAlign: "center", fontSize: 11, color: "var(--text-muted)" }}>No data</div>
+          : rows.map((r, i) => {
+              const up = r.pct >= 0;
+              const chgColor = type === "active" ? "var(--text-primary)" : up ? "#16a34a" : "#dc2626";
+              const chgSign  = up ? "+" : "";
+              const chgAmt   = ((r.close * r.pct) / 100);
+              return (
+                <Link key={r.symbol} href={`/data-portal/company/${r.symbol}`}
+                  style={{ textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--light-bg)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "")}
+                >
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
+                    padding: "4px 8px", gap: "0 4px",
+                    borderBottom: "1px solid var(--border)",
+                    alignItems: "center", cursor: "pointer",
+                  }}>
+                    {/* Symbol */}
+                    <span style={{
+                      fontWeight: 700, fontSize: 11, color: accent,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {i + 1 <= 3 && <span style={{ fontSize: 9, opacity: 0.6, marginRight: 3 }}>{i+1}</span>}
+                      {r.symbol}
+                    </span>
+
+                    {/* Price */}
+                    <span style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
+                      {fmtPrice(r.close)}
+                    </span>
+
+                    {/* Change */}
+                    <span style={{ textAlign: "right", fontSize: 10, fontWeight: 700, color: chgColor, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                      {type === "active"
+                        ? <span style={{ color: r.pct >= 0 ? "#16a34a" : "#dc2626" }}>{chgSign}{r.pct.toFixed(2)}%</span>
+                        : <>{chgSign}{Math.abs(chgAmt).toFixed(2)} ({chgSign}{r.pct.toFixed(2)}%)</>
+                      }
+                    </span>
+
+                    {/* Volume */}
+                    <span style={{ textAlign: "right", fontSize: 10, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                      {fmtVol(r.vol)}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+      </div>
+    </div>
   );
 }
 
-// Module-level cache so re-mounts don't re-fetch
-let _mktCache: MarketSummary | null = null;
-
 export default function MarketPerformers({ initialData }: { initialData?: MarketSummary | null }) {
-  const [tab, setTab] = useState<Tab>("Top Active");
-  const seed = initialData ?? _mktCache ?? null;
+  const seed = initialData ?? _cache ?? null;
   const [summary, setSummary] = useState<MarketSummary | null>(seed);
-  const [loading, setLoading] = useState(!seed);
+  const [loading, setLoading]  = useState(!seed);
 
   useEffect(() => {
-    if (seed) return; // already have data — skip fetch
+    if (seed) return;
     fetch("/api/portal/market-summary")
       .then(r => r.json())
-      .then(d => { _mktCache = d; setSummary(d); })
+      .then(d => { _cache = d; setSummary(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const rows: Row[] =
-    tab === "Top Active" ? (summary?.volume  ?? []).slice(0, 12) :
-    tab === "Advancers"  ? (summary?.gainers  ?? []).slice(0, 10) :
-                           (summary?.losers   ?? []).slice(0, 10);
-
-  const isActive = tab === "Top Active";
-  const maxVal = rows.length
-    ? isActive
-      ? Math.max(...rows.map(r => r.vol)) || 1
-      : Math.max(...rows.map(r => Math.abs(r.pct))) || 1
-    : 1;
-
-  const accentColor = isActive ? "var(--navy)" : tab === "Advancers" ? "#16A34A" : "#DC2626";
-  const accentBg    = isActive ? "rgba(7,17,31,0.07)" : tab === "Advancers" ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)";
+  const active    = (summary?.volume  ?? []).slice(0, 10);
+  const advancers = (summary?.gainers ?? []).slice(0, 10);
+  const decliners = (summary?.losers  ?? []).slice(0, 10);
 
   return (
-    <div className="card overflow-hidden flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-        <h2 className="text-sm font-bold" style={{ color: "var(--navy)" }}>Market Performers</h2>
+    <div className="card overflow-hidden" style={{ display: "flex", flexDirection: "column" }}>
+      {/* Title row */}
+      <div style={{
+        padding: "8px 12px", borderBottom: "1px solid var(--border)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: "var(--card-bg)",
+      }}>
+        <h2 style={{ fontSize: 13, fontWeight: 800, color: "var(--navy)", margin: 0 }}>
+          Market Performers
+        </h2>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 9.5, fontWeight: 700, color: "#16a34a" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a", display: "inline-block", animation: "pulse 2s infinite" }} />
+          LIVE
+        </span>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b" style={{ borderColor: "var(--border)", background: "var(--light-bg)" }}>
-        {(["Top Active", "Advancers", "Decliners"] as Tab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="flex-1 py-2 text-[11px] font-semibold transition-all"
-            style={{
-              color: tab === t ? "var(--gold)" : "var(--text-muted)",
-              background: "transparent",
-              border: "none",
-              borderBottom: tab === t ? "2px solid var(--gold)" : "2px solid transparent",
-              cursor: "pointer",
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      {/* Column headers */}
-      <div className="grid px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-wide border-b"
-        style={{
-          gridTemplateColumns: "2fr 1.4fr 54px 1.2fr",
-          gap: "0 6px",
-          color: "var(--text-muted)",
-          borderColor: "var(--border)",
-          background: "var(--light-bg)",
-        }}>
-        <div>Symbol</div>
-        <div className="text-right">Price</div>
-        <div />
-        <div className="text-right">{isActive ? "Volume" : "Change"}</div>
-      </div>
-
-      {/* Rows */}
-      <div className="flex-1 divide-y" style={{ borderColor: "var(--border)" }}>
-        {loading ? (
-          Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="grid items-center px-3 py-2 animate-pulse"
-              style={{ gridTemplateColumns: "2fr 1.4fr 54px 1.2fr", gap: "0 6px" }}>
-              <div className="h-4 bg-gray-100 rounded w-12" />
-              <div className="h-4 bg-gray-100 rounded ml-auto w-10" />
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-4 bg-gray-100 rounded ml-auto w-10" />
-            </div>
-          ))
-        ) : rows.length === 0 ? (
-          <div className="py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>No data available</div>
-        ) : (
-          rows.map(r => {
-            const up = r.pct >= 0;
-            const rowColor = isActive ? accentColor : up ? "#16A34A" : "#DC2626";
-            const rowBg    = isActive ? accentBg    : up ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)";
-            const barVal   = isActive ? r.vol : Math.abs(r.pct);
-            return (
-              <Link key={r.symbol} href={`/data-portal/company/${r.symbol}`}
-                className="grid items-center px-3 py-2 transition-colors"
-                style={{ gridTemplateColumns: "2fr 1.4fr 54px 1.2fr", gap: "0 6px", textDecoration: "none" }}
-                onMouseEnter={e => (e.currentTarget.style.background = rowBg)}
-                onMouseLeave={e => (e.currentTarget.style.background = "")}
-              >
-                {/* Symbol */}
-                <span className="font-mono font-semibold text-[10.5px] px-1.5 py-0.5 rounded truncate"
-                  style={{ color: "var(--navy)", background: "var(--navy-tint)" }}>
-                  {r.symbol}
-                </span>
-
-                {/* Price */}
-                <span className="text-right font-semibold text-[10.5px] tabular-nums" style={{ color: "var(--text-primary)" }}>
-                  {fmtNum(r.close)}
-                </span>
-
-                {/* Mini bar */}
-                <MiniBar pct={barVal} max={maxVal} color={rowColor} bgColor={rowBg} />
-
-                {/* Change / Volume */}
-                <span className="text-right text-[10px] font-bold tabular-nums" style={{ color: rowColor }}>
-                  {isActive
-                    ? fmtVol(r.vol)
-                    : `${up ? "+" : ""}${r.pct.toFixed(2)}%`}
-                </span>
-              </Link>
-            );
-          })
-        )}
+      {/* Three columns */}
+      <div style={{ display: "flex", overflow: "hidden" }}>
+        <Col title="Top Active Stocks" rows={active}    loading={loading} type="active"    />
+        <div style={{ width: 1, background: "var(--border)", flexShrink: 0 }} />
+        <Col title="Top Advancers"     rows={advancers} loading={loading} type="advancers" />
+        <div style={{ width: 1, background: "var(--border)", flexShrink: 0 }} />
+        <Col title="Top Decliners"     rows={decliners} loading={loading} type="decliners" />
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t flex items-center" style={{ borderColor: "var(--border)", background: "var(--light-bg)" }}>
-        <span className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: "#16A34A" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-          LIVE
-        </span>
-        <Link href="/data-portal/stocks" className="ml-auto text-[10px]" style={{ color: "var(--gold)" }}>
+      <div style={{
+        padding: "5px 12px", borderTop: "1px solid var(--border)",
+        display: "flex", justifyContent: "flex-end",
+        background: "var(--light-bg)",
+      }}>
+        <Link href="/data-portal/stocks" style={{ fontSize: 10, color: "var(--gold)", textDecoration: "none", fontWeight: 600 }}>
           All Stocks →
         </Link>
       </div>

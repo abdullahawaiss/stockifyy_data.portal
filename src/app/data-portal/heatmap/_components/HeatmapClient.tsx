@@ -166,24 +166,9 @@ function SectorModal({ g, onClose }: {
   );
 }
 
-// ── Combined View — PSX-style nested treemap (SCS Trade layout) ─────────────
+// ── Combined View — flat squarified treemap ───────────────────────────────────
 
-const CV_HEADER_H  = 20; // sector label strip height (px)
-const CV_MARGIN    = 0;  // outer canvas margin (px)
-const CV_SEC_GAP   = 3;  // white divider between sector frames
-const CV_STOCK_GAP = 1;  // 1px gap between stock tiles
-
-function buildWeightMap(allFilteredStocks: StockData[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const s of allFilteredStocks) {
-    // Size by trading volume — higher volume stocks get bigger tiles
-    const w = Math.max(1, s.vol || 1);
-    map.set(s.sym, w);
-  }
-  return map;
-}
-
-// Generic squarified treemap — unchanged algorithm, used by CombinedView only
+// Generic squarified treemap
 function squarifyG<T>(
   items: T[], W: number, H: number, wt: (it: T) => number
 ): Array<{ x: number; y: number; w: number; h: number; item: T }> {
@@ -236,6 +221,7 @@ function squarifyG<T>(
   return out;
 }
 
+// ── Combined View — flat squarified treemap (all stocks, size = volume) ──────
 function CombinedView({ stocks, onHover, onLeave }: {
   stocks: StockData[];
   onHover: (s: StockData, e: React.MouseEvent) => void;
@@ -243,18 +229,16 @@ function CombinedView({ stocks, onHover, onLeave }: {
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(0);
-  const [topOffset, setTopOffset] = useState(180);
+  const [canvasH, setCanvasH] = useState(560);
   const [hoveredSym, setHoveredSym] = useState<string | null>(null);
-  const [hoveredSector, setHoveredSector] = useState<string | null>(null);
-  const [zoomedSector, setZoomedSector] = useState<string | null>(null);
 
-  // Measure wrapper width and its distance from viewport top (to compute available height)
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
     const calc = () => {
       const rect = el.getBoundingClientRect();
       setCanvasW(Math.floor(rect.width));
-      setTopOffset(Math.floor(rect.top + window.scrollY > 0 ? rect.top : 180));
+      const avail = window.innerHeight - rect.top - 14;
+      setCanvasH(Math.max(480, Math.min(620, Math.floor(avail))));
     };
     calc();
     const obs = new ResizeObserver(calc);
@@ -263,275 +247,118 @@ function CombinedView({ stocks, onHover, onLeave }: {
     return () => { obs.disconnect(); window.removeEventListener("resize", calc); };
   }, []);
 
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setZoomedSector(null); };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, []);
+  // Sorted by volume descending — biggest volume = biggest tile
+  const sorted = useMemo(() =>
+    [...stocks].filter(s => (s.vol || 0) > 0).sort((a, b) => (b.vol || 0) - (a.vol || 0))
+  , [stocks]);
 
-  // Weight map uses all filtered stocks for normalization
-  const weightMap = useMemo(() => buildWeightMap(stocks), [stocks]);
-
-  // Volume quantiles for visual emphasis
-  const volQ = useMemo(() => {
-    const vols = [...stocks].map(s => s.vol).sort((a, b) => a - b);
-    const p15 = vols[Math.floor(vols.length * 0.15)] ?? 0;
-    const p85 = vols[Math.floor(vols.length * 0.85)] ?? Infinity;
-    return { p15, p85 };
-  }, [stocks]);
-
-  const sectorGroups = useMemo(() => {
-    const map: Record<string, StockData[]> = {};
-    for (const s of stocks) {
-      if (!map[s.sector]) map[s.sector] = [];
-      map[s.sector].push(s);
-    }
-    return Object.entries(map)
-      .map(([sector, ss]) => {
-        const sorted = [...ss].sort((a, b) => (weightMap.get(b.sym) ?? 1) - (weightMap.get(a.sym) ?? 1));
-        const secWt  = sorted.reduce((t, s) => t + (weightMap.get(s.sym) ?? 1), 0);
-        return { sector, stocks: sorted, secWt };
-      })
-      .filter(g => g.secWt > 0)
-      .sort((a, b) => b.secWt - a.secWt);
-  }, [stocks, weightMap]);
-
-  const activeGroups = useMemo(() =>
-    zoomedSector ? sectorGroups.filter(g => g.sector === zoomedSector) : sectorGroups
-  , [sectorGroups, zoomedSector]);
-
-  // Tall canvas: 0.65× width — fills most of the viewport without scrolling
-  const canvasH = useMemo(() => {
-    if (!canvasW) return 600;
-    return Math.max(500, Math.round(canvasW * 0.65));
-  }, [canvasW]);
-
-  const layout = useMemo(() => {
-    if (!canvasW || !canvasH || !activeGroups.length) return [];
-    const W = canvasW - CV_MARGIN * 2;
-    const H = canvasH - CV_MARGIN * 2;
-
-    return squarifyG(activeGroups, W, H, g => g.secWt).map(sr => {
-      const g  = sr.item;
-      // Apply sector gap inset
-      const sx = CV_MARGIN + sr.x + CV_SEC_GAP * 0.5;
-      const sy = CV_MARGIN + sr.y + CV_SEC_GAP * 0.5;
-      const sw = Math.max(1, sr.w - CV_SEC_GAP);
-      const sh = Math.max(1, sr.h - CV_SEC_GAP);
-      // Stocks fill area below the header strip
-      const stockAreaH = Math.max(0, sh - CV_HEADER_H);
-      const stockRects = squarifyG(g.stocks, sw, stockAreaH, s => weightMap.get(s.sym) ?? 1)
-        .map(r => ({ stock: r.item, x: sx + r.x, y: sy + CV_HEADER_H + r.y, w: r.w, h: r.h }));
-      return { sector: g.sector, sx, sy, sw, sh, stockRects };
-    });
-  }, [activeGroups, canvasW, canvasH, weightMap]);
+  // Flat squarify: all stocks in one canvas, weight = volume
+  const tiles = useMemo(() => {
+    if (!canvasW || !canvasH || !sorted.length) return [];
+    const GAP = 2;
+    return squarifyG(sorted, canvasW, canvasH, s => Math.max(1, s.vol || 1)).map(r => ({
+      stock: r.item,
+      x: r.x + GAP * 0.5,
+      y: r.y + GAP * 0.5,
+      w: Math.max(0, r.w - GAP),
+      h: Math.max(0, r.h - GAP),
+    }));
+  }, [sorted, canvasW, canvasH]);
 
   return (
     <div
       ref={wrapRef}
       style={{
-        width: "100%",
-        height: canvasH || 600,
-        position: "relative",
-        background: "#000000",
-        border: "2px solid #fff",
-        boxSizing: "border-box",
-        overflow: "hidden",
+        width: "100%", height: canvasH, minHeight: 480,
+        position: "relative", background: "#111",
+        boxSizing: "border-box", overflow: "hidden", flexShrink: 0,
       }}
     >
-      {zoomedSector && (
-        <button
-          onClick={() => setZoomedSector(null)}
-          style={{
-            position: "absolute", top: 8, left: 8, zIndex: 300,
-            padding: "4px 12px", borderRadius: 4,
-            background: "rgba(212,175,55,0.95)", color: "#07111F",
-            fontWeight: 700, fontSize: 11, border: "none", cursor: "pointer",
-          }}
-        >
-          ← All Sectors
-        </button>
-      )}
+      {tiles.map(({ stock: s, x, y, w, h }) => {
+        if (w < 2 || h < 2) return null;
+        const isHov = hoveredSym === s.sym;
+        const sign  = s.chg >= 0 ? "+" : "";
 
-      {layout.map(({ sector, sx, sy, sw, sh, stockRects }) => {
-        // Sector label: white CAPS text, fit to strip width
-        const headerFs = Math.max(7, Math.min(12, (sw - 10) / (sector.length * 0.60)));
+        const padH = w < 20 ? 1 : w < 50 ? 3 : w < 90 ? 5 : 8;
+        const padV = h < 20 ? 1 : h < 50 ? 3 : h < 90 ? 5 : 8;
+        const avW  = Math.max(1, w - padH * 2);
+        const avH  = Math.max(1, h - padV * 2);
+        const MIN  = 5;
+
+        // Symbol
+        let sym = s.sym;
+        let sFs = Math.min(avW / (sym.length * 0.62), avH * 0.40, 48);
+        if (sFs < MIN && sym.length > 3) { sym = sym.slice(0, 3); sFs = Math.min(avW / (sym.length * 0.62), avH * 0.40, 48); }
+        if (sFs < MIN) { sym = sym[0]; sFs = Math.min(avW / 0.62, avH * 0.40, 48); }
+        const showSym = sFs >= MIN;
+        const symFs   = showSym ? Math.max(MIN, sFs) : 0;
+
+        // Price
+        const priceTxt = s.price.toFixed(2);
+        const pFs = Math.min(symFs * 0.55, avW / (priceTxt.length * 0.58), 18);
+        const showP = showSym && sym === s.sym && pFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + 2 && w >= 28;
+
+        // Change
+        const chgAmt  = `${sign}${((s.price * s.chg) / 100).toFixed(2)}`;
+        const chgPct  = `${sign}${s.chg.toFixed(2)}%`;
+        const chgLine = `${chgAmt} (${chgPct})`;
+        const cFs     = Math.min(pFs * 0.80, avW / (chgLine.length * 0.54), 12);
+        const showC   = showP && cFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + cFs * 1.3 + 3;
+
+        // Volume
+        const volStr = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
+        const vFs    = Math.min(cFs * 0.82, avW / (volStr.length * 0.54), 10);
+        const showV  = showC && vFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + cFs * 1.3 + vFs * 1.4 + 4 && w >= 50;
 
         return (
-          <div key={sector} style={{ position: "absolute", left: 0, top: 0, width: 0, height: 0 }}>
-
-            {/* Sector outer boundary — 2px white border */}
-            <div style={{
-              position: "absolute", left: sx, top: sy, width: sw, height: sh,
-              border: "2px solid #fff",
-              boxSizing: "border-box", pointerEvents: "none", zIndex: 4,
-            }} />
-
-            {/* Sector label strip — dark background, white uppercase text (SCS Trade style) */}
-            <div
-              onClick={() => setZoomedSector(prev => prev === sector ? null : sector)}
-              onMouseEnter={() => setHoveredSector(sector)}
-              onMouseLeave={() => setHoveredSector(null)}
-              title={`${sector} — click to zoom`}
-              style={{
-                position: "absolute",
-                left: sx, top: sy, width: sw, height: CV_HEADER_H,
-                background: hoveredSector === sector ? "#1e3a5f" : "#07111F",
-                borderBottom: "1px solid rgba(255,255,255,0.25)",
-                boxSizing: "border-box",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "0 4px",
-                overflow: "hidden",
-                cursor: "pointer",
-                zIndex: 6,
-                transition: "background 0.12s",
-              }}
-            >
-              <span style={{
-                fontSize: headerFs,
-                fontWeight: 700,
-                color: "#ffffff",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                lineHeight: 1.1,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                textAlign: "center",
-              }}>
-                {sector}
-              </span>
-            </div>
-
-            {/* Stock tiles — SCS Trade style: Symbol / Price / chgAmt (chg%) / vol */}
-            {stockRects.map(({ stock: s, x, y, w, h }) => {
-              const tx = x + CV_STOCK_GAP, ty = y + CV_STOCK_GAP;
-              const tw = Math.max(0, w - CV_STOCK_GAP * 2);
-              const th = Math.max(0, h - CV_STOCK_GAP * 2);
-              if (tw < 2 || th < 2) return null;
-
-              const isHov       = hoveredSym === s.sym;
-              const inHovSector = hoveredSector === sector;
-              const sign        = s.chg >= 0 ? "+" : "";
-
-              // Padding scales with tile size
-              const padH = tw < 20 ? 1 : tw < 40 ? 2 : tw < 70 ? 4 : 6;
-              const padV = th < 20 ? 1 : th < 40 ? 2 : th < 70 ? 3 : 5;
-              const avW  = Math.max(1, tw - padH * 2);
-              const avH  = Math.max(1, th - padV * 2);
-              const MIN_FS = 5;
-
-              // ── SYMBOL ── largest text; abbreviates if needed
-              let symStr  = s.sym;
-              let symFs   = Math.min(avW / (symStr.length * 0.68), avH * 0.45, 44);
-              if (symFs < MIN_FS && symStr.length > 3) {
-                symStr = symStr.slice(0, 3);
-                symFs  = Math.min(avW / (symStr.length * 0.68), avH * 0.45, 44);
-              }
-              if (symFs < MIN_FS) {
-                symStr = symStr.slice(0, 1);
-                symFs  = Math.min(avW / 0.68, avH * 0.45, 44);
-              }
-              const showSym    = symFs >= MIN_FS;
-              const finalSymFs = showSym ? Math.max(MIN_FS, symFs) : 0;
-
-              // ── PRICE ── below symbol (e.g. "221.41")
-              const priceText = s.price.toFixed(2);
-              const priceFs   = Math.min(finalSymFs * 0.62, avW / (priceText.length * 0.60), 18);
-              const showPrice = showSym && symStr === s.sym && priceFs >= MIN_FS
-                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + 2 && tw >= 28;
-
-              // ── CHANGE LINE ── e.g. "-0.06 (-4.84%)"
-              const chgAmt    = s.chg >= 0
-                ? `+${((s.price * s.chg) / 100).toFixed(2)}`
-                : `${((s.price * s.chg) / 100).toFixed(2)}`;
-              const chgPct    = `${sign}${s.chg.toFixed(2)}%`;
-              const chgLine   = `${chgAmt} (${chgPct})`;
-              const chgFs     = Math.min(priceFs * 0.82, avW / (chgLine.length * 0.58), 12);
-              const showChg   = showPrice && chgFs >= MIN_FS
-                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + chgFs * 1.2 + 3;
-
-              // ── VOLUME ── e.g. "86.1 mn" or "450K"
-              const volStr  = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
-              const volFs   = Math.min(chgFs * 0.85, avW / (volStr.length * 0.58), 10);
-              const showVol = showChg && volFs >= MIN_FS
-                && avH >= finalSymFs * 1.15 + priceFs * 1.2 + chgFs * 1.2 + volFs * 1.3 + 4
-                && tw >= 48;
-
-              return (
-                <div
-                  key={s.sym}
-                  onMouseEnter={e => { onHover(s, e); setHoveredSym(s.sym); }}
-                  onMouseMove={e => onHover(s, e)}
-                  onMouseLeave={() => { onLeave(); setHoveredSym(null); }}
-                  onClick={() => {
-                    if (!zoomedSector) setZoomedSector(sector);
-                    else window.open(`/data-portal/company/${s.sym}`, "_blank");
-                  }}
-                  title={`${s.sym} — ${s.name}\nRs ${s.price.toFixed(2)}   ${chgAmt} (${chgPct})\nVol: ${volStr}${s.shariah ? "  |  Shariah ✓" : ""}`}
-                  style={{
-                    position: "absolute",
-                    left: tx, top: ty, width: tw, height: th,
-                    background: getColor(s.chg, s.sector),
-                    boxSizing: "border-box",
-                    display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center",
-                    cursor: "pointer",
-                    overflow: "hidden",
-                    contain: "paint" as React.CSSProperties["contain"],
-                    padding: `${padV}px ${padH}px`,
-                    textAlign: "center",
-                    boxShadow: isHov
-                      ? "inset 0 0 0 2px #FFD700"
-                      : "inset 0 0 0 1px rgba(255,255,255,0.20)",
-                    filter: isHov ? "brightness(1.20)" : inHovSector ? "brightness(1.08)" : "none",
-                    transition: "filter 0.10s, box-shadow 0.08s",
-                    zIndex: isHov ? 8 : 1,
-                  }}
-                >
-                  {/* Symbol */}
-                  {showSym && (
-                    <div style={{
-                      fontSize: finalSymFs, fontWeight: 800, color: "#fff",
-                      lineHeight: 1.0, whiteSpace: "nowrap",
-                      overflow: "hidden", maxWidth: "100%", flexShrink: 0,
-                      textShadow: finalSymFs > 12 ? "0 1px 3px rgba(0,0,0,0.55)" : "none",
-                      letterSpacing: finalSymFs > 18 ? "-0.02em" : "0",
-                    }}>{symStr}</div>
-                  )}
-
-                  {/* Price */}
-                  {showPrice && (
-                    <div style={{
-                      fontSize: priceFs, fontWeight: 600, color: "#fff",
-                      lineHeight: 1.1, marginTop: 2,
-                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
-                      textShadow: "0 1px 2px rgba(0,0,0,0.45)",
-                    }}>{priceText}</div>
-                  )}
-
-                  {/* Change amount (Change%) */}
-                  {showChg && (
-                    <div style={{
-                      fontSize: chgFs, fontWeight: 600,
-                      color: "rgba(255,255,255,0.90)",
-                      lineHeight: 1.1, marginTop: 1,
-                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
-                    }}>{chgLine}</div>
-                  )}
-
-                  {/* Volume */}
-                  {showVol && (
-                    <div style={{
-                      fontSize: volFs, fontWeight: 500,
-                      color: "rgba(255,255,255,0.60)",
-                      lineHeight: 1.1, marginTop: 2,
-                      whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
-                    }}>{volStr}</div>
-                  )}
-                </div>
-              );
-            })}
+          <div
+            key={s.sym}
+            onMouseEnter={e => { onHover(s, e); setHoveredSym(s.sym); }}
+            onMouseMove={e => onHover(s, e)}
+            onMouseLeave={() => { onLeave(); setHoveredSym(null); }}
+            onClick={() => window.open(`/data-portal/company/${s.sym}`, "_blank")}
+            title={`${s.sym} — ${s.name}\nRs ${priceTxt}  ${chgAmt} (${chgPct})\nVol: ${volStr}`}
+            style={{
+              position: "absolute", left: x, top: y, width: w, height: h,
+              background: getColor(s.chg, s.sector),
+              boxSizing: "border-box",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              cursor: "pointer", overflow: "hidden",
+              contain: "paint" as React.CSSProperties["contain"],
+              padding: `${padV}px ${padH}px`, textAlign: "center",
+              boxShadow: isHov ? "inset 0 0 0 2px #FFD700" : "inset 0 0 0 1px rgba(0,0,0,0.25)",
+              filter: isHov ? "brightness(1.18)" : "none",
+              transition: "filter 0.08s, box-shadow 0.06s",
+              zIndex: isHov ? 8 : 1,
+            }}
+          >
+            {showSym && (
+              <div style={{
+                fontSize: symFs, fontWeight: 800, color: "#fff", lineHeight: 1.0,
+                whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+                textShadow: symFs > 12 ? "0 1px 4px rgba(0,0,0,0.6)" : "none",
+                letterSpacing: symFs > 18 ? "-0.02em" : "0",
+              }}>{sym}</div>
+            )}
+            {showP && (
+              <div style={{
+                fontSize: pFs, fontWeight: 600, color: "#fff", lineHeight: 1.1,
+                marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+              }}>{priceTxt}</div>
+            )}
+            {showC && (
+              <div style={{
+                fontSize: cFs, fontWeight: 600, color: "rgba(255,255,255,0.9)", lineHeight: 1.1,
+                marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+              }}>{chgLine}</div>
+            )}
+            {showV && (
+              <div style={{
+                fontSize: vFs, fontWeight: 500, color: "rgba(255,255,255,0.55)", lineHeight: 1.1,
+                marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+              }}>{volStr}</div>
+            )}
           </div>
         );
       })}

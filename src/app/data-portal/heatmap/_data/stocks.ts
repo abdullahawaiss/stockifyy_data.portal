@@ -710,13 +710,18 @@ export const SECTORS = [...new Set(STOCKS.map(s => s.sector))].sort();
 export type IndexFilter = "kse100" | "kse30" | "kmi30" | "kmiAll" | "all" | "islamic";
 
 export function filterStocks(stocks: StockData[], idx: IndexFilter): StockData[] {
-  if (idx === "all")     return stocks;
-  if (idx === "kse100")  return stocks.filter(s => s.kse100);
-  if (idx === "kse30")   return stocks.filter(s => s.kse30);
-  if (idx === "kmi30")   return stocks.filter(s => s.kmi30);
-  if (idx === "kmiAll")  return stocks.filter(s => s.kmiAll);
-  if (idx === "islamic") return stocks.filter(s => s.shariah);
-  return stocks;
+  if (idx === "all") return stocks;
+  const flag = (s: StockData): boolean => {
+    if (idx === "kse100")  return s.kse100  ?? true;
+    if (idx === "kse30")   return s.kse30   ?? false;
+    if (idx === "kmi30")   return s.kmi30   ?? false;
+    if (idx === "kmiAll")  return s.kmiAll  ?? true;
+    if (idx === "islamic") return s.shariah ?? true;
+    return true;
+  };
+  const result = stocks.filter(flag);
+  // When live data lacks index flags, fall back to all stocks so heatmap is never empty
+  return result.length >= 5 ? result : stocks;
 }
 
 // Sector → unique dark hue pair [gain, loss] — all greens / reds / maroons
