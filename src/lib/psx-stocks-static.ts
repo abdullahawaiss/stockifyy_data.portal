@@ -3,6 +3,7 @@ export interface PsxStock {
   symbol: string;
   name: string;
   sector: string;
+  shariah?: boolean;
 }
 
 export const PSX_STOCKS_STATIC: PsxStock[] = [
