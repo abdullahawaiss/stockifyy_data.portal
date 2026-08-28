@@ -238,9 +238,10 @@ function CombinedView({ stocks, onHover, onLeave }: {
     const el = wrapRef.current; if (!el) return;
     const calc = () => {
       const rect = el.getBoundingClientRect();
-      setCanvasW(Math.floor(rect.width));
-      const avail = window.innerHeight - rect.top - 14;
-      setCanvasH(Math.max(480, Math.min(680, Math.floor(avail))));
+      const w = Math.floor(rect.width);
+      setCanvasW(w);
+      // Height = 52% of width → wide landscape like SCS Trade (~2:1 ratio)
+      setCanvasH(Math.max(380, Math.min(620, Math.floor(w * 0.52))));
     };
     calc();
     const obs = new ResizeObserver(calc);
@@ -301,7 +302,7 @@ function CombinedView({ stocks, onHover, onLeave }: {
     <div
       ref={wrapRef}
       style={{
-        width: "100%", height: canvasH, minHeight: 480,
+        width: "100%", height: canvasH, minHeight: 380,
         position: "relative", background: "#111",
         boxSizing: "border-box", overflow: "hidden", flexShrink: 0,
       }}
