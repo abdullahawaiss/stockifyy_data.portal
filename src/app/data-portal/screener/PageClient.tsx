@@ -108,6 +108,151 @@ function SymAvatar({ symbol }: { symbol: string }) {
   );
 }
 
+// ── Company Comparison ───────────────────────────────────────────────────
+const MAX_COMPARE = 4;
+
+function ComparePanel({ allResults }: { allResults: ScreenerResult[] }) {
+  const [slots, setSlots] = useState<(ScreenerResult | null)[]>([null, null, null, null]);
+  const [queries, setQueries] = useState<string[]>(["", "", "", ""]);
+  const [drops, setDrops] = useState<boolean[]>([false, false, false, false]);
+  const [open, setOpen] = useState(false);
+
+  function getHits(q: string): ScreenerResult[] {
+    if (!q) return [];
+    const lq = q.toLowerCase();
+    return allResults.filter(r =>
+      r.symbol.toLowerCase().includes(lq) || (r.companyName ?? "").toLowerCase().includes(lq)
+    ).slice(0, 8);
+  }
+
+  function pick(idx: number, r: ScreenerResult) {
+    setSlots(s => { const n = [...s]; n[idx] = r; return n; });
+    setQueries(q => { const n = [...q]; n[idx] = r.symbol; return n; });
+    setDrops(d => { const n = [...d]; n[idx] = false; return n; });
+  }
+
+  function clear(idx: number) {
+    setSlots(s => { const n = [...s]; n[idx] = null; return n; });
+    setQueries(q => { const n = [...q]; n[idx] = ""; return n; });
+  }
+
+  const filled = slots.filter(Boolean) as ScreenerResult[];
+
+  const METRICS = [
+    { label: "Price (Rs)", get: (r: ScreenerResult) => fmtNum(r.close), highlight: true },
+    { label: "Change %", get: (r: ScreenerResult) => {
+      const p = parseFloat(r.percentageChange);
+      const color = p > 0 ? "#16a34a" : p < 0 ? "#dc2626" : undefined;
+      return <span style={{ color, fontWeight: 700 }}>{p >= 0 ? "+" : ""}{p.toFixed(2)}%</span>;
+    }},
+    { label: "Volume", get: (r: ScreenerResult) => fmtVol(parseFloat(r.volume)) },
+    { label: "EPS", get: (r: ScreenerResult) => r.eps ? fmtNum(r.eps) : "—" },
+    { label: "P/E Ratio", get: (r: ScreenerResult) => r.pe ? fmtNum(r.pe) : "—" },
+    { label: "DPS (Rs)", get: (r: ScreenerResult) => r.dps ? <span style={{ color: "#D4971A", fontWeight: 700 }}>{fmtNum(r.dps)}</span> : "—" },
+    { label: "Sector", get: (r: ScreenerResult) => <span style={{ fontSize: 11 }}>{r.sectorName || "—"}</span> },
+    { label: "Shariah", get: (r: ScreenerResult) => {
+      const ok = r.shariahStatus === "compliant";
+      return <span style={{ color: ok ? "#16a34a" : "#dc2626", fontWeight: 700, fontSize: 11 }}>{ok ? "✓ Compliant" : "✗ Non-Compliant"}</span>;
+    }},
+  ];
+
+  return (
+    <div className="card" style={{ marginBottom: 12, overflow: "hidden" }}>
+      {/* Header */}
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#D4971A" strokeWidth="2" width="15" height="15"><rect x="2" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="8" height="18" rx="1"/></svg>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)" }}>Company Comparison</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>— compare up to {MAX_COMPARE} stocks side by side</span>
+        </div>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{open ? "▲ Collapse" : "▼ Expand"}</span>
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)" }}>
+          {/* Slot inputs */}
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${MAX_COMPARE}, 1fr)`, gap: 10, margin: "16px 0 20px" }}>
+            {slots.map((slot, idx) => (
+              <div key={idx} style={{ position: "relative" }}>
+                <div style={{ display: "flex", border: `1.5px solid ${slot ? "#D4971A" : "var(--border)"}`, borderRadius: 8, overflow: "hidden", background: "var(--background)" }}>
+                  <input
+                    value={queries[idx]}
+                    placeholder={`Stock ${idx + 1}…`}
+                    onChange={e => {
+                      const v = e.target.value.toUpperCase();
+                      setQueries(q => { const n = [...q]; n[idx] = v; return n; });
+                      setDrops(d => { const n = [...d]; n[idx] = true; return n; });
+                    }}
+                    onFocus={() => setDrops(d => { const n = [...d]; n[idx] = true; return n; })}
+                    onBlur={() => setTimeout(() => setDrops(d => { const n = [...d]; n[idx] = false; return n; }), 150)}
+                    style={{ flex: 1, padding: "8px 10px", fontSize: 12, fontWeight: 700, border: "none", outline: "none", background: "transparent", color: "var(--text)", textTransform: "uppercase", minWidth: 0 }}
+                  />
+                  {slot && (
+                    <button onClick={() => clear(idx)} style={{ padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontSize: 14, color: "var(--text-muted)" }}>✕</button>
+                  )}
+                </div>
+                {slot && (
+                  <div style={{ textAlign: "center", fontSize: 10, color: "var(--text-muted)", marginTop: 3 }}>{slot.companyName}</div>
+                )}
+                {drops[idx] && getHits(queries[idx]).length > 0 && (
+                  <div style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 200, background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.15)", overflow: "hidden" }}>
+                    {getHits(queries[idx]).map(r => (
+                      <button key={r.symbol} onMouseDown={() => pick(idx, r)}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid var(--border)", textAlign: "left" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,151,26,0.07)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                        <span style={{ fontWeight: 700, fontSize: 12, color: "#D4971A", minWidth: 50 }}>{r.symbol}</span>
+                        <span style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.companyName}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Comparison table */}
+          {filled.length >= 2 ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "var(--text-muted)", width: 120 }}>METRIC</th>
+                    {slots.map((slot, idx) => slot ? (
+                      <th key={idx} style={{ padding: "10px 14px", textAlign: "center", fontSize: 13, fontWeight: 800, color: "#D4971A", whiteSpace: "nowrap" }}>
+                        {slot.symbol}
+                      </th>
+                    ) : null)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {METRICS.map(m => (
+                    <tr key={m.label} style={{ borderBottom: "1px solid var(--border)" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "var(--light-bg)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      <td style={{ padding: "10px 14px", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{m.label}</td>
+                      {slots.map((slot, idx) => slot ? (
+                        <td key={idx} style={{ padding: "10px 14px", textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
+                          {m.get(slot)}
+                        </td>
+                      ) : null)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", fontSize: 12 }}>
+              Select at least 2 stocks above to compare them side by side.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ScreenerPage() {
   // Initialize instantly with static data — no loading spinner on first render
   const [results, setResults] = useState<ScreenerResult[]>(() => {
@@ -382,6 +527,9 @@ export default function ScreenerPage() {
           P/E = Price ÷ EPS · EPS and DPS sourced from Capital Stake market data
         </div>
       </div>
+
+      {/* Company Comparison */}
+      <ComparePanel allResults={results} />
 
       {/* Results */}
       <div className="card" style={{ overflow: "hidden" }}>
