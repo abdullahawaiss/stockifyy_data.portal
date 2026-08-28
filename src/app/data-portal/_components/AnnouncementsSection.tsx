@@ -313,12 +313,35 @@ function ResultAnnouncementsTab({search, data}:{search:string; data: SimpleRow[]
   );
 }
 
+// Parse DPS amount from title/content text
+function parseDps(title: string, content: string | null | undefined): string {
+  const text = `${title} ${content ?? ""}`;
+  // "Rs. 3.50 per share" / "@ Rs3.5" / "DPS: Rs 2.5" / "2.50 per share"
+  const m =
+    text.match(/Rs\.?\s*([\d,]+\.?\d*)\s*(?:\/-)?\s*per\s*share/i) ??
+    text.match(/@\s*Rs\.?\s*([\d,]+\.?\d*)/i) ??
+    text.match(/DPS\s*[:\-=]?\s*Rs\.?\s*([\d,]+\.?\d*)/i) ??
+    text.match(/dividend\s*of\s*Rs\.?\s*([\d,]+\.?\d*)/i) ??
+    text.match(/(?:interim|final|special)\s*(?:cash\s*)?dividend.*?Rs\.?\s*([\d,]+\.?\d*)/i);
+  if (m) return `Rs ${parseFloat(m[1].replace(/,/g, "")).toFixed(2)}`;
+  // Percentage dividend
+  const p = text.match(/([\d.]+)\s*%\s*(?:cash\s*)?dividend/i);
+  if (p) return `${p[1]}%`;
+  return "—";
+}
+
 // ── DIVIDEND PAYOUT tab ──
-function DividendPayoutTab({search, data}:{search:string; data: SimpleRow[]}) {
+function DividendPayoutTab({search, data, raw}:{search:string; data: SimpleRow[]; raw: import("@/lib/market-data").AnnouncementItem[]}) {
   const rows = useMemo(()=>data.filter((d)=>
     !search||d.symbol.toLowerCase().includes(search.toLowerCase())
-  ).map(d => ({ symbol: d.symbol, type: "Dividend", amount: "—", exDate: d.heldDate, payDate: d.heldDate, yield: "—" }))
-  ,[search, data]);
+  ).map(d => {
+    const src = raw.find(r => r.symbol === d.symbol && new Date(r.announcementDate).toDateString() === parseDate(d.heldDate).toDateString());
+    const amount = src ? parseDps(src.title, src.content) : "—";
+    const type = src?.title?.toLowerCase().includes("final") ? "Final"
+      : src?.title?.toLowerCase().includes("interim") ? "Interim"
+      : src?.title?.toLowerCase().includes("special") ? "Special" : "Dividend";
+    return { symbol: d.symbol, type, amount, exDate: d.heldDate, payDate: d.heldDate, yield: "—" };
+  }), [search, data, raw]);
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -524,7 +547,7 @@ export default function AnnouncementsSection({ initialData }: { initialData?: An
         {/* Tab content */}
         {!loading && cat==="Board Meetings"       && <BoardMeetingsTab      search={search} data={boardRows}/>}
         {!loading && cat==="Result Announcements" && <ResultAnnouncementsTab search={search} data={simpleRows.filter(r=>r.cat==="Result Announcements")}/>}
-        {!loading && cat==="Dividend Payout"      && <DividendPayoutTab     search={search} data={simpleRows.filter(r=>r.cat==="Dividend Payout")}/>}
+        {!loading && cat==="Dividend Payout"      && <DividendPayoutTab     search={search} data={simpleRows.filter(r=>r.cat==="Dividend Payout")} raw={allRows}/>}
         {!loading && (cat==="Payouts"||cat==="Insider Transactions") && <SimpleTab cat={cat} search={search} data={simpleRows}/>}
       </div>
     </div>
