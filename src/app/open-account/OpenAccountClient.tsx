@@ -106,10 +106,6 @@ export default function OpenAccountClient() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 34, objectFit: "contain", maxWidth: 170 }} />
         </a>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <a href="https://wa.me/923114944443" target="_blank" rel="noreferrer" style={{ fontSize: 12.5, fontWeight: 700, color: "#25d366", textDecoration: "none" }}>WhatsApp</a>
-          <a href="#apply" style={{ padding: "8px 20px", background: "#C8860A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12.5, textDecoration: "none" }}>Open Account</a>
-        </div>
       </div>
 
       {/* ── Hero ── */}
