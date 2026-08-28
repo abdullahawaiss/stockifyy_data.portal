@@ -264,34 +264,35 @@ function CombinedView({ stocks, onHover, onLeave }: {
       .sort((a, b) => b.totalVol - a.totalVol);
   }, [stocks]);
 
-  // Squarify sectors in the canvas, then squarify stocks within each sector
-  const SECTOR_HEADER_H = 22;
-  const GAP_SECTOR = 3;
-  const GAP_STOCK = 1;
+  // Squarify sectors then stocks within each sector — SCS Trade style
+  const SECTOR_HEADER_H = 15; // thin strip like SCS Trade
+  const GAP_OUTER = 2;        // gap between sector blocks
+  const GAP_INNER = 1;        // gap between stock tiles inside a sector
 
   const sectorRects = useMemo(() => {
     if (!canvasW || !canvasH || !sectorGroups.length) return [];
     return squarifyG(sectorGroups, canvasW, canvasH, g => g.totalVol).map(r => ({
       group: r.item,
-      x: r.x + GAP_SECTOR * 0.5,
-      y: r.y + GAP_SECTOR * 0.5,
-      w: Math.max(0, r.w - GAP_SECTOR),
-      h: Math.max(0, r.h - GAP_SECTOR),
+      x: r.x + GAP_OUTER * 0.5,
+      y: r.y + GAP_OUTER * 0.5,
+      w: Math.max(0, r.w - GAP_OUTER),
+      h: Math.max(0, r.h - GAP_OUTER),
     }));
   }, [sectorGroups, canvasW, canvasH]);
 
-  // Pre-compute stock tiles for all sectors
   const allStockTiles = useMemo(() => {
     return sectorRects.flatMap(({ group, x, y, w, h }) => {
-      const innerH = Math.max(0, h - SECTOR_HEADER_H);
+      const headerH = h >= 30 ? SECTOR_HEADER_H : 0; // skip header if block too small
+      const innerH = Math.max(0, h - headerH);
       if (innerH < 4 || w < 4) return [];
       const sortedStocks = [...group.stocks].sort((a, b) => (b.vol || 0) - (a.vol || 0));
       return squarifyG(sortedStocks, w, innerH, s => Math.max(1, s.vol || 1)).map(r => ({
         stock: r.item,
-        x: x + r.x + GAP_STOCK * 0.5,
-        y: y + SECTOR_HEADER_H + r.y + GAP_STOCK * 0.5,
-        w: Math.max(0, r.w - GAP_STOCK),
-        h: Math.max(0, r.h - GAP_STOCK),
+        sector: group.sector,
+        x: x + r.x + GAP_INNER * 0.5,
+        y: y + headerH + r.y + GAP_INNER * 0.5,
+        w: Math.max(0, r.w - GAP_INNER),
+        h: Math.max(0, r.h - GAP_INNER),
       }));
     });
   }, [sectorRects]);
@@ -301,69 +302,94 @@ function CombinedView({ stocks, onHover, onLeave }: {
       ref={wrapRef}
       style={{
         width: "100%", height: canvasH, minHeight: 480,
-        position: "relative", background: "#0a0f1a",
+        position: "relative", background: "#111",
         boxSizing: "border-box", overflow: "hidden", flexShrink: 0,
       }}
     >
-      {/* Sector header blocks */}
+      {/* ── Sector thin header strips (like SCS Trade) ── */}
       {sectorRects.map(({ group, x, y, w, h }) => {
-        if (w < 4 || h < 4) return null;
+        if (w < 6 || h < 30) return null;
         const avgChg = group.stocks.reduce((a, b) => a + b.chg, 0) / group.stocks.length;
         const chgColor = avgChg > 0 ? "#4ade80" : avgChg < 0 ? "#f87171" : "#94a3b8";
+        const sectorLabel = group.sector.toUpperCase();
+        // Font size: fill available width but cap at 11px
+        const labelFs = Math.min(11, Math.max(7, w / (sectorLabel.length * 0.65)));
         return (
           <div key={group.sector} style={{
             position: "absolute", left: x, top: y, width: w, height: SECTOR_HEADER_H,
-            background: "#1a2035", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "0 6px", boxSizing: "border-box", overflow: "hidden",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-            zIndex: 2,
+            background: "#000",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 5px", boxSizing: "border-box", overflow: "hidden",
+            zIndex: 3,
           }}>
-            <span style={{ fontSize: Math.min(11, w / (group.sector.length * 0.7)), fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.04em" }}>{group.sector}</span>
-            {w > 80 && <span style={{ fontSize: 9.5, fontWeight: 700, color: chgColor, flexShrink: 0, marginLeft: 4 }}>{avgChg >= 0 ? "+" : ""}{avgChg.toFixed(2)}%</span>}
+            <span style={{
+              fontSize: labelFs, fontWeight: 700, color: "#fff",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              textTransform: "uppercase", letterSpacing: "0.05em",
+              flexShrink: 1, minWidth: 0,
+            }}>{sectorLabel}</span>
+            {w > 70 && (
+              <span style={{
+                fontSize: Math.min(9.5, labelFs * 0.88), fontWeight: 700,
+                color: chgColor, flexShrink: 0, marginLeft: 4, whiteSpace: "nowrap",
+              }}>{avgChg >= 0 ? "+" : ""}{avgChg.toFixed(2)}%</span>
+            )}
           </div>
         );
       })}
 
-      {/* Stock tiles */}
+      {/* ── Stock tiles ── */}
       {allStockTiles.map(({ stock: s, x, y, w, h }) => {
         if (w < 2 || h < 2) return null;
         const isHov = hoveredSym === s.sym;
         const sign  = s.chg >= 0 ? "+" : "";
 
-        const padH = w < 20 ? 1 : w < 50 ? 3 : w < 90 ? 5 : 8;
-        const padV = h < 20 ? 1 : h < 50 ? 3 : h < 90 ? 5 : 8;
+        // Padding scales with tile size like SCS Trade
+        const padH = w < 15 ? 1 : w < 40 ? 2 : w < 80 ? 4 : 7;
+        const padV = h < 15 ? 1 : h < 40 ? 2 : h < 80 ? 4 : 7;
         const avW  = Math.max(1, w - padH * 2);
         const avH  = Math.max(1, h - padV * 2);
         const MIN  = 5;
 
-        // Symbol
+        // ── Symbol — no arbitrary cap; fills tile like SCS Trade ──
         let sym = s.sym;
-        let sFs = Math.min(avW / (sym.length * 0.62), avH * 0.40, 48);
-        if (sFs < MIN && sym.length > 3) { sym = sym.slice(0, 3); sFs = Math.min(avW / (sym.length * 0.62), avH * 0.40, 48); }
-        if (sFs < MIN) { sym = sym[0]; sFs = Math.min(avW / 0.62, avH * 0.40, 48); }
+        // Width-limited: each char ~0.60× font size wide
+        // Height-limited: symbol takes ≤42% of available height
+        let sFs = Math.min(avW / (sym.length * 0.60), avH * 0.42);
+        if (sFs < MIN && sym.length > 3) {
+          sym = sym.slice(0, 3);
+          sFs = Math.min(avW / (sym.length * 0.60), avH * 0.42);
+        }
+        if (sFs < MIN) {
+          sym = sym[0];
+          sFs = Math.min(avW / 0.60, avH * 0.42);
+        }
         const showSym = sFs >= MIN;
         const symFs   = showSym ? Math.max(MIN, sFs) : 0;
 
-        // Price
+        // ── Price line ──
         const priceTxt = s.price.toFixed(2);
-        const pFs = Math.min(symFs * 0.55, avW / (priceTxt.length * 0.58), 18);
-        const showP = showSym && sym === s.sym && pFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + 2 && w >= 28;
+        const pFs = Math.min(symFs * 0.52, avW / (priceTxt.length * 0.58));
+        const showP = showSym && sym === s.sym && pFs >= MIN
+          && avH >= symFs + pFs * 1.35 + 2 && w >= 24;
 
-        // Change
+        // ── Change line: "amt (pct%)" ──
         const chgAmt  = `${sign}${((s.price * s.chg) / 100).toFixed(2)}`;
         const chgPct  = `${sign}${s.chg.toFixed(2)}%`;
         const chgLine = `${chgAmt} (${chgPct})`;
-        const cFs     = Math.min(pFs * 0.80, avW / (chgLine.length * 0.54), 12);
-        const showC   = showP && cFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + cFs * 1.3 + 3;
+        const cFs     = Math.min(pFs * 0.82, avW / (chgLine.length * 0.56));
+        const showC   = showP && cFs >= MIN
+          && avH >= symFs + pFs * 1.35 + cFs * 1.35 + 2;
 
-        // Volume
+        // ── Volume line ──
         const volStr = s.vol >= 1000 ? `${(s.vol / 1000).toFixed(1)} mn` : `${s.vol}K`;
-        const vFs    = Math.min(cFs * 0.82, avW / (volStr.length * 0.54), 10);
-        const showV  = showC && vFs >= MIN && avH >= symFs * 1.1 + pFs * 1.3 + cFs * 1.3 + vFs * 1.4 + 4 && w >= 50;
+        const vFs    = Math.min(cFs * 0.84, avW / (volStr.length * 0.56));
+        const showV  = showC && vFs >= MIN
+          && avH >= symFs + pFs * 1.35 + cFs * 1.35 + vFs * 1.4 + 3 && w >= 42;
 
         return (
           <div
-            key={s.sym}
+            key={`${s.sym}-${x}-${y}`}
             onMouseEnter={e => { onHover(s, e); setHoveredSym(s.sym); }}
             onMouseMove={e => onHover(s, e)}
             onMouseLeave={() => { onLeave(); setHoveredSym(null); }}
@@ -378,29 +404,31 @@ function CombinedView({ stocks, onHover, onLeave }: {
               cursor: "pointer", overflow: "hidden",
               contain: "paint" as React.CSSProperties["contain"],
               padding: `${padV}px ${padH}px`, textAlign: "center",
-              boxShadow: isHov ? "inset 0 0 0 2px #FFD700" : "inset 0 0 0 1px rgba(0,0,0,0.25)",
-              filter: isHov ? "brightness(1.18)" : "none",
-              transition: "filter 0.08s, box-shadow 0.06s",
-              zIndex: isHov ? 8 : 1,
+              outline: isHov ? "2px solid #FFD700" : "none",
+              outlineOffset: -2,
+              filter: isHov ? "brightness(1.15)" : "none",
+              transition: "filter 0.07s",
+              zIndex: isHov ? 10 : 1,
             }}
           >
             {showSym && (
               <div style={{
                 fontSize: symFs, fontWeight: 800, color: "#fff", lineHeight: 1.0,
                 whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
-                textShadow: symFs > 12 ? "0 1px 4px rgba(0,0,0,0.6)" : "none",
-                letterSpacing: symFs > 18 ? "-0.02em" : "0",
+                textShadow: symFs > 14 ? "0 1px 6px rgba(0,0,0,0.55)" : "none",
+                letterSpacing: symFs > 22 ? "-0.02em" : "0",
               }}>{sym}</div>
             )}
             {showP && (
               <div style={{
                 fontSize: pFs, fontWeight: 600, color: "#fff", lineHeight: 1.1,
-                marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
+                marginTop: symFs > 20 ? 4 : 2,
+                whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
               }}>{priceTxt}</div>
             )}
             {showC && (
               <div style={{
-                fontSize: cFs, fontWeight: 600, color: "rgba(255,255,255,0.9)", lineHeight: 1.1,
+                fontSize: cFs, fontWeight: 600, color: "rgba(255,255,255,0.92)", lineHeight: 1.1,
                 marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", flexShrink: 0,
               }}>{chgLine}</div>
             )}
