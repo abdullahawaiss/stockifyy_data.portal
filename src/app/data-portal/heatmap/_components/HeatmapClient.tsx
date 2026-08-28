@@ -221,7 +221,9 @@ function squarifyG<T>(
   return out;
 }
 
-// ── Combined View — flat squarified treemap (all stocks, size = volume) ──────
+// ── Combined View — nested sector treemap (SCS Trade style) ─────────────────
+// Sectors are rectangular blocks with dark headers; stocks squarified inside.
+// Sector size ∝ total sector volume. Fits viewport height. No scroll.
 function CombinedView({ stocks, onHover, onLeave }: {
   stocks: StockData[];
   onHover: (s: StockData, e: React.MouseEvent) => void;
@@ -238,7 +240,7 @@ function CombinedView({ stocks, onHover, onLeave }: {
       const rect = el.getBoundingClientRect();
       setCanvasW(Math.floor(rect.width));
       const avail = window.innerHeight - rect.top - 14;
-      setCanvasH(Math.max(480, Math.min(620, Math.floor(avail))));
+      setCanvasH(Math.max(480, Math.min(680, Math.floor(avail))));
     };
     calc();
     const obs = new ResizeObserver(calc);
@@ -247,34 +249,83 @@ function CombinedView({ stocks, onHover, onLeave }: {
     return () => { obs.disconnect(); window.removeEventListener("resize", calc); };
   }, []);
 
-  // Sorted by volume descending — biggest volume = biggest tile
-  const sorted = useMemo(() =>
-    [...stocks].filter(s => (s.vol || 0) > 0).sort((a, b) => (b.vol || 0) - (a.vol || 0))
-  , [stocks]);
+  // Group stocks by sector, sorted by total volume desc
+  interface SectorGroup { sector: string; stocks: StockData[]; totalVol: number; }
+  const sectorGroups: SectorGroup[] = useMemo(() => {
+    const map: Record<string, StockData[]> = {};
+    for (const s of stocks) {
+      if ((s.vol || 0) <= 0) continue;
+      if (!map[s.sector]) map[s.sector] = [];
+      map[s.sector].push(s);
+    }
+    return Object.entries(map)
+      .map(([sector, ss]) => ({ sector, stocks: ss, totalVol: ss.reduce((a, b) => a + (b.vol || 0), 0) }))
+      .filter(g => g.totalVol > 0)
+      .sort((a, b) => b.totalVol - a.totalVol);
+  }, [stocks]);
 
-  // Flat squarify: all stocks in one canvas, weight = volume
-  const tiles = useMemo(() => {
-    if (!canvasW || !canvasH || !sorted.length) return [];
-    const GAP = 2;
-    return squarifyG(sorted, canvasW, canvasH, s => Math.max(1, s.vol || 1)).map(r => ({
-      stock: r.item,
-      x: r.x + GAP * 0.5,
-      y: r.y + GAP * 0.5,
-      w: Math.max(0, r.w - GAP),
-      h: Math.max(0, r.h - GAP),
+  // Squarify sectors in the canvas, then squarify stocks within each sector
+  const SECTOR_HEADER_H = 22;
+  const GAP_SECTOR = 3;
+  const GAP_STOCK = 1;
+
+  const sectorRects = useMemo(() => {
+    if (!canvasW || !canvasH || !sectorGroups.length) return [];
+    return squarifyG(sectorGroups, canvasW, canvasH, g => g.totalVol).map(r => ({
+      group: r.item,
+      x: r.x + GAP_SECTOR * 0.5,
+      y: r.y + GAP_SECTOR * 0.5,
+      w: Math.max(0, r.w - GAP_SECTOR),
+      h: Math.max(0, r.h - GAP_SECTOR),
     }));
-  }, [sorted, canvasW, canvasH]);
+  }, [sectorGroups, canvasW, canvasH]);
+
+  // Pre-compute stock tiles for all sectors
+  const allStockTiles = useMemo(() => {
+    return sectorRects.flatMap(({ group, x, y, w, h }) => {
+      const innerH = Math.max(0, h - SECTOR_HEADER_H);
+      if (innerH < 4 || w < 4) return [];
+      const sortedStocks = [...group.stocks].sort((a, b) => (b.vol || 0) - (a.vol || 0));
+      return squarifyG(sortedStocks, w, innerH, s => Math.max(1, s.vol || 1)).map(r => ({
+        stock: r.item,
+        x: x + r.x + GAP_STOCK * 0.5,
+        y: y + SECTOR_HEADER_H + r.y + GAP_STOCK * 0.5,
+        w: Math.max(0, r.w - GAP_STOCK),
+        h: Math.max(0, r.h - GAP_STOCK),
+      }));
+    });
+  }, [sectorRects]);
 
   return (
     <div
       ref={wrapRef}
       style={{
         width: "100%", height: canvasH, minHeight: 480,
-        position: "relative", background: "#111",
+        position: "relative", background: "#0a0f1a",
         boxSizing: "border-box", overflow: "hidden", flexShrink: 0,
       }}
     >
-      {tiles.map(({ stock: s, x, y, w, h }) => {
+      {/* Sector header blocks */}
+      {sectorRects.map(({ group, x, y, w, h }) => {
+        if (w < 4 || h < 4) return null;
+        const avgChg = group.stocks.reduce((a, b) => a + b.chg, 0) / group.stocks.length;
+        const chgColor = avgChg > 0 ? "#4ade80" : avgChg < 0 ? "#f87171" : "#94a3b8";
+        return (
+          <div key={group.sector} style={{
+            position: "absolute", left: x, top: y, width: w, height: SECTOR_HEADER_H,
+            background: "#1a2035", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 6px", boxSizing: "border-box", overflow: "hidden",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            zIndex: 2,
+          }}>
+            <span style={{ fontSize: Math.min(11, w / (group.sector.length * 0.7)), fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.04em" }}>{group.sector}</span>
+            {w > 80 && <span style={{ fontSize: 9.5, fontWeight: 700, color: chgColor, flexShrink: 0, marginLeft: 4 }}>{avgChg >= 0 ? "+" : ""}{avgChg.toFixed(2)}%</span>}
+          </div>
+        );
+      })}
+
+      {/* Stock tiles */}
+      {allStockTiles.map(({ stock: s, x, y, w, h }) => {
         if (w < 2 || h < 2) return null;
         const isHov = hoveredSym === s.sym;
         const sign  = s.chg >= 0 ? "+" : "";
