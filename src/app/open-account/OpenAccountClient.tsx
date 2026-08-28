@@ -63,9 +63,9 @@ const SERVICES_MAIN = [
 ];
 
 const TEAM = [
-  { icon: "💎", name: "Dr. Masood Rashid", role: "Head of Research & Advisory", tier: "Diamond — Rs 20,000", color: "#D4971A" },
-  { icon: "🥈", name: "M. Sufiyan · Mufeez Aziz · Moiz Shahzad", role: "Senior Analysts", tier: "Platinum — Rs 15,000", color: "#94a3b8" },
-  { icon: "🥇", name: "Hassan Askari · Saad Arshad · Hafsa Talpur", role: "Research Team", tier: "Gold — Rs 10,000", color: "#cd7f32" },
+  { icon: "💎", name: "Dr. Masood Rashid", role: "Head of Research & Advisory", tier: "Diamond", color: "#D4971A" },
+  { icon: "🥈", name: "M. Sufiyan · Mufeez Aziz · Moiz Shahzad", role: "Senior Analysts", tier: "Platinum", color: "#94a3b8" },
+  { icon: "🥇", name: "Hassan Askari · Saad Arshad · Hafsa Talpur", role: "Research Team", tier: "Gold", color: "#cd7f32" },
 ];
 
 // ── Main Component ────────────────────────────────────────────────────────
@@ -120,14 +120,14 @@ export default function OpenAccountClient() {
   // CSS variable values for dark/light
   // Match data portal CSS tokens exactly
   const pg = {
-    bg:     dark ? "#0b1929" : "#f8fafc",
-    card:   dark ? "#0e1f30" : "#ffffff",
-    text:   dark ? "#e2e8f0" : "#1e293b",
-    muted:  dark ? "#94a3b8" : "#64748b",
-    border: dark ? "rgba(255,255,255,0.09)" : "#E2E8F0",
+    bg:     dark ? "#0b1929" : "#FAF7F2",
+    card:   dark ? "#0e1f30" : "#FFFFFF",
+    text:   dark ? "#e2e8f0" : "#1C1A17",
+    muted:  dark ? "#94a3b8" : "#7A7268",
+    border: dark ? "rgba(255,255,255,0.09)" : "#EDE8DE",
     navy:   dark ? "#bdd0e8" : "#07111F",
     gold:   "#D4971A",
-    section: dark ? "#0d1e38" : "#f1f5f9",
+    section: dark ? "#0d1e38" : "#F3EFE7",
   };
 
   const inp: React.CSSProperties = {
@@ -169,9 +169,9 @@ export default function OpenAccountClient() {
           {/* Divider */}
           <div style={{ width: 1, height: 18, background: pg.border }} />
           {/* Quick links */}
-          <Link href="/data-portal" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Data Portal</Link>
-          <Link href="/data-portal/heatmap" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Heatmap</Link>
-          <Link href="/data-portal/screener" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Screener</Link>
+          <a href="https://www.psx.com.pk" target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>PSX Official</a>
+          <a href="https://www.secp.gov.pk" target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>SECP</a>
+          <a href="https://www.sbp.org.pk" target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>State Bank</a>
         </div>
 
         <button
@@ -182,19 +182,22 @@ export default function OpenAccountClient() {
 
       {/* ── Hero — two-column: headline left, form right ── */}
       <div style={{
-        background: `linear-gradient(140deg, #0a1e3c 0%, #122d58 50%, #1a3a6b 100%)`,
+        background: dark
+          ? `linear-gradient(140deg, #0a1e3c 0%, #122d58 50%, #1a3a6b 100%)`
+          : `linear-gradient(140deg, #FAF7F2 0%, #F3EFE7 50%, #EDE8DE 100%)`,
+        borderBottom: dark ? "none" : "1.5px solid #DDD8CC",
         position: "relative", overflow: "hidden",
       }}>
         {particles.map((p, i) => (
           <div key={i} style={{
             position: "absolute", left: `${p.x}%`, top: `${p.y}%`,
             width: p.size, height: p.size, borderRadius: "50%",
-            background: "#D4971A", opacity: p.opacity,
+            background: "#D4971A", opacity: p.opacity * 0.5,
             animation: `float ${p.speed}s ease-in-out infinite alternate`,
             animationDelay: `${i * 0.4}s`, pointerEvents: "none",
           }} />
         ))}
-        <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 320, background: "radial-gradient(ellipse, rgba(200,134,10,0.18) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 320, background: dark ? "radial-gradient(ellipse, rgba(200,134,10,0.18) 0%, transparent 70%)" : "radial-gradient(ellipse, rgba(212,151,26,0.10) 0%, transparent 70%)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 56px", display: "grid", gridTemplateColumns: "1fr 420px", gap: 40, alignItems: "center", position: "relative", zIndex: 1 }}>
 
@@ -203,24 +206,23 @@ export default function OpenAccountClient() {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "4px 16px", borderRadius: 20, border: "1px solid rgba(200,134,10,0.45)", background: "rgba(200,134,10,0.1)", marginBottom: 20, animation: "fadeSlideIn 0.7s ease both" }}>
               <span style={{ fontSize: 10.5, color: "#D4971A", fontWeight: 800, letterSpacing: "0.08em" }}>SECP LICENSED · PSX MEMBER · MUNIR KHANANI SECURITIES</span>
             </div>
-            <h1 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, color: "#fff", margin: "0 0 14px", lineHeight: 1.12, animation: "fadeSlideIn 0.75s ease 0.1s both" }}>
+            <h1 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, color: dark ? "#fff" : "#07111F", margin: "0 0 14px", lineHeight: 1.12, animation: "fadeSlideIn 0.75s ease 0.1s both" }}>
               Open Your PSX Account<br />
               <span style={{ color: "#D4971A" }}>Start Investing Today</span>
             </h1>
-            <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.7)", margin: "0 0 28px", lineHeight: 1.7, fontWeight: 400, maxWidth: 460, animation: "fadeSlideIn 0.75s ease 0.2s both" }}>
+            <p style={{ fontSize: 14.5, color: dark ? "rgba(255,255,255,0.7)" : "#5A3A00", margin: "0 0 28px", lineHeight: 1.7, fontWeight: 400, maxWidth: 460, animation: "fadeSlideIn 0.75s ease 0.2s both" }}>
               Pakistan&apos;s trusted SECP-licensed advisory. Open your brokerage account in under 24 hours and get free access to research, live data, and expert guidance.
             </p>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 28, animation: "fadeSlideIn 0.75s ease 0.3s both" }}>
               {[["🚀", "24-hour activation"], ["💯", "Zero setup fee"], ["🔐", "SECP regulated"], ["📊", "Free data portal"]].map(([icon, label]) => (
-                <div key={String(label)} style={{ fontSize: 12.5, color: "rgba(255,255,255,0.65)", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+                <div key={String(label)} style={{ fontSize: 12.5, color: dark ? "rgba(255,255,255,0.65)" : "#7A5C2A", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
                   <span style={{ fontSize: 15 }}>{icon}</span>{label}
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, animation: "fadeSlideIn 0.75s ease 0.35s both" }}>
-              <a href="https://wa.me/923114944443" target="_blank" rel="noreferrer" style={{ padding: "11px 22px", background: "#25d366", color: "#fff", borderRadius: 9, fontWeight: 800, fontSize: 13, textDecoration: "none", display: "flex", alignItems: "center", gap: 7 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                WhatsApp Us
+              <a href="/open-account" style={{ padding: "13px 28px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", borderRadius: 10, fontWeight: 900, fontSize: 14, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 18px rgba(200,134,10,0.35)", letterSpacing: "0.02em" }}>
+                Open Account Now →
               </a>
             </div>
           </div>
@@ -388,8 +390,9 @@ export default function OpenAccountClient() {
             ))}
           </div>
 
-          {/* Swing with Stockifyy + Elite Club — side by side */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+          {/* Swing with Stockifyy + Elite Club — same size as top 3, centered */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            <div aria-hidden />
             <Reveal delay={120} from="scale">
               <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", height: "100%", boxSizing: "border-box" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />

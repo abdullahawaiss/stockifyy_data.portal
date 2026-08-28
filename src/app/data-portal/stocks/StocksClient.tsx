@@ -329,54 +329,9 @@ export default function StocksClient() {
         </div>
       </div>
 
-      {/* ── Indices strip ── */}
-      <div className="indices-strip" style={{ marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"stretch", gap:0, background:t.bg, borderRadius:7, overflow:"hidden" }}>
-          {[
-            { label:"KSE-100", val:180034.85, chg:-1275.43, pct:-0.69, vol:"322.0M" },
-            { label:"KSE-30",  val:53634.04,  chg:-371.83,  pct:-0.69, vol:"185.4M" },
-            { label:"KSE ALL", val:108875.40, chg:-526.92,  pct:-0.46, vol:"412.0M" },
-            { label:"KMI-30",  val:253345.18, chg:-2380.01, pct:-0.94, vol:"97.2M"  },
-            { label:"KMI ALL", val:69720.49,  chg:-401.21,  pct:-0.56, vol:"75.2M"  },
-          ].map((ix, i) => {
-            const up  = ix.chg >= 0;
-            const col = up ? "#16A34A" : "#DC2626";
-            return (
-              <div key={i} style={{ flex:1, padding:"10px 14px", borderRight: i<4 ? `1px solid ${t.border}` : "none", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, textAlign:"center" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                  <span style={{ fontSize:10, fontWeight:700, color:"var(--navy)" }}>{ix.label}</span>
-                  <span style={{ fontSize:8, fontWeight:700, color:"#16A34A", background:"#dcfce7", borderRadius:3, padding:"1px 4px" }}>LIVE</span>
-                </div>
-                <div style={{ fontSize:12, fontWeight:800, color:t.text, fontVariantNumeric:"tabular-nums" }}>
-                  {ix.val.toLocaleString("en-PK", { minimumFractionDigits:2 })}
-                </div>
-                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                  <span style={{ fontSize:9, fontWeight:700, color:col }}>
-                    {up?"▲":"▼"} {Math.abs(ix.chg).toLocaleString("en-PK",{minimumFractionDigits:2})}
-                  </span>
-                  <span style={{ fontSize:9, fontWeight:600, color:col }}>({ix.pct.toFixed(2)}%)</span>
-                </div>
-                <div style={{ fontSize:8, color:t.textMuted }}>Vol: {ix.vol}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* ── Filter by ── */}
       <style>{`
-        .indices-strip {
-          position: relative;
-          border-radius: 8px;
-          padding: 1.5px;
-          background: linear-gradient(90deg, transparent 0%, #D4971A 25%, #F5D87A 50%, #D4971A 75%, transparent 100%);
-          background-size: 300% 100%;
-          animation: indicesGoldLine 2s linear infinite;
-        }
-        @keyframes indicesGoldLine {
-          0%   { background-position: 100% 0; }
-          100% { background-position: -200% 0; }
-        }
         @keyframes borderSlide {
           0%   { top: -100%; }
           100% { top: 200%; }
@@ -628,7 +583,7 @@ export default function StocksClient() {
                             {row.symbol}
                           </Link>
                           {row.shariahStatus === "compliant" && (
-                            <span style={{ marginLeft:4, fontSize:8, fontWeight:700, padding:"1px 4px", borderRadius:3, background:"#D1FAE5", color:"#065F46", verticalAlign:"middle" }}>SC</span>
+                            <span style={{ marginLeft:3, fontSize:11, verticalAlign:"middle" }} title="Shariah Compliant">☪️</span>
                           )}
                         </td>
                         <td style={{ padding:"9px 12px", color:t.textSec, maxWidth:140 }}>
