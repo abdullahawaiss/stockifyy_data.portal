@@ -632,25 +632,27 @@ export default function ToolsClient() {
           </div>
         </div>
 
-        {/* Active calculator panel */}
-        {ActiveCalc && activeCalcInfo && (
-          <div style={{ flex: "0 0 340px", position: "sticky", top: 20, maxHeight: "calc(100vh - 40px)", overflowY: "auto" }}>
-            <div className="card" style={{ padding: "20px 22px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 22 }}>{activeCalcInfo.icon}</span>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: "var(--navy)" }}>{activeCalcInfo.title}</div>
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{activeCalcInfo.subtitle}</div>
-                </div>
-                <button onClick={() => setActive(null)} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 18, color: "var(--text-muted)" }}>✕</button>
-              </div>
-              <ActiveCalc />
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Full-screen modal overlay for active calculator */}
+      {ActiveCalc && activeCalcInfo && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setActive(null); }}>
+          <div className="card" style={{ width: "min(680px, 96vw)", maxHeight: "90vh", overflowY: "auto", padding: "28px 32px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontSize: 26 }}>{activeCalcInfo.icon}</span>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: "var(--navy)" }}>{activeCalcInfo.title}</div>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{activeCalcInfo.subtitle}</div>
+              </div>
+              <button onClick={() => setActive(null)} style={{ border: "none", background: "var(--light-bg)", borderRadius: 8, cursor: "pointer", fontSize: 16, color: "var(--text-muted)", padding: "6px 10px", flexShrink: 0 }}>✕ Close</button>
+            </div>
+            <ActiveCalc />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -183,32 +183,6 @@ export default function TechnicalChartClient() {
               ))}
             </div>
 
-            {/* Separator */}
-            <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
-
-            {/* Chart type buttons */}
-            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-              {CHART_TYPES.map(ct => (
-                <button key={ct.value} onClick={() => setChartStyle(ct.value)}
-                  style={chartStyle === ct.value ? BTN_ACTIVE : BTN}>
-                  {ct.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Separator */}
-            <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
-
-            {/* Quick picks */}
-            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-              {QUICK_PICKS.map(s => (
-                <button key={s} onClick={() => selectSymbol(s)}
-                  style={rawSymbol === s ? BTN_ACTIVE : BTN}>
-                  {s}
-                </button>
-              ))}
-            </div>
-
             {/* Camera / screenshot button */}
             <button
               title="Take screenshot"

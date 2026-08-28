@@ -328,7 +328,8 @@ export default function PortfolioLive() {
     }
     const totalPL = marketValue - costBasis;
     const totalPct = costBasis > 0 ? (totalPL / costBasis) * 100 : 0;
-    return { marketValue, costBasis, totalPL, totalPct, todayPL };
+    const todayPct = marketValue > 0 ? (todayPL / (marketValue - todayPL)) * 100 : 0;
+    return { marketValue, costBasis, totalPL, totalPct, todayPL, todayPct };
   }, [holdings]);
 
   const cardStyle: React.CSSProperties = { background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 20px", flex: 1, minWidth: 140 };
@@ -357,7 +358,7 @@ export default function PortfolioLive() {
           { label: "MARKET VALUE",  value: `Rs ${fmt(summary.marketValue)}`, sub: null },
           { label: "COST BASIS",    value: `Rs ${fmt(summary.costBasis)}`,   sub: null },
           { label: "TOTAL P&L",    value: `${summary.totalPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.totalPL))}`, sub: `${summary.totalPct >= 0 ? "+" : ""}${fmt(summary.totalPct)}%`, color: pctColor(summary.totalPL) },
-          { label: "TODAY P&L",    value: `${summary.todayPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.todayPL))}`, sub: null, color: pctColor(summary.todayPL) },
+          { label: "TODAY P&L",    value: `${summary.todayPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.todayPL))}`, sub: `${summary.todayPct >= 0 ? "+" : ""}${fmt(summary.todayPct)}%`, color: pctColor(summary.todayPL) },
         ].map(c => (
           <div key={c.label} style={cardStyle}>
             <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, letterSpacing: "0.07em", marginBottom: 6 }}>{c.label}</div>

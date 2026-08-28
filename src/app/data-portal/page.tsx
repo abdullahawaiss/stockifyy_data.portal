@@ -4,7 +4,7 @@ import AnnouncementsSection from "./_components/AnnouncementsSection";
 import PortalTitle from "./_components/PortalTitle";
 import PageAnimations from "./_components/PageAnimations";
 import GlobalSearch from "./_components/GlobalSearch";
-import PortalCTA, { PortalPhones } from "./_components/PortalCTA";
+import PortalCTA from "./_components/PortalCTA";
 import PublicNotice from "./_components/PublicNotice";
 import { getMarketSummary, getAnnouncements } from "@/lib/market-data";
 import { STATIC_MARKET, STATIC_ANNOUNCEMENTS } from "./_components/StaticDashboardData";
@@ -94,7 +94,6 @@ export default async function DataPortalPage() {
                   <circle key={`d${x}${y}`} cx={x} cy={y} r="1.3" fill="rgba(212,175,55,0.35)" />
                 )))}
               </svg>
-              <div style={{ position: "relative", zIndex: 1 }}><PortalPhones /></div>
               <div style={{ position: "relative", zIndex: 1 }}><PortalCTA /></div>
             </div>
           </div>
