@@ -75,7 +75,7 @@ export default function OpenAccountClient() {
   const [submitted, setSubmitted] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [pkTime, setPkTime] = useState("");
-  const [marketOpen, setMarketOpen] = useState(false);
+  const [marketOpen] = useState(false);
   const [particles, setParticles] = useState<{ x: number; y: number; size: number; speed: number; opacity: number }[]>([]);
 
   useEffect(() => {
@@ -92,10 +92,7 @@ export default function OpenAccountClient() {
       const hStr = h % 12 || 12, mStr = String(m).padStart(2, "0");
       const ampm = h >= 12 ? "PM" : "AM";
       setPkTime(`${hStr}:${mStr} ${ampm} PKT`);
-      const dow = now.getDay(); // 0=Sun,6=Sat
-      const isWeekday = dow >= 1 && dow <= 5;
-      const totalMin = h * 60 + m;
-      setMarketOpen(isWeekday && totalMin >= 9 * 60 + 30 && totalMin < 15 * 60 + 30);
+      void marketOpen;
     };
     tick();
     const id = setInterval(tick, 30000);
@@ -161,11 +158,14 @@ export default function OpenAccountClient() {
               🕐 <span style={{ fontVariantNumeric: "tabular-nums" }}>{pkTime}</span>
             </div>
           )}
-          {/* Market status */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: marketOpen ? "#16a34a" : "#ef4444", display: "inline-block", animation: marketOpen ? "pulse 2s infinite" : "none" }} />
-            <span style={{ color: marketOpen ? "#16a34a" : "#ef4444" }}>{marketOpen ? "Market Open" : "Market Closed"}</span>
-          </div>
+          {/* Book a Call CTA */}
+          <a href="https://wa.me/923362444466?text=I%20want%20to%20book%20a%20free%20consultation%20with%20Stockifyy" target="_blank" rel="noreferrer" style={{
+            padding: "6px 16px", borderRadius: 20, background: "#D4971A", color: "#07111F",
+            fontWeight: 800, fontSize: 12, textDecoration: "none", whiteSpace: "nowrap",
+            letterSpacing: "0.03em",
+          }}>
+            📅 Book a Free Call
+          </a>
           {/* Divider */}
           <div style={{ width: 1, height: 18, background: pg.border }} />
           {/* Quick links */}
@@ -199,7 +199,7 @@ export default function OpenAccountClient() {
         ))}
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 320, background: dark ? "radial-gradient(ellipse, rgba(200,134,10,0.18) 0%, transparent 70%)" : "radial-gradient(ellipse, rgba(212,151,26,0.10) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 56px", display: "grid", gridTemplateColumns: "1fr 420px", gap: 40, alignItems: "center", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "24px 24px 48px", display: "grid", gridTemplateColumns: "1fr 420px", gap: 40, alignItems: "center", position: "relative", zIndex: 1 }}>
 
           {/* Left — headline */}
           <div>
@@ -221,14 +221,14 @@ export default function OpenAccountClient() {
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, animation: "fadeSlideIn 0.75s ease 0.35s both" }}>
-              <a href="/open-account" style={{ padding: "13px 28px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", borderRadius: 10, fontWeight: 900, fontSize: 14, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 18px rgba(200,134,10,0.35)", letterSpacing: "0.02em" }}>
+              <a href="#application-form" style={{ padding: "13px 28px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", borderRadius: 10, fontWeight: 900, fontSize: 14, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 18px rgba(200,134,10,0.35)", letterSpacing: "0.02em" }}>
                 Open Account Now →
               </a>
             </div>
           </div>
 
           {/* Right — compact application form */}
-          <div style={{ animation: "fadeSlideIn 0.8s ease 0.2s both" }}>
+          <div id="application-form" style={{ animation: "fadeSlideIn 0.8s ease 0.2s both" }}>
             {submitted ? (
               <div style={{ background: dark ? "rgba(14,31,48,0.97)" : "rgba(255,255,255,0.97)", borderRadius: 18, padding: "32px 24px", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
@@ -391,10 +391,9 @@ export default function OpenAccountClient() {
           </div>
 
           {/* Swing with Stockifyy + Elite Club — same size as top 3, centered */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
-            <div aria-hidden />
+          <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
             <Reveal delay={120} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", height: "100%", boxSizing: "border-box" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", flex: "0 0 calc(33.33% - 8px)", maxWidth: "calc(33.33% - 8px)" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>SWING TRADING</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🔄</div>
@@ -409,7 +408,7 @@ export default function OpenAccountClient() {
               </div>
             </Reveal>
             <Reveal delay={160} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", height: "100%", boxSizing: "border-box" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", flex: "0 0 calc(33.33% - 8px)", maxWidth: "calc(33.33% - 8px)" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>ALL-IN-ONE</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>⭐</div>
@@ -468,6 +467,24 @@ export default function OpenAccountClient() {
           &nbsp;·&nbsp; www.stockifyy.com
         </div>
       </div>
+
+      {/* ── WhatsApp floating button ── */}
+      <style>{`
+        @keyframes wa-shine {
+          0%,100% { box-shadow: 0 4px 20px rgba(37,211,102,0.45); }
+          50% { box-shadow: 0 4px 32px rgba(37,211,102,0.85), 0 0 0 8px rgba(37,211,102,0.1); }
+        }
+      `}</style>
+      <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer"
+        style={{ position: "fixed", bottom: 82, right: 24, width: 52, height: 52, borderRadius: "50%", background: "#25D366", color: "#fff", textDecoration: "none", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", animation: "wa-shine 2.5s ease-in-out infinite", transition: "transform 0.2s" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+        title="Chat with Stockifyy on WhatsApp"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+      </a>
 
       {/* ── Back to top button ── */}
       {showTop && (

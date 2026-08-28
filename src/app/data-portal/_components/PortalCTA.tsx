@@ -46,20 +46,29 @@ export default function PortalCTA() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
       <style>{`
-        .portal-cta-btn:hover {
-          background: #D4971A !important;
-          color: #07111F !important;
-          border-color: #D4971A !important;
-        }
+        .portal-cta-login:hover { opacity: 0.85; }
+        .portal-cta-open:hover { opacity: 0.85; }
       `}</style>
-      <a href="/open-account" className="portal-cta-btn" style={{ ...btnStyle, padding: "8px 24px" }}>
+      <Link href="/auth/login" className="portal-cta-login" style={{
+        padding: "8px 18px", borderRadius: 7,
+        background: "#07111F", color: "#fff",
+        fontWeight: 700, fontSize: 13, textDecoration: "none",
+        border: "none", whiteSpace: "nowrap", display: "inline-block",
+        cursor: "pointer", letterSpacing: "0.02em", transition: "opacity 150ms",
+      }}>
+        Login
+      </Link>
+      <a href="/open-account" className="portal-cta-open" style={{
+        padding: "8px 20px", borderRadius: 7,
+        background: "#D4971A", color: "#07111F",
+        fontWeight: 800, fontSize: 13, textDecoration: "none",
+        border: "none", whiteSpace: "nowrap", display: "inline-block",
+        cursor: "pointer", letterSpacing: "0.02em", transition: "opacity 150ms",
+      }}>
         Open New Account
       </a>
-      <Link href="/auth/login" className="portal-cta-btn" style={btnStyle}>
-        Client Login
-      </Link>
     </div>
   );
 }
