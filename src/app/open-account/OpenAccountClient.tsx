@@ -95,9 +95,26 @@ export default function OpenAccountClient() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: "inherit", overflowX: "hidden" }}>
 
+      {/* ── Top nav bar with logo ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(10, 24, 54, 0.92)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        padding: "12px 28px", display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 34, objectFit: "contain", maxWidth: 170 }} />
+        </a>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <a href="https://wa.me/923114944443" target="_blank" rel="noreferrer" style={{ fontSize: 12.5, fontWeight: 700, color: "#25d366", textDecoration: "none" }}>WhatsApp</a>
+          <a href="#apply" style={{ padding: "8px 20px", background: "#C8860A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12.5, textDecoration: "none" }}>Open Account</a>
+        </div>
+      </div>
+
       {/* ── Hero ── */}
       <div style={{
-        background: "linear-gradient(140deg, #050e1c 0%, #0a1f3c 50%, #0f1a2e 100%)",
+        background: "linear-gradient(140deg, #0a1e3c 0%, #122d58 45%, #1a3a6b 100%)",
         padding: "70px 20px 90px", textAlign: "center", position: "relative", overflow: "hidden",
       }}>
         {/* Animated particles */}
@@ -403,7 +420,7 @@ export default function OpenAccountClient() {
       </div>
 
       {/* ── Footer strip ── */}
-      <div style={{ background: "linear-gradient(135deg, #050e1c, #0a1f3c)", padding: "28px 20px", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1e3c, #122d58)", padding: "28px 20px", textAlign: "center" }}>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>
           <strong style={{ color: "#fff" }}>M/S Stock Ifyy (Private) Limited</strong> &nbsp;·&nbsp; SECP Licence: SECP/LRD/LD/73/S&A/SIPL/2025 &nbsp;·&nbsp; Securities & Futures Adviser
         </div>
