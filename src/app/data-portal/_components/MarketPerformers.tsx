@@ -25,8 +25,8 @@ function Col({ title, rows, loading, type }: {
   const accent = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
   const headerBg = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
 
-  // col layout: Symbol | Price | Change | Volume — give volume plenty of space
-  const COLS = "1.4fr 0.85fr 1.5fr 1.6fr";
+  // col layout: Symbol | Price | Change | Volume
+  const COLS = "1.3fr 0.9fr 1.55fr 1.4fr";
 
   return (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
@@ -49,7 +49,7 @@ function Col({ title, rows, loading, type }: {
         letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
         <div>Symbol</div>
-        <div style={{ textAlign: "right" }}>Price</div>
+        <div style={{ paddingLeft: 4 }}>Price</div>
         <div style={{ textAlign: "right" }}>Change</div>
         <div style={{ textAlign: "right" }}>Volume</div>
       </div>
@@ -83,14 +83,13 @@ function Col({ title, rows, loading, type }: {
                     alignItems: "center", cursor: "pointer",
                   }}>
                     <span style={{ fontWeight: 700, fontSize: 10.5, color: accent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {i < 3 && <span style={{ fontSize: 8.5, opacity: 0.5, marginRight: 2 }}>{i+1}</span>}
                       {r.symbol}
                     </span>
-                    <span style={{ textAlign: "right", fontSize: 10.5, fontWeight: 500, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ textAlign: "left", paddingLeft: 4, fontSize: 10.5, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
                       {fmtPrice(r.close)}
                     </span>
                     <span style={{ textAlign: "right", fontSize: 10, fontWeight: 600, color: chgColor, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-                      {up ? "▲" : "▼"}{chgAmt.toFixed(2)} ({up ? "+" : ""}{r.pct.toFixed(2)}%)
+                      {up ? "▲" : "▼"}{chgAmt.toFixed(2)} ({r.pct.toFixed(2)}%)
                     </span>
                     <span style={{ textAlign: "right", fontSize: 10, fontWeight: 400, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                       {fmtVol(r.vol)}
@@ -119,9 +118,9 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const active    = (summary?.volume  ?? []).slice(0, 10);
-  const advancers = (summary?.gainers ?? []).slice(0, 10);
-  const decliners = (summary?.losers  ?? []).slice(0, 10);
+  const active    = (summary?.volume  ?? []).slice(0, 12);
+  const advancers = (summary?.gainers ?? []).slice(0, 12);
+  const decliners = (summary?.losers  ?? []).slice(0, 12);
 
   return (
     <div className="card overflow-hidden" style={{ display: "flex", flexDirection: "column" }}>
@@ -140,13 +139,13 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
         </span>
       </div>
 
-      {/* Three columns */}
+      {/* Three columns — Advancers | Decliners | Active */}
       <div style={{ display: "flex", overflow: "hidden" }}>
-        <Col title="Top Active Stocks" rows={active}    loading={loading} type="active"    />
-        <div style={{ width: 1, background: "var(--border)", flexShrink: 0 }} />
         <Col title="Top Advancers"     rows={advancers} loading={loading} type="advancers" />
         <div style={{ width: 1, background: "var(--border)", flexShrink: 0 }} />
         <Col title="Top Decliners"     rows={decliners} loading={loading} type="decliners" />
+        <div style={{ width: 1, background: "var(--border)", flexShrink: 0 }} />
+        <Col title="Top Active Stocks" rows={active}    loading={loading} type="active"    />
       </div>
 
       {/* Footer */}
