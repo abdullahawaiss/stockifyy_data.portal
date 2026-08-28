@@ -177,20 +177,8 @@ export default function DashboardClient({ initialData }: { initialData: MarketSu
       {/* ── Sector Performance ── */}
       <SectorPanel initialData={data?.sectors} />
 
-      {/* ── Gainers | Losers | Market Performers ── */}
-      <div style={{ display: "flex", gap: 12, alignItems: "stretch", width: "100%" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <GainersLosersSection gainersOnly
-            initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <GainersLosersSection losersOnly
-            initialData={data ? { gainers: data.gainers, losers: data.losers } : undefined} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-          <MarketPerformers initialData={data} />
-        </div>
-      </div>
+      {/* ── Market Performers — full width, 3-col (Active | Advancers | Decliners) ── */}
+      <MarketPerformers initialData={data} />
     </>
   );
 }

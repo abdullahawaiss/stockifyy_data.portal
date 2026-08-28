@@ -25,26 +25,28 @@ function Col({ title, rows, loading, type }: {
   const accent = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
   const headerBg = type === "active" ? "#1e3a5f" : type === "advancers" ? "#16a34a" : "#dc2626";
 
+  // col layout: Symbol | Price | Change | Volume — give volume plenty of space
+  const COLS = "1.4fr 0.85fr 1.5fr 1.6fr";
+
   return (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
       {/* Section header */}
       <div style={{
         background: headerBg, color: "#fff",
-        fontWeight: 800, fontSize: 11.5, letterSpacing: "0.06em",
-        textTransform: "uppercase", padding: "7px 10px",
+        fontWeight: 700, fontSize: 11, letterSpacing: "0.07em",
+        textTransform: "uppercase", padding: "6px 10px",
         display: "flex", alignItems: "center", gap: 6,
       }}>
-        {type === "advancers" ? "▲" : type === "decliners" ? "▼" : "●"} {title}
+        {type === "advancers" ? "▲" : type === "decliners" ? "▼" : "●"}&nbsp;{title}
       </div>
 
       {/* Column headers */}
       <div style={{
-        display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
+        display: "grid", gridTemplateColumns: COLS,
         padding: "4px 8px", background: "var(--light-bg)",
         borderBottom: "1px solid var(--border)",
-        fontSize: 9.5, fontWeight: 700, color: "var(--text-muted)",
-        letterSpacing: "0.05em", textTransform: "uppercase",
-        gap: "0 4px",
+        fontSize: 9, fontWeight: 600, color: "var(--text-muted)",
+        letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
         <div>Symbol</div>
         <div style={{ textAlign: "right" }}>Price</div>
@@ -56,13 +58,9 @@ function Col({ title, rows, loading, type }: {
       <div style={{ flex: 1 }}>
         {loading
           ? Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{
-                display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
-                padding: "5px 8px", gap: "0 4px", borderBottom: "1px solid var(--border)",
-                opacity: 0.5,
-              }}>
-                {[80, 50, 60, 70].map((w, j) => (
-                  <div key={j} style={{ height: 10, background: "var(--border)", borderRadius: 3, width: `${w}%`, marginLeft: j > 0 ? "auto" : 0 }} />
+              <div key={i} style={{ display: "grid", gridTemplateColumns: COLS, padding: "5px 8px", borderBottom: "1px solid var(--border)", opacity: 0.45 }}>
+                {[80, 50, 70, 85].map((w, j) => (
+                  <div key={j} style={{ height: 9, background: "var(--border)", borderRadius: 3, width: `${w}%`, marginLeft: j > 0 ? "auto" : 0 }} />
                 ))}
               </div>
             ))
@@ -70,45 +68,31 @@ function Col({ title, rows, loading, type }: {
           ? <div style={{ padding: "20px 10px", textAlign: "center", fontSize: 11, color: "var(--text-muted)" }}>No data</div>
           : rows.map((r, i) => {
               const up = r.pct >= 0;
-              const chgColor = type === "active" ? "var(--text-primary)" : up ? "#16a34a" : "#dc2626";
+              const chgColor = type === "active" ? (up ? "#16a34a" : "#dc2626") : up ? "#16a34a" : "#dc2626";
               const chgSign  = up ? "+" : "";
-              const chgAmt   = ((r.close * r.pct) / 100);
+              const chgAmt   = ((r.close * Math.abs(r.pct)) / 100);
               return (
                 <Link key={r.symbol} href={`/data-portal/company/${r.symbol}`}
-                  style={{ textDecoration: "none" }}
+                  style={{ textDecoration: "none", display: "block" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--light-bg)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "")}
                 >
                   <div style={{
-                    display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr 1.5fr",
-                    padding: "4px 8px", gap: "0 4px",
-                    borderBottom: "1px solid var(--border)",
+                    display: "grid", gridTemplateColumns: COLS,
+                    padding: "3.5px 8px", borderBottom: "1px solid var(--border)",
                     alignItems: "center", cursor: "pointer",
                   }}>
-                    {/* Symbol */}
-                    <span style={{
-                      fontWeight: 700, fontSize: 11, color: accent,
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
-                      {i + 1 <= 3 && <span style={{ fontSize: 9, opacity: 0.6, marginRight: 3 }}>{i+1}</span>}
+                    <span style={{ fontWeight: 700, fontSize: 10.5, color: accent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {i < 3 && <span style={{ fontSize: 8.5, opacity: 0.5, marginRight: 2 }}>{i+1}</span>}
                       {r.symbol}
                     </span>
-
-                    {/* Price */}
-                    <span style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ textAlign: "right", fontSize: 10.5, fontWeight: 500, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
                       {fmtPrice(r.close)}
                     </span>
-
-                    {/* Change */}
-                    <span style={{ textAlign: "right", fontSize: 10, fontWeight: 700, color: chgColor, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-                      {type === "active"
-                        ? <span style={{ color: r.pct >= 0 ? "#16a34a" : "#dc2626" }}>{chgSign}{r.pct.toFixed(2)}%</span>
-                        : <>{chgSign}{Math.abs(chgAmt).toFixed(2)} ({chgSign}{r.pct.toFixed(2)}%)</>
-                      }
+                    <span style={{ textAlign: "right", fontSize: 10, fontWeight: 600, color: chgColor, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                      {up ? "▲" : "▼"}{chgAmt.toFixed(2)} ({up ? "+" : ""}{r.pct.toFixed(2)}%)
                     </span>
-
-                    {/* Volume */}
-                    <span style={{ textAlign: "right", fontSize: 10, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                    <span style={{ textAlign: "right", fontSize: 10, fontWeight: 400, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                       {fmtVol(r.vol)}
                     </span>
                   </div>

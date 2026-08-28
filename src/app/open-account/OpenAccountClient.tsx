@@ -48,10 +48,12 @@ const ACCOUNT_TYPES = [
 const WHY = [
   { icon: "🏛️", title: "SECP Licensed", desc: "Licence No. SECP/LRD/LD/73/S&A/SIPL/2025" },
   { icon: "🤝", title: "PSX Member Broker", desc: "Accounts via Munir Khanani Securities" },
-  { icon: "📊", title: "Free Data Portal", desc: "Live heatmap, screener & stock data" },
+  { icon: "📊", title: "Free Data Portal", desc: "Live heatmap, screener & real-time stock data" },
   { icon: "📞", title: "Dedicated Dealer", desc: "Personal equity dealer assigned to you" },
-  { icon: "🎓", title: "26 Live Zoom Sessions", desc: "Monthly Q&A with expert analysts" },
-  { icon: "⚡", title: "1-on-1 Guidance", desc: "Direct support from research team" },
+  { icon: "🎓", title: "26 Live Zoom Sessions", desc: "Monthly Q&A sessions with expert analysts" },
+  { icon: "⚡", title: "1-on-1 Guidance", desc: "Direct research support from our team" },
+  { icon: "☪️", title: "Shariah Screener", desc: "Filter halal-compliant stocks on PSX instantly" },
+  { icon: "📢", title: "PSX Announcements", desc: "Real-time corporate announcements & results" },
 ];
 
 const SERVICES_MAIN = [
@@ -72,6 +74,8 @@ export default function OpenAccountClient() {
   const [form, setForm] = useState({ name: "", mobile: "", type: "sahulat", email: "" });
   const [submitted, setSubmitted] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const [pkTime, setPkTime] = useState("");
+  const [marketOpen, setMarketOpen] = useState(false);
   const [particles, setParticles] = useState<{ x: number; y: number; size: number; speed: number; opacity: number }[]>([]);
 
   useEffect(() => {
@@ -81,13 +85,35 @@ export default function OpenAccountClient() {
     })));
     const onScroll = () => setShowTop(window.scrollY > 400);
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    // Pakistan time clock
+    const tick = () => {
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
+      const h = now.getHours(), m = now.getMinutes();
+      const hStr = h % 12 || 12, mStr = String(m).padStart(2, "0");
+      const ampm = h >= 12 ? "PM" : "AM";
+      setPkTime(`${hStr}:${mStr} ${ampm} PKT`);
+      const dow = now.getDay(); // 0=Sun,6=Sat
+      const isWeekday = dow >= 1 && dow <= 5;
+      const totalMin = h * 60 + m;
+      setMarketOpen(isWeekday && totalMin >= 9 * 60 + 30 && totalMin < 15 * 60 + 30);
+    };
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => { window.removeEventListener("scroll", onScroll); clearInterval(id); };
   }, []);
 
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name || !form.mobile) return;
+    // Send data to Stockifyy via WhatsApp
+    const msg = encodeURIComponent(
+      `*New Account Application — Stockifyy*\n\n` +
+      `Name: ${form.name}\nMobile: ${form.mobile}\n` +
+      (form.email ? `Email: ${form.email}\n` : "") +
+      `Account Type: ${form.type}\n\n_Submitted from stockifyy.com_`
+    );
+    window.open(`https://wa.me/923114944443?text=${msg}`, "_blank");
     setSubmitted(true);
   }
 
@@ -124,10 +150,31 @@ export default function OpenAccountClient() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/stockifyy-full-logo.png" alt="Stockifyy" style={{ height: 32, objectFit: "contain", maxWidth: 160 }} />
         </a>
+
+        {/* ── Centre: time + market status + quick links ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flex: 1, justifyContent: "center", flexWrap: "wrap" }}>
+          {/* Pakistan time */}
+          {pkTime && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: pg.muted, fontWeight: 600 }}>
+              🕐 <span style={{ fontVariantNumeric: "tabular-nums" }}>{pkTime}</span>
+            </div>
+          )}
+          {/* Market status */}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: marketOpen ? "#16a34a" : "#ef4444", display: "inline-block", animation: marketOpen ? "pulse 2s infinite" : "none" }} />
+            <span style={{ color: marketOpen ? "#16a34a" : "#ef4444" }}>{marketOpen ? "Market Open" : "Market Closed"}</span>
+          </div>
+          {/* Divider */}
+          <div style={{ width: 1, height: 18, background: pg.border }} />
+          {/* Quick links */}
+          <Link href="/data-portal" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Data Portal</Link>
+          <Link href="/data-portal/heatmap" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Heatmap</Link>
+          <Link href="/data-portal/screener" style={{ fontSize: 11.5, color: pg.muted, fontWeight: 600, textDecoration: "none" }}>Screener</Link>
+        </div>
+
         <button
           onClick={() => setDark(d => !d)}
-          style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${pg.border}`, background: "transparent", cursor: "pointer", fontSize: 13, color: pg.muted, fontWeight: 600 }}
-          title="Toggle dark/light mode"
+          style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${pg.border}`, background: "transparent", cursor: "pointer", fontSize: 12.5, color: pg.muted, fontWeight: 600, flexShrink: 0 }}
         >{dark ? "☀ Light" : "🌙 Dark"}</button>
       </div>
 
@@ -193,24 +240,24 @@ export default function OpenAccountClient() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} style={{ background: "rgba(255,255,255,0.97)", borderRadius: 18, padding: "28px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.25)", backdropFilter: "blur(8px)" }}>
+              <form onSubmit={handleSubmit} style={{ background: dark ? "rgba(15,28,50,0.97)" : "rgba(255,255,255,0.97)", borderRadius: 18, padding: "28px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.25)", backdropFilter: "blur(8px)" }}>
                 <div style={{ fontWeight: 900, fontSize: 17, color: "#07111F", marginBottom: 4 }}>Start Your Application</div>
                 <div style={{ fontSize: 12, color: "#64748b", marginBottom: 20, fontWeight: 400 }}>Free • No setup fee • Account in 24 hours</div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.07em" }}>Full Name *</label>
-                  <input required value={form.name} onChange={e => setF("name", e.target.value)} placeholder="As on CNIC" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#1a2035", outline: "none" }} />
+                  <input required value={form.name} onChange={e => setF("name", e.target.value)} placeholder="As on CNIC" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.07em" }}>Mobile Number *</label>
-                  <input required value={form.mobile} onChange={e => setF("mobile", e.target.value)} placeholder="03XX-XXXXXXX" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#1a2035", outline: "none" }} />
+                  <input required value={form.mobile} onChange={e => setF("mobile", e.target.value)} placeholder="03XX-XXXXXXX" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.07em" }}>Email (optional)</label>
-                  <input type="email" value={form.email} onChange={e => setF("email", e.target.value)} placeholder="you@example.com" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#1a2035", outline: "none" }} />
+                  <input type="email" value={form.email} onChange={e => setF("email", e.target.value)} placeholder="you@example.com" style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }} />
                 </div>
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.07em" }}>Account Type</label>
-                  <select value={form.type} onChange={e => setF("type", e.target.value)} style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#1a2035", outline: "none" }}>
+                  <select value={form.type} onChange={e => setF("type", e.target.value)} style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box", border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }}>
                     <option value="sahulat">Sahulat Account (up to Rs 3M)</option>
                     <option value="full">Full PSX Account (no limit)</option>
                     <option value="joint">Joint Account</option>
