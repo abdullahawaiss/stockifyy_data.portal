@@ -40,7 +40,7 @@ const STEPS = [
 ];
 
 const ACCOUNT_TYPES = [
-  { title: "Sahulat Account", badge: "MOST POPULAR", color: "#C8860A", desc: "Perfect for new investors starting their PSX journey.", limit: "Trading Limit: Rs 3,000,000", wa: "03010301246", waDisplay: "0301-0301246", items: ["CNIC / SNIC", "Bank Account", "Signatures", "Email ID", "Registered Mobile"] },
+  { title: "Sahulat Account", badge: "MOST POPULAR", color: "#D4971A", desc: "Perfect for new investors starting their PSX journey.", limit: "Trading Limit: Rs 3,000,000", wa: "03010301246", waDisplay: "0301-0301246", items: ["CNIC / SNIC", "Bank Account", "Signatures", "Email ID", "Registered Mobile"] },
   { title: "Full PSX Account", badge: "NO LIMIT", color: "#1a6b3a", desc: "Unlimited trading via Munir Khanani Securities.", limit: "No upper trading limit", wa: "923114944443", waDisplay: "0311-4944443", items: ["Same 5 documents", "Biometric verification", "Munir Khanani Securities", "PSX member broker access"] },
   { title: "Overseas (RDA)", badge: "NRP", color: "#1a3a6b", desc: "Overseas Pakistanis investing in PSX via Roshan Digital Account.", limit: "Biometric Exempted", wa: "923114944443", waDisplay: "0311-4944443", items: ["CNIC / NICOP / Passport", "Foreign bank account", "RDA at any Pakistan bank", "No biometric required"] },
 ];
@@ -63,7 +63,7 @@ const SERVICES_MAIN = [
 ];
 
 const TEAM = [
-  { icon: "💎", name: "Dr. Masood Rashid", role: "Head of Research & Advisory", tier: "Diamond — Rs 20,000", color: "#C8860A" },
+  { icon: "💎", name: "Dr. Masood Rashid", role: "Head of Research & Advisory", tier: "Diamond — Rs 20,000", color: "#D4971A" },
   { icon: "🥈", name: "M. Sufiyan · Mufeez Aziz · Moiz Shahzad", role: "Senior Analysts", tier: "Platinum — Rs 15,000", color: "#94a3b8" },
   { icon: "🥇", name: "Hassan Askari · Saad Arshad · Hafsa Talpur", role: "Research Team", tier: "Gold — Rs 10,000", color: "#cd7f32" },
 ];
@@ -118,14 +118,16 @@ export default function OpenAccountClient() {
   }
 
   // CSS variable values for dark/light
+  // Match data portal CSS tokens exactly
   const pg = {
-    bg: dark ? "#0a1628" : "#f5f6f8",
-    card: dark ? "#111e30" : "#ffffff",
-    text: dark ? "#e2e8f0" : "#1a2035",
-    muted: dark ? "#94a3b8" : "#64748b",
-    border: dark ? "rgba(255,255,255,0.09)" : "#e8eaf0",
-    navy: dark ? "#cbd5e1" : "#07111F",
-    section: dark ? "#0d1e38" : "#eef0f5",
+    bg:     dark ? "#0b1929" : "#f8fafc",
+    card:   dark ? "#0e1f30" : "#ffffff",
+    text:   dark ? "#e2e8f0" : "#1e293b",
+    muted:  dark ? "#94a3b8" : "#64748b",
+    border: dark ? "rgba(255,255,255,0.09)" : "#E2E8F0",
+    navy:   dark ? "#bdd0e8" : "#07111F",
+    gold:   "#D4971A",
+    section: dark ? "#0d1e38" : "#f1f5f9",
   };
 
   const inp: React.CSSProperties = {
@@ -187,7 +189,7 @@ export default function OpenAccountClient() {
           <div key={i} style={{
             position: "absolute", left: `${p.x}%`, top: `${p.y}%`,
             width: p.size, height: p.size, borderRadius: "50%",
-            background: "#C8860A", opacity: p.opacity,
+            background: "#D4971A", opacity: p.opacity,
             animation: `float ${p.speed}s ease-in-out infinite alternate`,
             animationDelay: `${i * 0.4}s`, pointerEvents: "none",
           }} />
@@ -199,11 +201,11 @@ export default function OpenAccountClient() {
           {/* Left — headline */}
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "4px 16px", borderRadius: 20, border: "1px solid rgba(200,134,10,0.45)", background: "rgba(200,134,10,0.1)", marginBottom: 20, animation: "fadeSlideIn 0.7s ease both" }}>
-              <span style={{ fontSize: 10.5, color: "#C8860A", fontWeight: 800, letterSpacing: "0.08em" }}>SECP LICENSED · PSX MEMBER · MUNIR KHANANI SECURITIES</span>
+              <span style={{ fontSize: 10.5, color: "#D4971A", fontWeight: 800, letterSpacing: "0.08em" }}>SECP LICENSED · PSX MEMBER · MUNIR KHANANI SECURITIES</span>
             </div>
             <h1 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, color: "#fff", margin: "0 0 14px", lineHeight: 1.12, animation: "fadeSlideIn 0.75s ease 0.1s both" }}>
               Open Your PSX Account<br />
-              <span style={{ color: "#C8860A" }}>Start Investing Today</span>
+              <span style={{ color: "#D4971A" }}>Start Investing Today</span>
             </h1>
             <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.7)", margin: "0 0 28px", lineHeight: 1.7, fontWeight: 400, maxWidth: 460, animation: "fadeSlideIn 0.75s ease 0.2s both" }}>
               Pakistan&apos;s trusted SECP-licensed advisory. Open your brokerage account in under 24 hours and get free access to research, live data, and expert guidance.
@@ -226,13 +228,13 @@ export default function OpenAccountClient() {
           {/* Right — compact application form */}
           <div style={{ animation: "fadeSlideIn 0.8s ease 0.2s both" }}>
             {submitted ? (
-              <div style={{ background: "rgba(255,255,255,0.97)", borderRadius: 18, padding: "32px 24px", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+              <div style={{ background: dark ? "rgba(14,31,48,0.97)" : "rgba(255,255,255,0.97)", borderRadius: 18, padding: "32px 24px", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
                 <div style={{ fontWeight: 900, fontSize: 18, color: "#07111F", marginBottom: 8 }}>Application Received!</div>
                 <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.7, marginBottom: 20 }}>
                   Thank you, <strong>{form.name}</strong>! We&apos;ll call <strong>{form.mobile}</strong> within 24 hours.
                 </div>
-                <Link href="/data-portal" style={{ display: "block", padding: "11px", background: "#C8860A", color: "#fff", borderRadius: 9, fontWeight: 800, fontSize: 13, textDecoration: "none", textAlign: "center" }}>
+                <Link href="/data-portal" style={{ display: "block", padding: "11px", background: "#D4971A", color: "#fff", borderRadius: 9, fontWeight: 800, fontSize: 13, textDecoration: "none", textAlign: "center" }}>
                   Explore Data Portal →
                 </Link>
                 <button onClick={() => setSubmitted(false)} style={{ display: "block", width: "100%", marginTop: 10, padding: "9px", background: "none", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 12, cursor: "pointer", color: "#64748b" }}>
@@ -264,11 +266,11 @@ export default function OpenAccountClient() {
                     <option value="rda">Overseas / RDA Account</option>
                   </select>
                 </div>
-                <button type="submit" style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg,#C8860A,#e8a020)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 900, fontSize: 14, cursor: "pointer", letterSpacing: "0.03em", boxShadow: "0 4px 18px rgba(200,134,10,0.4)" }}>
+                <button type="submit" style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 900, fontSize: 14, cursor: "pointer", letterSpacing: "0.03em", boxShadow: "0 4px 18px rgba(200,134,10,0.4)" }}>
                   Submit Application →
                 </button>
                 <div style={{ textAlign: "center", marginTop: 12, fontSize: 11.5, color: "#64748b", fontWeight: 400 }}>
-                  No money collected at this stage &nbsp;·&nbsp; <Link href="/auth/login" style={{ color: "#C8860A", fontWeight: 700, textDecoration: "none" }}>Login</Link>
+                  No money collected at this stage &nbsp;·&nbsp; <Link href="/auth/login" style={{ color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>Login</Link>
                 </div>
               </form>
             )}
@@ -285,14 +287,14 @@ export default function OpenAccountClient() {
         <section style={{ padding: "52px 0 44px" }}>
           <Reveal from="blur">
             <h2 style={{ textAlign: "center", fontSize: "clamp(18px,2.6vw,24px)", fontWeight: 900, margin: "0 0 32px", color: pg.navy }}>
-              Why Choose <span style={{ color: "#C8860A" }}>Stockifyy?</span>
+              Why Choose <span style={{ color: "#D4971A" }}>Stockifyy?</span>
             </h2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
             {WHY.map((w, i) => (
               <Reveal key={w.title} delay={i * 70} from="scale">
                 <div style={{ padding: "18px 20px", borderRadius: 12, border: `1.5px solid ${pg.border}`, background: pg.card, display: "flex", gap: 14, alignItems: "flex-start", transition: "box-shadow 0.2s, border-color 0.2s, transform 0.2s" }}
-                  onMouseEnter={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = "#C8860A"; d.style.boxShadow = "0 4px 18px rgba(200,134,10,0.1)"; d.style.transform = "translateY(-2px)"; }}
+                  onMouseEnter={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = "#D4971A"; d.style.boxShadow = "0 4px 18px rgba(200,134,10,0.1)"; d.style.transform = "translateY(-2px)"; }}
                   onMouseLeave={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = pg.border; d.style.boxShadow = "none"; d.style.transform = ""; }}
                 >
                   <div style={{ fontSize: 24, flexShrink: 0 }}>{w.icon}</div>
@@ -310,7 +312,7 @@ export default function OpenAccountClient() {
         <section style={{ padding: "0 0 52px" }}>
           <Reveal from="blur">
             <h2 style={{ textAlign: "center", fontSize: "clamp(18px,2.6vw,24px)", fontWeight: 900, margin: "0 0 32px", color: pg.navy }}>
-              Choose Your <span style={{ color: "#C8860A" }}>Account Type</span>
+              Choose Your <span style={{ color: "#D4971A" }}>Account Type</span>
             </h2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18 }}>
@@ -340,7 +342,7 @@ export default function OpenAccountClient() {
         <section style={{ padding: "0 0 52px" }}>
           <Reveal from="blur">
             <h2 style={{ textAlign: "center", fontSize: "clamp(18px,2.6vw,24px)", fontWeight: 900, margin: "0 0 32px", color: pg.navy }}>
-              How It <span style={{ color: "#C8860A" }}>Works</span>
+              How It <span style={{ color: "#D4971A" }}>Works</span>
             </h2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
@@ -363,7 +365,7 @@ export default function OpenAccountClient() {
         <section style={{ padding: "0 0 52px" }}>
           <Reveal from="blur">
             <h2 style={{ textAlign: "center", fontSize: "clamp(18px,2.6vw,24px)", fontWeight: 900, margin: "0 0 8px", color: pg.navy }}>
-              Stockifyy <span style={{ color: "#C8860A" }}>Premium Services</span>
+              Stockifyy <span style={{ color: "#D4971A" }}>Premium Services</span>
             </h2>
             <p style={{ textAlign: "center", fontSize: 13, color: pg.muted, margin: "0 0 28px", fontWeight: 400 }}>Expert advisory packages — available alongside your account.</p>
           </Reveal>
@@ -398,7 +400,7 @@ export default function OpenAccountClient() {
                 <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400 }}>
                   {["Swing + Trade + Invest + Research Group", "Four opportunities under one roof", "Best value for serious investors"].map(f => <li key={f}>{f}</li>)}
                 </ul>
-                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#C8860A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none" }}>
+                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none" }}>
                   Join Elite Club → 0336-2444466
                 </a>
               </div>
@@ -410,7 +412,7 @@ export default function OpenAccountClient() {
         <section style={{ padding: "0 0 52px" }}>
           <Reveal from="blur">
             <h2 style={{ textAlign: "center", fontSize: "clamp(18px,2.6vw,24px)", fontWeight: 900, margin: "0 0 28px", color: pg.navy }}>
-              Meet the <span style={{ color: "#C8860A" }}>Advisory Team</span>
+              Meet the <span style={{ color: "#D4971A" }}>Advisory Team</span>
             </h2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
@@ -429,7 +431,7 @@ export default function OpenAccountClient() {
           </div>
           <Reveal delay={100}>
             <div style={{ textAlign: "center", marginTop: 16 }}>
-              <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#C8860A", fontWeight: 700, textDecoration: "none" }}>Book a 1-on-1 session → WhatsApp 0336-2444466</a>
+              <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>Book a 1-on-1 session → WhatsApp 0336-2444466</a>
             </div>
           </Reveal>
         </section>
@@ -442,9 +444,9 @@ export default function OpenAccountClient() {
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
           Munir Khanani Securities &nbsp;·&nbsp;
-          <a href="tel:+923362444466" style={{ color: "#C8860A", fontWeight: 700, textDecoration: "none" }}>0336-2444466</a>
+          <a href="tel:+923362444466" style={{ color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>0336-2444466</a>
           &nbsp;·&nbsp;
-          <a href="tel:+923114944443" style={{ color: "#C8860A", fontWeight: 700, textDecoration: "none" }}>0311-4944443</a>
+          <a href="tel:+923114944443" style={{ color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>0311-4944443</a>
           &nbsp;·&nbsp; www.stockifyy.com
         </div>
       </div>
@@ -452,7 +454,7 @@ export default function OpenAccountClient() {
       {/* ── Back to top button ── */}
       {showTop && (
         <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{ position: "fixed", bottom: 28, right: 24, width: 44, height: 44, borderRadius: "50%", background: "#C8860A", color: "#fff", border: "none", fontSize: 18, cursor: "pointer", boxShadow: "0 4px 16px rgba(200,134,10,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s" }}
+          style={{ position: "fixed", bottom: 28, right: 24, width: 44, height: 44, borderRadius: "50%", background: "#D4971A", color: "#fff", border: "none", fontSize: 18, cursor: "pointer", boxShadow: "0 4px 16px rgba(200,134,10,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s" }}
           onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
           onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
         >↑</button>
