@@ -46,19 +46,12 @@ export default function PortalCTA() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
       <style>{`
-        @keyframes gold-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); border-color: #D4971A; }
-          50%       { box-shadow: 0 0 10px 3px rgba(212,175,55,0.45); border-color: #f0cc5a; }
-        }
-        .portal-cta-btn { animation: gold-pulse 2s ease-in-out infinite; }
         .portal-cta-btn:hover {
-          animation: none !important;
           background: #D4971A !important;
           color: #07111F !important;
           border-color: #D4971A !important;
-          box-shadow: 0 0 18px 5px rgba(212,175,55,0.55) !important;
         }
       `}</style>
       <a href="/open-account" className="portal-cta-btn" style={{ ...btnStyle, padding: "8px 24px" }}>

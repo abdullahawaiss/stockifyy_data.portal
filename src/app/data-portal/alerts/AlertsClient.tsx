@@ -70,25 +70,55 @@ function fmt(n: number) {
   return n.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+type StockRow = { symbol: string; name: string; close: string };
+
 function AddAlertModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Omit<PriceAlert, "id" | "createdAt" | "triggered">) => void }) {
-  const [symbol, setSymbol] = useState("");
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<StockRow | null>(null);
+  const [showDrop, setShowDrop] = useState(false);
+  const [allStocks, setAllStocks] = useState<StockRow[]>([]);
   const [condition, setCondition] = useState<"above" | "below">("above");
   const [target, setTarget] = useState("");
 
-  const match = POPULAR.find(s => s === symbol.toUpperCase());
-  const currentPrice = match ? (DEMO_PRICES[match] ?? 0) : 0;
+  useEffect(() => {
+    fetch("/api/portal/stocks?limit=2000")
+      .then(r => r.json())
+      .then(j => {
+        const rows: StockRow[] = (j.stocks ?? j.data ?? []).map((s: { symbol: string; companyName?: string; name?: string; close?: string }) => ({
+          symbol: s.symbol,
+          name: s.companyName ?? s.name ?? s.symbol,
+          close: s.close ?? "0",
+        }));
+        setAllStocks(rows);
+      })
+      .catch(() => {});
+  }, []);
+
+  const hits = useMemo(() => {
+    if (!query) return [];
+    const q = query.toLowerCase();
+    return allStocks.filter(s => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [query, allStocks]);
+
+  const currentPrice = selected ? parseFloat(selected.close) : 0;
+
+  function pick(s: StockRow) {
+    setSelected(s);
+    setQuery(s.symbol);
+    setShowDrop(false);
+  }
 
   function submit() {
     const t = parseFloat(target);
-    if (!symbol || !t) return;
-    onAdd({ symbol: symbol.toUpperCase(), name: symbol.toUpperCase(), condition, targetPrice: t, currentPrice });
+    if (!selected || !t) return;
+    onAdd({ symbol: selected.symbol, name: selected.name, condition, targetPrice: t, currentPrice });
     onClose();
   }
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "var(--card-bg,#fff)", borderRadius: 12, padding: "28px 28px 24px", width: 400, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
+      <div style={{ background: "var(--card-bg,#fff)", borderRadius: 12, padding: "28px 28px 24px", width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 16, color: "var(--navy,#0f172a)" }}>Create Price Alert</div>
@@ -96,12 +126,46 @@ function AddAlertModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Omi
           </div>
           <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 18, color: "var(--text-muted)" }}>✕</button>
         </div>
-        <div style={{ marginBottom: 14 }}>
+
+        {/* Symbol search with dropdown */}
+        <div style={{ marginBottom: 14, position: "relative" }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Symbol</label>
-          <input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="e.g. OGDC"
-            style={{ width: "100%", padding: "9px 12px", border: "1.5px solid var(--border,#e2e8f0)", borderRadius: 8, fontSize: 13, boxSizing: "border-box", background: "var(--background,#f8fafc)" }} />
-          {currentPrice > 0 && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Current: Rs {fmt(currentPrice)}</div>}
+          <input
+            value={query}
+            onChange={e => { setQuery(e.target.value.toUpperCase()); setSelected(null); setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
+            onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+            placeholder="Search symbol or company…"
+            style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${selected ? "#D4971A" : "var(--border,#e2e8f0)"}`, borderRadius: 8, fontSize: 13, boxSizing: "border-box", background: "var(--background,#f8fafc)", outline: "none", textTransform: "uppercase", fontWeight: selected ? 700 : 400 }}
+          />
+          {currentPrice > 0 && (
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+              Current price: <strong style={{ color: "var(--navy)" }}>Rs {fmt(currentPrice)}</strong>
+            </div>
+          )}
+          {showDrop && hits.length > 0 && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100, background: "var(--card-bg,#fff)", border: "1px solid var(--border,#e2e8f0)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", overflow: "hidden", maxHeight: 260, overflowY: "auto" }}>
+              {hits.map(s => (
+                <button key={s.symbol} onMouseDown={() => pick(s)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 14px", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid var(--border,#e2e8f0)", textAlign: "left", gap: 10 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,151,26,0.07)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: "#D4971A" }}>{s.symbol}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{s.name}</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>Rs {parseFloat(s.close).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {showDrop && query.length > 0 && hits.length === 0 && allStocks.length > 0 && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100, background: "var(--card-bg,#fff)", border: "1px solid var(--border,#e2e8f0)", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)" }}>
+              No results for &ldquo;{query}&rdquo;
+            </div>
+          )}
         </div>
+
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Condition</label>
           <select value={condition} onChange={e => setCondition(e.target.value as "above" | "below")}
@@ -117,7 +181,7 @@ function AddAlertModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Omi
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 8, border: "1.5px solid var(--border,#e2e8f0)", background: "none", fontSize: 13, cursor: "pointer", color: "var(--navy)" }}>Cancel</button>
-          <button onClick={submit} style={{ padding: "9px 22px", borderRadius: 8, border: "none", background: "#C8860A", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Create Alert</button>
+          <button onClick={submit} disabled={!selected} style={{ padding: "9px 22px", borderRadius: 8, border: "none", background: selected ? "#D4971A" : "var(--border)", color: selected ? "#07111F" : "var(--text-muted)", fontSize: 13, fontWeight: 700, cursor: selected ? "pointer" : "default" }}>Create Alert</button>
         </div>
       </div>
     </div>
