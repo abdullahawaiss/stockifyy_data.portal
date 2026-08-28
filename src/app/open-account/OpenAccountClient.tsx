@@ -388,10 +388,25 @@ export default function OpenAccountClient() {
             ))}
           </div>
 
-          {/* Elite Club — centered below */}
-          <Reveal delay={120} from="scale">
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ width: "calc(33.33% - 11px)", minWidth: 280, padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box" }}>
+          {/* Swing with Stockifyy + Elite Club — side by side */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+            <Reveal delay={120} from="scale">
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", height: "100%", boxSizing: "border-box" }}>
+                <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+                <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>SWING TRADING</div>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>🔄</div>
+                <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 5 }}>Swing with Stockifyy</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#ffd700", marginBottom: 14 }}>Rs 5,000/mo &nbsp;<span style={{ fontWeight: 400, fontSize: 11, opacity: 0.7 }}>or Rs 15,000/qtr</span></div>
+                <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400 }}>
+                  {["2–10 day swing trade calls", "Entry, target & stop-loss levels", "Risk management guidance", "Members-only WhatsApp group"].map(f => <li key={f}>{f}</li>)}
+                </ul>
+                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none" }}>
+                  Join Now → 0336-2444466
+                </a>
+              </div>
+            </Reveal>
+            <Reveal delay={160} from="scale">
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", height: "100%", boxSizing: "border-box" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>ALL-IN-ONE</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>⭐</div>
@@ -404,8 +419,8 @@ export default function OpenAccountClient() {
                   Join Elite Club → 0336-2444466
                 </a>
               </div>
-            </div>
-          </Reveal>
+            </Reveal>
+          </div>
         </section>
 
         {/* ── Advisory Team ── */}
