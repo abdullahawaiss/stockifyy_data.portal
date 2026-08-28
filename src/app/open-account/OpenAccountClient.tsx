@@ -158,14 +158,11 @@ export default function OpenAccountClient() {
               🕐 <span style={{ fontVariantNumeric: "tabular-nums" }}>{pkTime}</span>
             </div>
           )}
-          {/* Book a Call CTA */}
-          <a href="https://wa.me/923362444466?text=I%20want%20to%20book%20a%20free%20consultation%20with%20Stockifyy" target="_blank" rel="noreferrer" style={{
-            padding: "6px 16px", borderRadius: 20, background: "#D4971A", color: "#07111F",
-            fontWeight: 800, fontSize: 12, textDecoration: "none", whiteSpace: "nowrap",
-            letterSpacing: "0.03em",
-          }}>
-            📅 Book a Free Call
-          </a>
+          {/* Market hours info */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 14px", borderRadius: 20, border: `1px solid ${pg.border}`, fontSize: 11.5, color: pg.muted, fontWeight: 600 }}>
+            <span style={{ fontSize: 13 }}>🕐</span>
+            PSX Trading: Mon–Fri &nbsp;·&nbsp; 9:30 AM – 3:30 PM
+          </div>
           {/* Divider */}
           <div style={{ width: 1, height: 18, background: pg.border }} />
           {/* Quick links */}
@@ -390,10 +387,12 @@ export default function OpenAccountClient() {
             ))}
           </div>
 
-          {/* Swing with Stockifyy + Elite Club — same size as top 3, centered */}
+          {/* Swing with Stockifyy + Elite Club — centered, same width as top-3 cols */}
           <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
+
+            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0 }}>
             <Reveal delay={120} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", flex: "0 0 calc(33.33% - 8px)", maxWidth: "calc(33.33% - 8px)" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>SWING TRADING</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🔄</div>
@@ -407,8 +406,10 @@ export default function OpenAccountClient() {
                 </a>
               </div>
             </Reveal>
+            </div>
+            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0 }}>
             <Reveal delay={160} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", flex: "0 0 calc(33.33% - 8px)", maxWidth: "calc(33.33% - 8px)" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>ALL-IN-ONE</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>⭐</div>
@@ -422,6 +423,7 @@ export default function OpenAccountClient() {
                 </a>
               </div>
             </Reveal>
+            </div>
           </div>
         </section>
 
