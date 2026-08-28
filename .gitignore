@@ -62,3 +62,6 @@ _quarantine/
 # Dev performance/audit docs (optional — remove if you want them in repo)
 # PERFORMANCE_BASELINE.md
 # PERFORMANCE_RESULTS.md
+
+.vercel
+.env*
