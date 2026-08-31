@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { searchPsxStocks, PSX_STOCKS } from "@/lib/psx-stocks-static";
 import { useDarkTokens } from "@/hooks/useDarkMode";
-import { searchPsxStocks } from "@/lib/psx-stocks-static";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface Holding {
   id: string;
   symbol: string;
   name: string;
+  sector: string;
   quantity: number;
   avgPrice: number;
   addedDate: string;
@@ -21,446 +21,632 @@ interface Transaction {
   quantity: number;
   price: number;
   date: string;
-  note?: string;
+  note: string;
 }
 
-interface PriceInfo {
-  price: number;
-  chg: number;
-}
-
-// ── Demo prices ────────────────────────────────────────────────────────────────
-const DEMO_PRICES: Record<string, PriceInfo> = {
-  OGDC: { price: 181.50, chg: -0.66 }, PPL: { price: 89.30, chg: -0.78 },
-  MARI: { price: 2210.0, chg: 0.68 },  HBL: { price: 178.50, chg: 1.02 },
-  UBL: { price: 232.40, chg: 0.91 },   MCB: { price: 219.80, chg: -0.68 },
-  NBP: { price: 43.20, chg: 0.70 },    MEBL: { price: 218.50, chg: 0.83 },
-  LUCK: { price: 1125.0, chg: 0.76 },  DGKC: { price: 97.80, chg: -0.81 },
-  ENGRO: { price: 312.50, chg: 1.13 }, EFERT: { price: 87.60, chg: 0.69 },
-  FFC: { price: 139.30, chg: -0.64 },  HUBC: { price: 107.80, chg: 0.75 },
-  TRG: { price: 101.50, chg: 1.50 },   SYS: { price: 724.0, chg: 1.26 },
-  PTC: { price: 18.80, chg: -1.05 },   FCCL: { price: 22.10, chg: 0.91 },
-  BWCL: { price: 312.0, chg: 0.81 },   PSO: { price: 478.0, chg: 0.95 },
-  SNGP: { price: 28.10, chg: 1.44 },   SEARL: { price: 228.0, chg: 0.88 },
-  MLCF: { price: 40.80, chg: -0.97 },  PSMC: { price: 830.0, chg: 1.47 },
-  INDU: { price: 1702.0, chg: 1.07 },  FFBL: { price: 25.10, chg: 0.80 },
-  FATIMA: { price: 34.80, chg: -0.57 },ILP: { price: 68.0, chg: 0.89 },
-  NML: { price: 138.0, chg: 0.73 },    MUGHAL: { price: 78.50, chg: 0.90 },
-  EPCL: { price: 38.20, chg: 0.79 },   ICI: { price: 832.0, chg: 0.73 },
-  BAFL: { price: 54.60, chg: 0.74 },   ABL: { price: 136.70, chg: 0.66 },
+const DEMO_PRICES: Record<string, { price: number; chg: number; sector: string }> = {
+  OGDC: { price: 181.50, chg: -0.66, sector: "Oil & Gas" },
+  PPL:  { price: 89.30,  chg: -0.78, sector: "Oil & Gas" },
+  MARI: { price: 2210.0, chg: 0.68,  sector: "Oil & Gas" },
+  HBL:  { price: 178.50, chg: 1.02,  sector: "Banks" },
+  UBL:  { price: 232.40, chg: 0.91,  sector: "Banks" },
+  MCB:  { price: 219.80, chg: -0.68, sector: "Banks" },
+  NBP:  { price: 43.20,  chg: 0.70,  sector: "Banks" },
+  MEBL: { price: 218.50, chg: 0.83,  sector: "Banks" },
+  LUCK: { price: 1125.0, chg: 0.76,  sector: "Cement" },
+  DGKC: { price: 97.80,  chg: -0.81, sector: "Cement" },
+  ENGRO:{ price: 312.50, chg: 1.13,  sector: "Fertilizer" },
+  EFERT:{ price: 87.60,  chg: 0.69,  sector: "Fertilizer" },
+  FFC:  { price: 139.30, chg: -0.64, sector: "Fertilizer" },
+  HUBC: { price: 107.80, chg: 0.75,  sector: "Power" },
+  TRG:  { price: 101.50, chg: 1.50,  sector: "Technology" },
+  SYS:  { price: 724.0,  chg: 1.26,  sector: "Technology" },
+  PTC:  { price: 18.80,  chg: -1.05, sector: "Telecom" },
+  FCCL: { price: 22.10,  chg: 0.91,  sector: "Cement" },
+  BWCL: { price: 312.0,  chg: 0.81,  sector: "Cement" },
+  PSO:  { price: 478.0,  chg: 0.95,  sector: "Oil & Gas" },
+  SNGP: { price: 28.10,  chg: 1.44,  sector: "Gas" },
+  SEARL:{ price: 228.0,  chg: 0.88,  sector: "Pharma" },
+  MLCF: { price: 40.80,  chg: -0.97, sector: "Cement" },
+  PSMC: { price: 830.0,  chg: 1.47,  sector: "Auto" },
+  INDU: { price: 1702.0, chg: 1.07,  sector: "Auto" },
+  NML:  { price: 138.0,  chg: 0.73,  sector: "Textile" },
+  ICI:  { price: 832.0,  chg: 0.73,  sector: "Chemicals" },
+  BAFL: { price: 54.60,  chg: 0.74,  sector: "Banks" },
+  ABL:  { price: 136.70, chg: 0.66,  sector: "Banks" },
 };
 
-const POPULAR_SYMBOLS = Object.keys(DEMO_PRICES);
-
-function getPrice(sym: string): PriceInfo {
-  return DEMO_PRICES[sym] ?? { price: 100, chg: 0 };
+function getPrice(sym: string) {
+  return DEMO_PRICES[sym] ?? { price: 100, chg: 0, sector: "Other" };
+}
+function getSector(sym: string) {
+  const d = DEMO_PRICES[sym];
+  if (d) return d.sector;
+  const s = PSX_STOCKS.find(x => x.symbol === sym);
+  return s?.sector ?? "Other";
+}
+function fmt(n: number, d = 2) {
+  if (!isFinite(n)) return "—";
+  return n.toLocaleString("en-PK", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fmtShort(n: number) {
+  if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+  if (Math.abs(n) >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return fmt(n);
 }
 
-function fmt(n: number, dec = 2): string {
-  return n.toLocaleString("en-PK", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-}
+const LS_HOLD = "stockifyy_portfolio_holdings";
+const LS_TX   = "stockifyy_portfolio_tx";
+function loadHoldings(): Holding[] { try { return JSON.parse(localStorage.getItem(LS_HOLD) ?? "[]"); } catch { return []; } }
+function saveHoldings(h: Holding[]) { try { localStorage.setItem(LS_HOLD, JSON.stringify(h)); } catch {} }
+function loadTx(): Transaction[] { try { return JSON.parse(localStorage.getItem(LS_TX) ?? "[]"); } catch { return []; } }
+function saveTx(t: Transaction[]) { try { localStorage.setItem(LS_TX, JSON.stringify(t)); } catch {} }
 
-function pctColor(v: number): string {
-  return v > 0 ? "#16A34A" : v < 0 ? "#DC2626" : "#6b7280";
-}
-
-const LS_KEY = "stockifyy_portfolio_v1";
-const LS_HIST = "stockifyy_portfolio_history_v1";
-
-function loadHoldings(): Holding[] {
-  try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
-}
-function saveHoldings(h: Holding[]) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(h)); } catch {}
-}
-function loadHistory(): Transaction[] {
-  try { const raw = localStorage.getItem(LS_HIST); return raw ? JSON.parse(raw) : []; } catch { return []; }
-}
-function saveHistory(h: Transaction[]) {
-  try { localStorage.setItem(LS_HIST, JSON.stringify(h)); } catch {}
-}
-
-// ── Add Stock Modal ────────────────────────────────────────────────────────────
-function AddStockModal({ onClose, onAdd }: {
-  onClose: () => void;
-  onAdd: (h: Omit<Holding, "id">, txType: "BUY") => void;
-}) {
-  const t = useDarkTokens();
-  const [symbol, setSymbol] = useState("");
-  const [name, setName] = useState("");
-  const [qty, setQty] = useState("");
-  const [avgPrice, setAvgPrice] = useState("");
-  const [symSuggestions, setSymSuggestions] = useState<string[]>([]);
-
-  const handleSymbolChange = (val: string) => {
-    const upper = val.toUpperCase();
-    setSymbol(upper);
-    if (upper.length >= 1) {
-      const staticSuggestions = searchPsxStocks(upper, 12).map(s => s.symbol);
-      setSymSuggestions(staticSuggestions.length > 0 ? staticSuggestions : POPULAR_SYMBOLS.filter(s => s.startsWith(upper)).slice(0, 6));
-      fetch(`/api/portal/companies?search=${encodeURIComponent(upper)}&limit=50`)
-        .then(r => r.json())
-        .then(j => { const syms = (j.data ?? []).map((c: { symbol: string }) => c.symbol); if (syms.length > 0) setSymSuggestions(syms); })
-        .catch(() => {});
-    } else {
-      setSymSuggestions([]);
-    }
-    if (DEMO_PRICES[upper]) setAvgPrice(DEMO_PRICES[upper].price.toString());
-  };
-
-  const selectSymbol = (sym: string) => {
-    setSymbol(sym); setSymSuggestions([]);
-    if (DEMO_PRICES[sym]) setAvgPrice(DEMO_PRICES[sym].price.toString());
-  };
-
-  const handleSubmit = () => {
-    const q = parseFloat(qty), p = parseFloat(avgPrice);
-    if (!symbol.trim() || isNaN(q) || q <= 0 || isNaN(p) || p <= 0) return;
-    onAdd({ symbol: symbol.trim().toUpperCase(), name: name.trim() || symbol.trim().toUpperCase(), quantity: q, avgPrice: p, addedDate: new Date().toISOString().slice(0, 10) }, "BUY");
-    onClose();
-  };
-
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 12px", borderRadius: 6, border: `1px solid ${t.border}`, background: t.inputBg ?? t.bg, color: t.text, fontSize: 13, outline: "none", boxSizing: "border-box" };
-  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 5 };
-
+// SVG Donut for sector allocation
+function DonutChart({ slices }: { slices: { label: string; value: number; color: string }[] }) {
+  const total = slices.reduce((a, s) => a + s.value, 0);
+  if (total === 0) return <div style={{ width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>No data</div>;
+  const r = 60, cx = 80, cy = 80;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: t.bg, borderRadius: 12, width: 360, maxWidth: "calc(100vw - 32px)", padding: "22px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: `1px solid ${t.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: t.text }}>Add Stock to Portfolio</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: t.textMuted, cursor: "pointer", lineHeight: 1 }}>×</button>
-        </div>
-        <div style={{ marginBottom: 14, position: "relative" }}>
-          <label style={labelStyle}>Stock Symbol</label>
-          <input value={symbol} onChange={e => handleSymbolChange(e.target.value)} placeholder="e.g. OGDC, HBL, LUCK" style={inputStyle} autoFocus />
-          {symSuggestions.length > 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: t.bg, border: `1px solid ${t.border}`, borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", overflow: "hidden" }}>
-              {symSuggestions.map(s => (
-                <button key={s} onClick={() => selectSymbol(s)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "none", border: "none", borderBottom: `1px solid ${t.border}`, cursor: "pointer", fontSize: 12, fontWeight: 700, color: t.text }}>
-                  {s} <span style={{ fontWeight: 400, color: t.textMuted, fontSize: 11 }}>— Rs {fmt(getPrice(s).price)}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{ marginBottom: 14 }}><label style={labelStyle}>Company Name (optional)</label><input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Oil & Gas Dev. Co." style={inputStyle} /></div>
-        <div style={{ marginBottom: 14 }}><label style={labelStyle}>Quantity (Shares)</label><input value={qty} onChange={e => setQty(e.target.value)} placeholder="e.g. 500" type="number" min="1" style={inputStyle} /></div>
-        <div style={{ marginBottom: 20 }}><label style={labelStyle}>Average Buy Price (Rs)</label><input value={avgPrice} onChange={e => setAvgPrice(e.target.value)} placeholder="e.g. 175.50" type="number" min="0" step="0.01" style={inputStyle} /></div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${t.border}`, background: "transparent", color: t.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-          <button onClick={handleSubmit} style={{ flex: 2, padding: "9px", borderRadius: 7, border: "none", background: "var(--gold)", color: "#07111F", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>+ Add to Portfolio</button>
-        </div>
-      </div>
-    </div>
+    <svg width={160} height={160} viewBox="0 0 160 160">
+      {slices.map((s, i) => {
+        const frac = s.value / total;
+        const dash = circ * frac;
+        const el = (
+          <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth={22}
+            strokeDasharray={`${dash} ${circ - dash}`}
+            strokeDashoffset={circ * 0.25 - offset * circ}
+          />
+        );
+        offset += frac;
+        return el;
+      })}
+      <circle cx={cx} cy={cy} r={46} fill="var(--card-bg,#fff)" />
+    </svg>
   );
 }
 
-// ── Sell Modal ────────────────────────────────────────────────────────────────
-function SellModal({ holding, onClose, onSell }: {
-  holding: Holding;
-  onClose: () => void;
-  onSell: (id: string, qty: number, price: number) => void;
-}) {
-  const t = useDarkTokens();
-  const [qty, setQty] = useState("");
-  const [price, setPrice] = useState(getPrice(holding.symbol).price.toString());
-
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 12px", borderRadius: 6, border: `1px solid ${t.border}`, background: t.inputBg ?? t.bg, color: t.text, fontSize: 13, outline: "none", boxSizing: "border-box" };
-  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 5 };
-
-  const q = parseFloat(qty), p = parseFloat(price);
-  const profit = (q && p) ? (p - holding.avgPrice) * q : null;
-
-  const handleSell = () => {
-    if (!q || q <= 0 || q > holding.quantity || !p || p <= 0) return;
-    onSell(holding.id, q, p);
-    onClose();
-  };
-
+// SVG Bar chart for P&L by stock
+function BarChart({ data }: { data: { label: string; value: number }[] }) {
+  if (!data.length) return null;
+  const max = Math.max(...data.map(d => Math.abs(d.value)), 1);
+  const bw = 28, gap = 10, h = 120, pad = 20;
+  const w = data.length * (bw + gap) + pad * 2;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: t.bg, borderRadius: 12, width: 360, maxWidth: "calc(100vw - 32px)", padding: "22px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: `1px solid ${t.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: t.text }}>Sell <span style={{ color: "#DC2626" }}>{holding.symbol}</span></h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: t.textMuted, cursor: "pointer" }}>×</button>
-        </div>
-        <div style={{ marginBottom: 6, padding: "10px 12px", background: "rgba(220,38,38,0.06)", borderRadius: 8, border: "1px solid rgba(220,38,38,0.15)", fontSize: 12, color: t.textMuted }}>
-          You hold <strong style={{ color: t.text }}>{holding.quantity.toLocaleString()} shares</strong> at avg <strong style={{ color: t.text }}>Rs {fmt(holding.avgPrice)}</strong>
-        </div>
-        <div style={{ marginBottom: 14, marginTop: 14 }}><label style={labelStyle}>Shares to Sell (max {holding.quantity})</label><input value={qty} onChange={e => setQty(e.target.value)} placeholder={`1 – ${holding.quantity}`} type="number" min="1" max={holding.quantity} style={inputStyle} autoFocus /></div>
-        <div style={{ marginBottom: 14 }}><label style={labelStyle}>Sell Price (Rs)</label><input value={price} onChange={e => setPrice(e.target.value)} placeholder="Current market price" type="number" min="0" step="0.01" style={inputStyle} /></div>
-        {profit !== null && (
-          <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 8, background: profit >= 0 ? "rgba(22,163,74,0.08)" : "rgba(220,38,38,0.08)", border: `1px solid ${profit >= 0 ? "rgba(22,163,74,0.2)" : "rgba(220,38,38,0.2)"}` }}>
-            <span style={{ fontSize: 11, color: t.textMuted }}>Estimated P/L: </span>
-            <strong style={{ fontSize: 14, color: profit >= 0 ? "#16A34A" : "#DC2626" }}>{profit >= 0 ? "+" : ""}Rs {fmt(profit)} ({profit >= 0 ? "+" : ""}{fmt(((p - holding.avgPrice) / holding.avgPrice) * 100)}%)</strong>
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${t.border}`, background: "transparent", color: t.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-          <button onClick={handleSell} disabled={!q || q <= 0 || q > holding.quantity || !p || p <= 0} style={{ flex: 2, padding: "9px", borderRadius: 7, border: "none", background: "#DC2626", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Sell Shares</button>
-        </div>
-      </div>
+    <div style={{ overflowX: "auto" }}>
+      <svg width={Math.max(w, 300)} height={h + 40} viewBox={`0 0 ${Math.max(w, 300)} ${h + 40}`}>
+        {data.map((d, i) => {
+          const barH = Math.max(2, (Math.abs(d.value) / max) * (h - 20));
+          const x = pad + i * (bw + gap);
+          const color = d.value >= 0 ? "#16a34a" : "#dc2626";
+          const barY = h - barH;
+          return (
+            <g key={d.label}>
+              <rect x={x} y={barY} width={bw} height={barH} rx={4} fill={color} opacity={0.85} />
+              <text x={x + bw / 2} y={h + 14} textAnchor="middle" fontSize={10} fill="#94a3b8">{d.label}</text>
+              <text x={x + bw / 2} y={barY - 4} textAnchor="middle" fontSize={9} fill={color} fontWeight="700">
+                {d.value >= 0 ? "+" : ""}{fmtShort(d.value)}
+              </text>
+            </g>
+          );
+        })}
+        <line x1={pad - 4} y1={h} x2={Math.max(w, 300) - 4} y2={h} stroke="var(--border,#e2e8f0)" strokeWidth={1} />
+      </svg>
     </div>
   );
 }
 
-// ── History Tab ────────────────────────────────────────────────────────────────
-function HistoryTab({ history }: { history: Transaction[] }) {
-  const t = useDarkTokens();
-  const sorted = useMemo(() => [...history].sort((a, b) => b.date.localeCompare(a.date)), [history]);
+type SortKey = "symbol" | "qty" | "avgPrice" | "curPrice" | "value" | "pnlPct" | "dayChg";
 
-  if (sorted.length === 0) return (
-    <div style={{ padding: "80px 20px", textAlign: "center" }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-      <p style={{ fontSize: 15, fontWeight: 700, color: t.text, margin: "0 0 6px" }}>No transactions yet</p>
-      <p style={{ fontSize: 12, color: t.textMuted, margin: 0 }}>Your buy/sell history will appear here</p>
-    </div>
-  );
-
-  return (
-    <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bg, overflow: "hidden" }}>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 620 }}>
-          <thead>
-            <tr style={{ background: t.tableTh ?? t.bg }}>
-              {["Date", "Type", "Symbol", "Company", "Quantity", "Price", "Total Value", "P/L"].map(h => (
-                <th key={h} style={{ padding: "10px 14px", textAlign: h === "Date" || h === "Type" || h === "Symbol" || h === "Company" ? "left" : "right", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: t.textMuted, borderBottom: `2px solid ${t.border}`, whiteSpace: "nowrap" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((tx, i) => {
-              const total = tx.quantity * tx.price;
-              const curPrice = getPrice(tx.symbol).price;
-              const pl = tx.type === "BUY" ? (curPrice - tx.price) * tx.quantity : null;
-              const tdStyle: React.CSSProperties = { padding: "11px 14px", fontSize: 12, color: t.text, borderBottom: i < sorted.length - 1 ? `1px solid ${t.border}` : "none", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
-              return (
-                <tr key={tx.id} onMouseEnter={e => (e.currentTarget.style.background = t.bgLight ?? "rgba(0,0,0,0.02)")} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  <td style={tdStyle}>{tx.date}</td>
-                  <td style={tdStyle}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontWeight: 700, fontSize: 11, background: tx.type === "BUY" ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: tx.type === "BUY" ? "#16A34A" : "#DC2626" }}>
-                      {tx.type === "BUY" ? "▲ BUY" : "▼ SELL"}
-                    </span>
-                  </td>
-                  <td style={{ ...tdStyle, fontWeight: 800, color: "var(--gold)" }}>{tx.symbol}</td>
-                  <td style={{ ...tdStyle, color: t.textMuted, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>{tx.name}</td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>{tx.quantity.toLocaleString()}</td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(tx.price)}</td>
-                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>Rs {fmt(total)}</td>
-                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: pl === null ? t.textMuted : pctColor(pl) }}>
-                    {pl === null ? "—" : `${pl >= 0 ? "+" : ""}Rs ${fmt(Math.abs(pl))}`}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────────
 export default function PortfolioLive() {
-  const t = useDarkTokens();
+  const tk = useDarkTokens();
   const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [history, setHistory] = useState<Transaction[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [sellHolding, setSellHolding] = useState<Holding | null>(null);
+  const [txHistory, setTxHistory] = useState<Transaction[]>([]);
+  const [activeTab, setActiveTab] = useState<"holdings" | "transactions" | "analytics">("holdings");
+  const [showAddModal, setShowAddModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<"holdings" | "history">("holdings");
+  const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [sortAsc, setSortAsc] = useState(false);
+
+  // Add form state
+  const [addSym, setAddSym] = useState("");
+  const [addName, setAddName] = useState("");
+  const [addQty, setAddQty] = useState("");
+  const [addAvg, setAddAvg] = useState("");
+  const [addDate, setAddDate] = useState(new Date().toISOString().slice(0, 10));
+  const [addSearch, setAddSearch] = useState("");
+  const [addSuggs, setAddSuggs] = useState<{ symbol: string; name: string }[]>([]);
+
+  // Tx form state
+  const [txSym, setTxSym] = useState("");
+  const [txName, setTxName] = useState("");
+  const [txType, setTxType] = useState<"BUY"|"SELL">("BUY");
+  const [txQty, setTxQty] = useState("");
+  const [txPrice, setTxPrice] = useState("");
+  const [txDate, setTxDate] = useState(new Date().toISOString().slice(0, 10));
+  const [txNote, setTxNote] = useState("");
+  const [txSearch, setTxSearch] = useState("");
+  const [txSuggs, setTxSuggs] = useState<{ symbol: string; name: string }[]>([]);
 
   useEffect(() => {
-    setHoldings(loadHoldings());
-    setHistory(loadHistory());
     setMounted(true);
+    setHoldings(loadHoldings());
+    setTxHistory(loadTx());
   }, []);
 
-  const addHolding = useCallback((h: Omit<Holding, "id">, txType: "BUY") => {
-    setHoldings(prev => {
-      const existing = prev.find(x => x.symbol === h.symbol);
-      let next: Holding[];
-      if (existing) {
-        next = prev.map(x => {
-          if (x.symbol !== h.symbol) return x;
-          const totalShares = x.quantity + h.quantity;
-          const avgP = (x.quantity * x.avgPrice + h.quantity * h.avgPrice) / totalShares;
-          return { ...x, quantity: totalShares, avgPrice: Math.round(avgP * 100) / 100 };
-        });
-      } else {
-        next = [...prev, { ...h, id: Date.now().toString() }];
-      }
-      saveHoldings(next);
-      return next;
-    });
-    const tx: Transaction = { id: Date.now().toString() + Math.random(), symbol: h.symbol, name: h.name, type: txType, quantity: h.quantity, price: h.avgPrice, date: new Date().toISOString().slice(0, 10) };
-    setHistory(prev => { const next = [tx, ...prev]; saveHistory(next); return next; });
-  }, []);
-
-  const sellHoldingFn = useCallback((id: string, qty: number, price: number) => {
-    setHoldings(prev => {
-      const h = prev.find(x => x.id === id);
-      if (!h) return prev;
-      const tx: Transaction = { id: Date.now().toString() + Math.random(), symbol: h.symbol, name: h.name, type: "SELL", quantity: qty, price, date: new Date().toISOString().slice(0, 10) };
-      setHistory(p => { const next = [tx, ...p]; saveHistory(next); return next; });
-      let next: Holding[];
-      if (qty >= h.quantity) {
-        next = prev.filter(x => x.id !== id);
-      } else {
-        next = prev.map(x => x.id !== id ? x : { ...x, quantity: x.quantity - qty });
-      }
-      saveHoldings(next);
-      return next;
-    });
-  }, []);
-
-  const removeHolding = useCallback((id: string) => {
-    setHoldings(prev => { const next = prev.filter(h => h.id !== id); saveHoldings(next); return next; });
-  }, []);
+  useEffect(() => { if (mounted) saveHoldings(holdings); }, [holdings, mounted]);
+  useEffect(() => { if (mounted) saveTx(txHistory); }, [txHistory, mounted]);
 
   const summary = useMemo(() => {
-    let marketValue = 0, costBasis = 0, todayPL = 0;
-    for (const h of holdings) {
-      const { price, chg } = getPrice(h.symbol);
-      const mv = h.quantity * price, cb = h.quantity * h.avgPrice;
-      const prevPrice = price / (1 + chg / 100);
-      marketValue += mv; costBasis += cb; todayPL += h.quantity * (price - prevPrice);
-    }
-    const totalPL = marketValue - costBasis;
-    const totalPct = costBasis > 0 ? (totalPL / costBasis) * 100 : 0;
-    const todayPct = marketValue > 0 ? (todayPL / (marketValue - todayPL)) * 100 : 0;
-    return { marketValue, costBasis, totalPL, totalPct, todayPL, todayPct };
+    let invested = 0, currentVal = 0, todayChg = 0;
+    holdings.forEach(h => {
+      const p = getPrice(h.symbol);
+      invested += h.quantity * h.avgPrice;
+      currentVal += h.quantity * p.price;
+      todayChg += h.quantity * p.price * (p.chg / 100);
+    });
+    const pnl = currentVal - invested;
+    const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+    // Naive XIRR estimate: annualized based on avg hold period
+    const xirrEst = pnlPct * 1.2; // rough proxy
+    return { invested, currentVal, pnl, pnlPct, todayChg, xirrEst };
   }, [holdings]);
 
-  const cardStyle: React.CSSProperties = { background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 20px", flex: 1, minWidth: 140 };
+  const sectorAlloc = useMemo(() => {
+    const map: Record<string, number> = {};
+    holdings.forEach(h => {
+      const p = getPrice(h.symbol);
+      const v = h.quantity * p.price;
+      const sec = getSector(h.symbol);
+      map[sec] = (map[sec] ?? 0) + v;
+    });
+    const COLORS = ["#D4971A","#16a34a","#2563eb","#7c3aed","#0891b2","#dc2626","#f59e0b","#10b981","#6366f1","#ec4899"];
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, value], i) => ({ label, value, color: COLORS[i % COLORS.length] }));
+  }, [holdings]);
 
-  if (!mounted) return (
-    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading portfolio…</div>
-  );
+  const top3Holdings = useMemo(() => {
+    return [...holdings]
+      .map(h => ({ ...h, curVal: h.quantity * getPrice(h.symbol).price }))
+      .sort((a, b) => b.curVal - a.curVal)
+      .slice(0, 3);
+  }, [holdings]);
+
+  const sortedHoldings = useMemo(() => {
+    return [...holdings].sort((a, b) => {
+      const pa = getPrice(a.symbol), pb = getPrice(b.symbol);
+      const vals: Record<SortKey, number> = {
+        symbol: a.symbol.localeCompare(b.symbol) * (sortAsc ? 1 : -1),
+        qty: (a.quantity - b.quantity) * (sortAsc ? 1 : -1),
+        avgPrice: (a.avgPrice - b.avgPrice) * (sortAsc ? 1 : -1),
+        curPrice: (pa.price - pb.price) * (sortAsc ? 1 : -1),
+        value: (a.quantity * pa.price - b.quantity * pb.price) * (sortAsc ? 1 : -1),
+        pnlPct: (((pa.price - a.avgPrice) / a.avgPrice) - ((pb.price - b.avgPrice) / b.avgPrice)) * (sortAsc ? 1 : -1),
+        dayChg: (pa.chg - pb.chg) * (sortAsc ? 1 : -1),
+      };
+      return vals[sortKey];
+    });
+  }, [holdings, sortKey, sortAsc]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortAsc(v => !v);
+    else { setSortKey(key); setSortAsc(false); }
+  }
+
+  const addHolding = useCallback(() => {
+    if (!addSym || !addQty || !addAvg) return;
+    const qty = parseFloat(addQty), avg = parseFloat(addAvg);
+    if (!isFinite(qty) || !isFinite(avg) || qty <= 0 || avg <= 0) return;
+    setHoldings(prev => {
+      const existing = prev.find(h => h.symbol === addSym);
+      if (existing) {
+        return prev.map(h => h.symbol === addSym
+          ? { ...h, quantity: h.quantity + qty, avgPrice: (h.avgPrice * h.quantity + avg * qty) / (h.quantity + qty) }
+          : h);
+      }
+      return [...prev, { id: Date.now().toString(), symbol: addSym, name: addName, sector: getSector(addSym), quantity: qty, avgPrice: avg, addedDate: addDate }];
+    });
+    setAddSym(""); setAddName(""); setAddQty(""); setAddAvg(""); setAddSearch(""); setShowAddModal(false);
+  }, [addSym, addName, addQty, addAvg, addDate]);
+
+  const addTransaction = useCallback(() => {
+    if (!txSym || !txQty || !txPrice) return;
+    const qty = parseFloat(txQty), price = parseFloat(txPrice);
+    if (!isFinite(qty) || !isFinite(price)) return;
+    setTxHistory(prev => [...prev, { id: Date.now().toString(), symbol: txSym, name: txName, type: txType, quantity: qty, price, date: txDate, note: txNote }]);
+    setTxSym(""); setTxName(""); setTxQty(""); setTxPrice(""); setTxNote(""); setTxSearch("");
+  }, [txSym, txName, txType, txQty, txPrice, txDate, txNote]);
+
+  const card = tk.dark ? "#0A1825" : "#ffffff";
+  const border = tk.dark ? "rgba(255,255,255,0.08)" : "#E2E8F0";
+  const text = tk.dark ? "#BDD0E8" : "#07111F";
+  const muted = tk.dark ? "#5C8099" : "#718096";
+  const bg = tk.dark ? "#0E1F30" : "#F8F6F1";
+  const navy = "#07111F";
+  const gold = "#D4971A";
+
+  const INP: React.CSSProperties = {
+    width: "100%", boxSizing: "border-box", padding: "9px 12px",
+    border: `1.5px solid ${border}`, borderRadius: 8, fontSize: 13,
+    background: tk.dark ? "#07111F" : "#F8F6F1", color: text, outline: "none",
+  };
+
+  const pnlColor = summary.pnl >= 0 ? "#16a34a" : "#dc2626";
+
+  if (!mounted) return null;
 
   return (
-    <div style={{ padding: "16px 20px", fontFamily: "inherit" }} suppressHydrationWarning>
+    <div style={{ minHeight: "100vh", background: bg, padding: "24px 20px", color: text, fontFamily: "inherit" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
-      {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}><span style={{ color: t.text }}>My</span> <span style={{ color: "#C8860A" }}>Portfolio</span></h1>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: t.textMuted }}>Track your PSX holdings &amp; P&amp;L</p>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: text, margin: 0 }}>Portfolio Tracker</h1>
+            <p style={{ fontSize: 13, color: muted, margin: "4px 0 0" }}>Track your PSX holdings, P&L, and performance</p>
+          </div>
+          <button onClick={() => setShowAddModal(true)} style={{
+            padding: "10px 20px", background: `linear-gradient(135deg, ${gold}, #B8810E)`,
+            color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: "pointer",
+          }}>+ Add Holding</button>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#07111F", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          + Add Stock
-        </button>
-      </div>
 
-      {/* ── Summary Cards ── */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
-        {[
-          { label: "MARKET VALUE",  value: `Rs ${fmt(summary.marketValue)}`, sub: null },
-          { label: "COST BASIS",    value: `Rs ${fmt(summary.costBasis)}`,   sub: null },
-          { label: "TOTAL P&L",    value: `${summary.totalPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.totalPL))}`, sub: `${summary.totalPct >= 0 ? "+" : ""}${fmt(summary.totalPct)}%`, color: pctColor(summary.totalPL) },
-          { label: "TODAY P&L",    value: `${summary.todayPL >= 0 ? "+" : ""}Rs ${fmt(Math.abs(summary.todayPL))}`, sub: `${summary.todayPct >= 0 ? "+" : ""}${fmt(summary.todayPct)}%`, color: pctColor(summary.todayPL) },
-        ].map(c => (
-          <div key={c.label} style={cardStyle}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, letterSpacing: "0.07em", marginBottom: 6 }}>{c.label}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: (c as any).color ?? t.text, fontVariantNumeric: "tabular-nums" }}>{c.value}</div>
-            {c.sub && <div style={{ fontSize: 11, fontWeight: 600, color: (c as any).color, marginTop: 2 }}>{c.sub}</div>}
-          </div>
-        ))}
-      </div>
+        {/* Main Layout */}
+        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
 
-      {/* ── Tabs ── */}
-      <div style={{ display: "flex", gap: 2, marginBottom: 16, borderBottom: `2px solid ${t.border}` }}>
-        {[
-          { id: "holdings" as const, label: `Holdings`, count: holdings.length },
-          { id: "history" as const, label: "History", count: history.length },
-        ].map(tb => (
-          <button key={tb.id} onClick={() => setTab(tb.id)} style={{
-            padding: "9px 20px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13,
-            background: "transparent", borderBottom: `2px solid ${tab === tb.id ? "#C8860A" : "transparent"}`,
-            marginBottom: -2, color: tab === tb.id ? "#C8860A" : t.textMuted, transition: "all 150ms",
-          }}>
-            {tb.label}
-            <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 600, padding: "1px 7px", borderRadius: 12, background: tab === tb.id ? "rgba(200,134,10,0.12)" : (t.bgLight ?? "rgba(0,0,0,0.05)"), color: tab === tb.id ? "#C8860A" : t.textMuted }}>
-              {tb.count}
-            </span>
-          </button>
-        ))}
-      </div>
+          {/* LEFT: Summary Panel */}
+          <div>
+            {/* Portfolio Value Card */}
+            <div style={{ background: `linear-gradient(135deg, ${navy}, #0E2D47)`, borderRadius: 16, padding: "20px", marginBottom: 16, color: "#fff" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Current Value</div>
+              <div style={{ fontSize: 30, fontWeight: 900, fontVariantNumeric: "tabular-nums", marginBottom: 4 }}>₨ {fmtShort(summary.currentVal)}</div>
+              <div style={{ fontSize: 13, color: pnlColor, fontWeight: 700, marginBottom: 16 }}>
+                {summary.pnl >= 0 ? "+" : ""}₨ {fmtShort(summary.pnl)} ({summary.pnlPct >= 0 ? "+" : ""}{fmt(summary.pnlPct)}%)
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  { label: "Invested", value: "₨ " + fmtShort(summary.invested) },
+                  { label: "Today's Chg", value: (summary.todayChg >= 0 ? "+" : "") + "₨ " + fmtShort(summary.todayChg), color: summary.todayChg >= 0 ? "#4ade80" : "#f87171" },
+                  { label: "Total P&L %", value: (summary.pnlPct >= 0 ? "+" : "") + fmt(summary.pnlPct) + "%", color: pnlColor === "#16a34a" ? "#4ade80" : "#f87171" },
+                  { label: "Est. XIRR", value: (summary.xirrEst >= 0 ? "+" : "") + fmt(summary.xirrEst) + "%", color: "#D4971A" },
+                ].map(it => (
+                  <div key={it.label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>{it.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: it.color ?? "#fff", fontVariantNumeric: "tabular-nums" }}>{it.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-      {/* ── Holdings Tab ── */}
-      {tab === "holdings" && (
-        holdings.length === 0 ? (
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 12, padding: "80px 20px", textAlign: "center", background: t.bg }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>💼</div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: t.text, margin: "0 0 6px" }}>No holdings yet</p>
-            <p style={{ fontSize: 12, color: t.textMuted, margin: "0 0 20px" }}>Add your first PSX stock to start tracking</p>
-            <button onClick={() => setShowAdd(true)} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#07111F", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-              Add your first stock
-            </button>
-          </div>
-        ) : (
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bg, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 780 }}>
-                <thead>
-                  <tr style={{ background: t.tableTh ?? t.bg }}>
-                    {["Symbol", "Company", "Qty", "Avg Price", "Cur Price", "Invested", "Market Val", "P&L", "P&L%", "Today", ""].map(h => (
-                      <th key={h} style={{ padding: "10px 12px", textAlign: h === "Symbol" || h === "Company" || h === "" ? "left" : "right", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: t.textMuted, borderBottom: `2px solid ${t.border}`, whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {holdings.map((h, i) => {
-                    const { price, chg } = getPrice(h.symbol);
-                    const invested = h.quantity * h.avgPrice, marketVal = h.quantity * price;
-                    const pl = marketVal - invested, plPct = invested > 0 ? (pl / invested) * 100 : 0;
-                    const prevPrice = price / (1 + chg / 100), todayPL = h.quantity * (price - prevPrice);
-                    const plColor = pctColor(pl);
-                    const tdStyle: React.CSSProperties = { padding: "11px 12px", fontSize: 12, color: t.text, borderBottom: i < holdings.length - 1 ? `1px solid ${t.border}` : "none", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
-                    return (
-                      <tr key={h.id} onMouseEnter={e => (e.currentTarget.style.background = t.bgLight ?? "transparent")} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                        <td style={{ ...tdStyle, fontWeight: 800, color: "var(--gold)" }}>{h.symbol}</td>
-                        <td style={{ ...tdStyle, color: t.textSec ?? t.textMuted, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{h.name || h.symbol}</td>
-                        <td style={{ ...tdStyle, textAlign: "right" }}>{h.quantity.toLocaleString()}</td>
-                        <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(h.avgPrice)}</td>
-                        <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(price)}</td>
-                        <td style={{ ...tdStyle, textAlign: "right" }}>Rs {fmt(invested)}</td>
-                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>Rs {fmt(marketVal)}</td>
-                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: plColor }}>{pl >= 0 ? "+" : ""}Rs {fmt(Math.abs(pl))}</td>
-                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: plColor }}>{plPct >= 0 ? "+" : ""}{fmt(plPct)}%</td>
-                        <td style={{ ...tdStyle, textAlign: "right", color: pctColor(todayPL) }}>{todayPL >= 0 ? "+" : ""}Rs {fmt(Math.abs(todayPL))}</td>
-                        <td style={{ ...tdStyle, textAlign: "right" }}>
-                          <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                            <button onClick={() => setSellHolding(h)} title="Sell shares" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#DC2626", cursor: "pointer", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 5 }}>Sell</button>
-                            <button onClick={() => removeHolding(h.id)} title="Remove" style={{ background: "none", border: "none", color: t.textMuted, cursor: "pointer", fontSize: 14, opacity: 0.5, padding: "2px 6px", borderRadius: 4, lineHeight: 1 }}
-                              onMouseEnter={e => (e.currentTarget.style.opacity = "1")} onMouseLeave={e => (e.currentTarget.style.opacity = "0.5")}>✕</button>
+            {/* Sector Donut */}
+            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>Sector Allocation</div>
+              {sectorAlloc.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                  <DonutChart slices={sectorAlloc} />
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
+                    {sectorAlloc.slice(0, 6).map(s => {
+                      const total = sectorAlloc.reduce((a, x) => a + x.value, 0);
+                      const pct = total > 0 ? (s.value / total * 100) : 0;
+                      return (
+                        <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: text }}>{s.label}</span>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: muted }}>{pct.toFixed(1)}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : <div style={{ textAlign: "center", color: muted, fontSize: 13, padding: "20px 0" }}>No holdings yet</div>}
             </div>
-            <div style={{ padding: "10px 12px", borderTop: `1px solid ${t.border}`, display: "flex", justifyContent: "flex-end", gap: 24, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, color: t.textMuted }}>{holdings.length} holding{holdings.length !== 1 ? "s" : ""}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: t.text }}>Invested: <span style={{ color: "var(--gold)" }}>Rs {fmt(summary.costBasis)}</span></span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: t.text }}>Value: <span style={{ fontVariantNumeric: "tabular-nums" }}>Rs {fmt(summary.marketValue)}</span></span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: pctColor(summary.totalPL) }}>Total P&amp;L: {summary.totalPL >= 0 ? "+" : ""}Rs {fmt(Math.abs(summary.totalPL))} ({summary.totalPct >= 0 ? "+" : ""}{fmt(summary.totalPct)}%)</span>
+
+            {/* Top 3 Holdings */}
+            {top3Holdings.length > 0 && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>Top Holdings</div>
+                {top3Holdings.map((h, i) => {
+                  const p = getPrice(h.symbol);
+                  const pnlPct = ((p.price - h.avgPrice) / h.avgPrice) * 100;
+                  const totalVal = h.quantity * p.price;
+                  const totalPortVal = summary.currentVal || 1;
+                  const weight = (totalVal / totalPortVal) * 100;
+                  return (
+                    <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 2 ? 10 : 0, paddingBottom: i < 2 ? 10 : 0, borderBottom: i < 2 ? `1px solid ${border}` : "none" }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: gold + "20", color: gold, fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        #{i + 1}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: text }}>{h.symbol}</div>
+                        <div style={{ fontSize: 10, color: muted }}>{weight.toFixed(1)}% of portfolio</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: pnlPct >= 0 ? "#16a34a" : "#dc2626" }}>
+                          {pnlPct >= 0 ? "+" : ""}{fmt(pnlPct)}%
+                        </div>
+                        <div style={{ fontSize: 10, color: muted }}>₨ {fmtShort(totalVal)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: Tabs Panel */}
+          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 16, overflow: "hidden" }}>
+            {/* Tab Bar */}
+            <div style={{ display: "flex", borderBottom: `1px solid ${border}` }}>
+              {(["holdings", "transactions", "analytics"] as const).map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                  padding: "14px 22px", background: "none", border: "none", cursor: "pointer",
+                  fontWeight: activeTab === tab ? 700 : 500, fontSize: 14,
+                  color: activeTab === tab ? gold : muted,
+                  borderBottom: activeTab === tab ? `2px solid ${gold}` : "2px solid transparent",
+                  transition: "all 0.15s", textTransform: "capitalize",
+                }}>{tab}</button>
+              ))}
+            </div>
+
+            <div style={{ padding: "20px" }}>
+              {/* HOLDINGS TAB */}
+              {activeTab === "holdings" && (
+                <div>
+                  {sortedHoldings.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "60px 20px", color: muted }}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No holdings yet</div>
+                      <div style={{ fontSize: 13 }}>Click "+ Add Holding" to start tracking your portfolio</div>
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: navy }}>
+                            {([
+                              ["symbol","Symbol"],["qty","Qty"],["avgPrice","Avg Price"],["curPrice","Cur Price"],
+                              ["value","Value (PKR)"],["pnlPct","P&L %"],["dayChg","Day Chg"],
+                            ] as [SortKey, string][]).map(([key, label]) => (
+                              <th key={key} onClick={() => toggleSort(key)} style={{
+                                padding: "9px 12px", textAlign: "right", color: "rgba(255,255,255,0.8)",
+                                fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase",
+                                cursor: "pointer", whiteSpace: "nowrap", userSelect: "none",
+                              }}>
+                                {label} {sortKey === key ? (sortAsc ? "▲" : "▼") : ""}
+                              </th>
+                            ))}
+                            <th style={{ padding: "9px 12px", color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 700 }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedHoldings.map(h => {
+                            const p = getPrice(h.symbol);
+                            const val = h.quantity * p.price;
+                            const pnl = val - h.quantity * h.avgPrice;
+                            const pnlPct = ((p.price - h.avgPrice) / h.avgPrice) * 100;
+                            const pColor = pnl >= 0 ? "#16a34a" : "#dc2626";
+                            const dColor = p.chg >= 0 ? "#16a34a" : "#dc2626";
+                            return (
+                              <tr key={h.id} style={{ borderBottom: `1px solid ${border}` }}
+                                onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                                <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                                  <span style={{ background: navy, color: gold, fontWeight: 800, fontSize: 12, padding: "2px 8px", borderRadius: 5 }}>{h.symbol}</span>
+                                </td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(h.quantity, 0)}</td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(h.avgPrice)}</td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmt(p.price)}</td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{fmtShort(val)}</td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: pColor, fontWeight: 700 }}>
+                                  {pnlPct >= 0 ? "+" : ""}{fmt(pnlPct)}%
+                                </td>
+                                <td style={{ padding: "10px 12px", textAlign: "right", color: dColor, fontWeight: 600 }}>
+                                  {p.chg >= 0 ? "+" : ""}{fmt(p.chg)}%
+                                </td>
+                                <td style={{ padding: "10px 12px", textAlign: "center" }}>
+                                  <button onClick={() => setHoldings(prev => prev.filter(x => x.id !== h.id))} style={{
+                                    background: "#dc262610", color: "#dc2626", border: "none", borderRadius: 6,
+                                    padding: "3px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700,
+                                  }}>Remove</button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TRANSACTIONS TAB */}
+              {activeTab === "transactions" && (
+                <div>
+                  {/* Add transaction form */}
+                  <div style={{ background: tk.dark ? "rgba(255,255,255,0.03)" : "#F8F6F1", borderRadius: 12, padding: "16px", marginBottom: 20, border: `1px solid ${border}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 12 }}>Record Transaction</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10 }}>
+                      <div style={{ position: "relative" }}>
+                        <input value={txSearch} onChange={e => { setTxSearch(e.target.value); setTxSuggs(searchPsxStocks(e.target.value, 6)); }}
+                          placeholder="Symbol..." style={INP} />
+                        {txSuggs.length > 0 && (
+                          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: card, border: `1px solid ${border}`, borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", maxHeight: 200, overflowY: "auto" }}>
+                            {txSuggs.map(s => (
+                              <button key={s.symbol} onClick={() => { setTxSym(s.symbol); setTxName(s.name); setTxSearch(s.symbol); setTxSuggs([]); const p = getPrice(s.symbol); setTxPrice(p.price.toString()); }}
+                                style={{ display: "block", width: "100%", padding: "8px 12px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 12, color: text, borderBottom: `1px solid ${border}` }}>
+                                <strong>{s.symbol}</strong> — {s.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <select value={txType} onChange={e => setTxType(e.target.value as "BUY"|"SELL")} style={{ ...INP, background: txType === "BUY" ? "#16a34a18" : "#dc262618" }}>
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                      </select>
+                      <input type="number" value={txQty} onChange={e => setTxQty(e.target.value)} placeholder="Quantity" style={INP} />
+                      <input type="number" value={txPrice} onChange={e => setTxPrice(e.target.value)} placeholder="Price" style={INP} />
+                      <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} style={INP} />
+                      <input value={txNote} onChange={e => setTxNote(e.target.value)} placeholder="Note (optional)" style={INP} />
+                    </div>
+                    <button onClick={addTransaction} style={{
+                      marginTop: 12, padding: "9px 20px", background: `linear-gradient(135deg, ${gold}, #B8810E)`,
+                      color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                    }}>Record</button>
+                  </div>
+
+                  {/* Tx History */}
+                  {txHistory.length === 0 ? (
+                    <div style={{ textAlign: "center", color: muted, padding: "40px 0", fontSize: 13 }}>No transactions recorded yet</div>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: navy }}>
+                            {["Date","Symbol","Type","Qty","Price","Total","Note"].map(c => (
+                              <th key={c} style={{ padding: "9px 12px", textAlign: "right", color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{c}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...txHistory].reverse().map(tx => (
+                            <tr key={tx.id} style={{ borderBottom: `1px solid ${border}` }}
+                              onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                              <td style={{ padding: "9px 12px", textAlign: "right", color: muted }}>{tx.date}</td>
+                              <td style={{ padding: "9px 12px", textAlign: "right" }}>
+                                <span style={{ background: navy, color: gold, fontWeight: 800, fontSize: 11, padding: "2px 7px", borderRadius: 4 }}>{tx.symbol}</span>
+                              </td>
+                              <td style={{ padding: "9px 12px", textAlign: "right" }}>
+                                <span style={{ color: tx.type === "BUY" ? "#16a34a" : "#dc2626", fontWeight: 700, fontSize: 12 }}>{tx.type}</span>
+                              </td>
+                              <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(tx.quantity, 0)}</td>
+                              <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(tx.price)}</td>
+                              <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{fmtShort(tx.quantity * tx.price)}</td>
+                              <td style={{ padding: "9px 12px", textAlign: "right", color: muted, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.note || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ANALYTICS TAB */}
+              {activeTab === "analytics" && (
+                <div>
+                  {holdings.length === 0 ? (
+                    <div style={{ textAlign: "center", color: muted, padding: "60px 0", fontSize: 13 }}>Add holdings to see analytics</div>
+                  ) : (
+                    <div>
+                      {/* P&L Bar Chart */}
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 12 }}>P&L by Stock</div>
+                        <BarChart data={holdings.map(h => {
+                          const p = getPrice(h.symbol);
+                          return { label: h.symbol, value: h.quantity * (p.price - h.avgPrice) };
+                        })} />
+                      </div>
+
+                      {/* Best/Worst */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+                        {(() => {
+                          const sorted = holdings.map(h => {
+                            const p = getPrice(h.symbol);
+                            return { ...h, pnlPct: ((p.price - h.avgPrice) / h.avgPrice) * 100 };
+                          }).sort((a, b) => b.pnlPct - a.pnlPct);
+                          const best = sorted[0], worst = sorted[sorted.length - 1];
+                          return [
+                            { label: "Best Performer", stock: best, color: "#16a34a" },
+                            { label: "Worst Performer", stock: worst, color: "#dc2626" },
+                          ].map(({ label, stock, color }) => stock ? (
+                            <div key={label} style={{ background: color + "10", border: `1px solid ${color}30`, borderRadius: 12, padding: "14px 16px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
+                              <div style={{ fontSize: 18, fontWeight: 800, color }}>{stock.symbol}</div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color }}>{stock.pnlPct >= 0 ? "+" : ""}{fmt(stock.pnlPct)}%</div>
+                            </div>
+                          ) : null);
+                        })()}
+                      </div>
+
+                      {/* Sector Allocation Table */}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 10 }}>Sector Breakdown</div>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: navy }}>
+                            {["Sector","Value (PKR)","Weight %"].map(c => (
+                              <th key={c} style={{ padding: "8px 12px", textAlign: "right", color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{c}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sectorAlloc.map(s => {
+                            const total = sectorAlloc.reduce((a, x) => a + x.value, 0);
+                            const pct = total > 0 ? (s.value / total * 100) : 0;
+                            return (
+                              <tr key={s.label} style={{ borderBottom: `1px solid ${border}` }}>
+                                <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: "inline-block" }} />
+                                    {s.label}
+                                  </span>
+                                </td>
+                                <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtShort(s.value)}</td>
+                                <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: s.color }}>{fmt(pct)}%</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        )
+        </div>
+      </div>
+
+      {/* Add Holding Modal */}
+      {showAddModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: card, borderRadius: 16, padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: text }}>Add Holding</h3>
+              <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: muted, fontSize: 20 }}>✕</button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ position: "relative" }}>
+                <input value={addSearch} onChange={e => { setAddSearch(e.target.value); setAddSuggs(searchPsxStocks(e.target.value, 6)); }}
+                  placeholder="Search symbol..." style={INP} />
+                {addSuggs.length > 0 && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: card, border: `1px solid ${border}`, borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", maxHeight: 200, overflowY: "auto" }}>
+                    {addSuggs.map(s => (
+                      <button key={s.symbol} onClick={() => { setAddSym(s.symbol); setAddName(s.name); setAddSearch(s.symbol); setAddSuggs([]); const p = getPrice(s.symbol); setAddAvg(p.price.toString()); }}
+                        style={{ display: "block", width: "100%", padding: "8px 12px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 12, color: text, borderBottom: `1px solid ${border}` }}>
+                        <strong style={{ color: gold }}>{s.symbol}</strong> — {s.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input type="number" value={addQty} onChange={e => setAddQty(e.target.value)} placeholder="Quantity (shares)" style={INP} />
+              <input type="number" value={addAvg} onChange={e => setAddAvg(e.target.value)} placeholder="Average Buy Price (PKR)" style={INP} />
+              <input type="date" value={addDate} onChange={e => setAddDate(e.target.value)} style={INP} />
+            </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: "10px", background: "none", border: `1px solid ${border}`, borderRadius: 8, color: muted, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button onClick={addHolding} style={{ flex: 2, padding: "10px", background: `linear-gradient(135deg, ${gold}, #B8810E)`, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>Add to Portfolio</button>
+            </div>
+          </div>
+        </div>
       )}
-
-      {/* ── History Tab ── */}
-      {tab === "history" && <HistoryTab history={history} />}
-
-      <p style={{ fontSize: 10, color: t.textMuted, marginTop: 10, textAlign: "center" }}>
-        Prices are indicative demo data · Portfolio saved locally in your browser
-      </p>
-
-      {showAdd && <AddStockModal onClose={() => setShowAdd(false)} onAdd={addHolding} />}
-      {sellHolding && <SellModal holding={sellHolding} onClose={() => setSellHolding(null)} onSell={sellHoldingFn} />}
     </div>
   );
 }
