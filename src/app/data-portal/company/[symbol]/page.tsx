@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PSX_STOCKS } from "@/lib/psx-stocks-static";
 import { getCompanyDetail } from "@/lib/psx-company-details";
 import { db } from "@/db";
 import { companies, dailyStockPrices, weeklyStockPrices, sectors, companyAnnouncements } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { formatNumber, formatVolume, formatPct, formatChange, getWeekLabel } from "@/lib/utils";
 import { getPsxRow } from "@/lib/psx-live";
+import CompanyClient from "./CompanyClient";
 
 interface Props { params: Promise<{ symbol: string }> }
 
@@ -100,218 +99,26 @@ export default async function CompanyPage({ params }: Props) {
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
 
-  const { company, latestDaily, latestWeekly, recentDaily, recentWeekly, announcements, fromLive } = await getCompanyData(sym);
+  const { company, latestDaily, latestWeekly, recentDaily, recentWeekly, announcements } = await getCompanyData(sym);
 
   if (!company) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-12 text-center">
-        <p className="text-lg font-semibold" style={{ color: "var(--navy)" }}>Symbol not found: {sym}</p>
-        <Link href="/data-portal/stocks" className="text-sm mt-3 inline-block hover:underline" style={{ color: "var(--gold)" }}>
-          ← Back to Stocks
-        </Link>
+      <div style={{ maxWidth: 600, margin: "80px auto", textAlign: "center", padding: "0 24px" }}>
+        <p style={{ fontSize: 18, fontWeight: 600, color: "var(--navy)", marginBottom: 12 }}>Symbol not found: {sym}</p>
+        <a href="/data-portal/stocks" style={{ fontSize: 14, color: "var(--gold)" }}>← Back to Stocks</a>
       </div>
     );
   }
 
-  const dailyPct = formatPct(latestDaily?.percentageChange);
-  const weeklyPct = formatPct(latestWeekly?.weeklyPctChange);
-
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
-      {/* Breadcrumb */}
-      <nav className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-        <Link href="/data-portal/companies" className="hover:underline">Companies</Link>
-        {" / "}
-        <span style={{ color: "var(--navy)", fontWeight: 600 }}>{sym}</span>
-        {fromLive && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px]" style={{ background: "rgba(212,175,55,0.15)", color: "var(--gold)" }}>Live</span>}
-      </nav>
-
-      {/* Company header */}
-      <div className="card p-5 mb-5">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>{sym}</h1>
-              {company.shariahStatus === "compliant" && (
-                <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: "#D1FAE5", color: "#065F46" }}>Shariah Compliant</span>
-              )}
-            </div>
-            <p className="text-base font-medium mb-1" style={{ color: "var(--text-secondary)" }}>{company.name}</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{company.sectorName ?? "—"} · Listed: {company.listingDate ?? "—"}</p>
-          </div>
-          <div className="text-right">
-            {latestDaily ? (
-              <>
-                <p className="text-3xl font-bold" style={{ color: "var(--navy)" }}>PKR {formatNumber(latestDaily.close)}</p>
-                <p className="text-base font-semibold mt-1" style={{ color: dailyPct.positive === true ? "var(--positive)" : dailyPct.positive === false ? "var(--negative)" : "var(--neutral)" }}>
-                  {formatChange(latestDaily.priceChange).text} ({dailyPct.text}) Daily
-                </p>
-                {latestWeekly && (
-                  <p className="text-sm font-medium" style={{ color: weeklyPct.positive === true ? "var(--positive)" : weeklyPct.positive === false ? "var(--negative)" : "var(--neutral)" }}>
-                    {weeklyPct.text} Weekly
-                  </p>
-                )}
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>As of {latestDaily.tradingDate}</p>
-              </>
-            ) : (
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>No price data available</p>
-            )}
-          </div>
-        </div>
-
-        {latestDaily && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-            {[
-              { l: "Open", v: formatNumber(latestDaily.open) },
-              { l: "High", v: formatNumber(latestDaily.high) },
-              { l: "Low", v: formatNumber(latestDaily.low) },
-              { l: "Volume", v: formatVolume(latestDaily.volume) },
-              { l: "52W High", v: formatNumber(latestDaily.weekHigh52) },
-              { l: "52W Low", v: formatNumber(latestDaily.weekLow52) },
-            ].map((s) => (
-              <div key={s.l} className="text-center">
-                <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>{s.l}</p>
-                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{s.v}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Daily data */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="card">
-            <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-              Recent Daily Data
-            </div>
-            {recentDaily.length === 0 ? (
-              <p className="px-4 py-6 text-sm" style={{ color: "var(--text-muted)" }}>No daily data.</p>
-            ) : (
-              <div className="table-scroll">
-                <table className="w-full text-sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
-                  <thead>
-                    <tr style={{ background: "var(--light-bg)" }}>
-                      {["Date", "Close", "Open", "High", "Low", "Chg %", "Volume"].map((h) => (
-                        <th key={h} className="px-3 py-2 text-xs font-semibold uppercase tracking-wider border-b text-right first:text-left" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentDaily.map((r, i) => {
-                      const pct = formatPct(r.percentageChange);
-                      return (
-                        <tr key={r.tradingDate + i} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}>
-                          <td className="px-3 py-2 border-b text-left" style={{ borderColor: "var(--border)" }}>{r.tradingDate}</td>
-                          <td className="px-3 py-2 border-b text-right font-medium" style={{ borderColor: "var(--border)" }}>{formatNumber(r.close)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatNumber(r.open)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--positive)" }}>{formatNumber(r.high)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--negative)" }}>{formatNumber(r.low)}</td>
-                          <td className="px-3 py-2 border-b text-right font-semibold" style={{ borderColor: "var(--border)", color: pct.positive === true ? "var(--positive)" : pct.positive === false ? "var(--negative)" : "var(--neutral)" }}>{pct.text}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatVolume(r.volume)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Weekly data */}
-          {recentWeekly.length > 0 && (
-            <div className="card">
-              <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-                Recent Weekly Data
-              </div>
-              <div className="table-scroll">
-                <table className="w-full text-sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
-                  <thead>
-                    <tr style={{ background: "var(--light-bg)" }}>
-                      {["Week", "W. Close", "W. Open", "W. High", "W. Low", "W. Chg %", "W. Volume", "Sessions"].map((h) => (
-                        <th key={h} className="px-3 py-2 text-xs font-semibold uppercase tracking-wider border-b text-right first:text-left" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentWeekly.map((r, i) => {
-                      const pct = formatPct(r.weeklyPctChange);
-                      return (
-                        <tr key={r.weekStartDate} style={{ background: i % 2 === 0 ? "var(--white)" : "var(--light-bg)" }}>
-                          <td className="px-3 py-2 border-b text-left text-xs" style={{ borderColor: "var(--border)" }}>{getWeekLabel(r.weekStartDate)}</td>
-                          <td className="px-3 py-2 border-b text-right font-medium" style={{ borderColor: "var(--border)" }}>{formatNumber(r.weeklyClose)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatNumber(r.weeklyOpen)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--positive)" }}>{formatNumber(r.weeklyHigh)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--negative)" }}>{formatNumber(r.weeklyLow)}</td>
-                          <td className="px-3 py-2 border-b text-right font-semibold" style={{ borderColor: "var(--border)", color: pct.positive === true ? "var(--positive)" : pct.positive === false ? "var(--negative)" : "var(--neutral)" }}>{pct.text}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>{formatVolume(r.totalWeeklyVolume)}</td>
-                          <td className="px-3 py-2 border-b text-right" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>{r.tradingSessionsCount}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-5">
-          {/* Company info */}
-          <div className="card p-4">
-            <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--navy)" }}>Company Information</h2>
-            <div className="space-y-2">
-              {[
-                { l: "Symbol", v: sym },
-                { l: "Full Name", v: company.name },
-                { l: "Sector", v: company.sectorName ?? "—" },
-                { l: "Listing Date", v: company.listingDate ?? "—" },
-                { l: "Fiscal Year End", v: company.fiscalYearEnd ?? "—" },
-                { l: "Shariah Status", v: company.shariahStatus ?? "—" },
-                { l: "Free Float", v: company.freeFloat ? company.freeFloat + "%" : "—" },
-                { l: "Website", v: company.website ?? "—" },
-              ].map((item) => (
-                <div key={item.l} className="flex justify-between py-1.5 border-b" style={{ borderColor: "var(--border)" }}>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.l}</span>
-                  <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>{item.v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Announcements */}
-          {announcements.length > 0 && (
-            <div className="card">
-              <div className="px-4 py-3 border-b font-semibold text-sm" style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-                Recent Announcements
-              </div>
-              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-                {announcements.map((a) => (
-                  <div key={a.id} className="px-4 py-3">
-                    <p className="text-xs font-medium leading-snug" style={{ color: "var(--text-primary)" }}>{a.title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{a.announcementDate} · {a.announcementType}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="card p-4">
-            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--navy)" }}>More Tools</h3>
-            {[
-              { label: "Historical Data for " + sym, href: `/data-portal/historical-data?symbol=${sym}` },
-              { label: "Compare with other stocks", href: `/data-portal/screener` },
-              { label: "All Announcements", href: `/data-portal/announcements?symbol=${sym}` },
-            ].map((link) => (
-              <Link key={link.href} href={link.href} className="block py-2 text-sm border-b hover:opacity-70" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>
-                {link.label} <span style={{ color: "var(--gold)" }}>→</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    <CompanyClient
+      company={company}
+      latestDaily={latestDaily}
+      latestWeekly={latestWeekly}
+      recentDaily={recentDaily}
+      recentWeekly={recentWeekly}
+      announcements={announcements}
+      sym={sym}
+    />
   );
 }
