@@ -226,87 +226,157 @@ export default function ReportsClient() {
     Fundamental: REPORTS.filter(r => r.type === "Fundamental").length,
   }), []);
 
-  const featured = filtered.filter(r => r.featured);
-  const byType = (t: ReportType) => filtered.filter(r => !r.featured && r.type === t);
+  const allTags = useMemo(() => {
+    const freq: Record<string, number> = {};
+    REPORTS.forEach(r => r.tags.forEach(t => { freq[t] = (freq[t] || 0) + 1; }));
+    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 18).map(([t]) => t);
+  }, []);
 
-  const pillStyle = (f: FilterType): React.CSSProperties => ({
-    display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "7px 16px", borderRadius: 8,
-    background: filter === f ? "#C8860A" : "var(--card-bg,#fff)",
-    color: filter === f ? "#fff" : "var(--text-muted,#64748b)",
-    border: `1.5px solid ${filter === f ? "#C8860A" : "var(--border,#e2e8f0)"}`,
-    fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 150ms",
-  });
+  const featured = filtered.filter(r => r.featured);
+  const rest = filtered.filter(r => !r.featured);
+
+  const FILTERS: [FilterType, string, number][] = [
+    ["All Reports", "📰", counts.all],
+    ["Research",    "🔍", counts.Research],
+    ["Technical",   "📈", counts.Technical],
+    ["Fundamental", "📊", counts.Fundamental],
+  ];
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
+    <div style={{ minHeight: "calc(100vh - 60px)", background: "var(--background)" }}>
       {openReport && <ReportModal r={openReport} onClose={() => setOpenReport(null)} />}
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
-            <span style={{ color: "var(--navy)" }}>Stockifyy</span> <span style={{ color: "#C8860A" }}>Reports</span>
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 0" }}>In-depth research, technical and fundamental analysis by the Stockifyy team</p>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>{filtered.length} report{filtered.length !== 1 ? "s" : ""}</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reports…"
-            style={{ padding: "9px 14px", border: "1.5px solid var(--border,#e2e8f0)", borderRadius: 8, fontSize: 13, background: "var(--background,#f8fafc)", color: "var(--text)", outline: "none", width: 200 }} />
+      {/* ── Page header ── */}
+      <div style={{ background: "linear-gradient(135deg, var(--navy) 0%, #1a3560 100%)", padding: "28px 32px 24px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(212,151,26,0.8)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>STOCKIFYY · RESEARCH DESK</div>
+            <h1 style={{ fontSize: 26, fontWeight: 900, color: "#fff", margin: "0 0 6px", lineHeight: 1.1 }}>
+              Market Reports <span style={{ color: "#D4971A" }}>& Analysis</span>
+            </h1>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", margin: 0 }}>In-depth research, technical and fundamental coverage by the Stockifyy team</p>
+          </div>
+          {/* Stats chips */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {FILTERS.slice(1).map(([type, icon, count]) => {
+              const cfg = TYPE_CONFIG[type as ReportType];
+              return (
+                <div key={type} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "10px 18px", borderRadius: 10, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", minWidth: 80 }}>
+                  <div style={{ fontSize: 18, marginBottom: 3 }}>{icon}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: cfg.color }}>{count}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{type}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
-        {([["All Reports", counts.all], ["Research", counts.Research], ["Technical", counts.Technical], ["Fundamental", counts.Fundamental]] as [string, number][]).map(([label, count]) => {
-          const f = label as FilterType;
-          return (
-            <button key={label} style={pillStyle(f)} onClick={() => setFilter(f)}>
-              {label === "Research" && "🔍 "}{label === "Technical" && "📈 "}{label === "Fundamental" && "📊 "}
-              {label} <span style={{ fontSize: 11, opacity: 0.75, marginLeft: 2 }}>{count}</span>
-            </button>
-          );
-        })}
+      {/* ── Body: sidebar + content ── */}
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 32px", display: "flex", gap: 28, alignItems: "flex-start" }}>
+
+        {/* ── Left sidebar ── */}
+        <div style={{ width: 210, flexShrink: 0, position: "sticky", top: 72 }}>
+          {/* Filter by type */}
+          <div className="card" style={{ padding: "16px 14px", marginBottom: 14 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Filter By Type</div>
+            {FILTERS.map(([f, icon, count]) => (
+              <button key={f} onClick={() => setFilter(f as FilterType)} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                width: "100%", padding: "8px 10px", borderRadius: 8, border: "none",
+                background: filter === f ? "rgba(200,134,10,0.12)" : "transparent",
+                cursor: "pointer", marginBottom: 3,
+                borderLeft: filter === f ? "3px solid #C8860A" : "3px solid transparent",
+              }}>
+                <span style={{ fontSize: 12, fontWeight: filter === f ? 700 : 500, color: filter === f ? "#C8860A" : "var(--text-muted)" }}>{icon} {f}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: filter === f ? "#C8860A" : "var(--border)", color: filter === f ? "#fff" : "var(--text-muted)" }}>{count}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="card" style={{ padding: "12px 14px", marginBottom: 14 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Search</div>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Report title, ticker…"
+              style={{ width: "100%", padding: "8px 10px", border: "1.5px solid var(--border)", borderRadius: 7, fontSize: 12, background: "var(--background)", color: "var(--text)", outline: "none", boxSizing: "border-box" }} />
+            {search && <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</div>}
+          </div>
+
+          {/* Tags cloud */}
+          <div className="card" style={{ padding: "14px" }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Popular Tags</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {allTags.map(tag => (
+                <button key={tag} onClick={() => setSearch(tag)} style={{
+                  padding: "3px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer",
+                  background: search === tag ? "#C8860A" : "var(--border)", color: search === tag ? "#fff" : "var(--text-muted)",
+                  border: "none",
+                }}>{tag}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Main content ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* Featured reports — prominent cards */}
+          {featured.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{ height: 3, width: 24, borderRadius: 2, background: "#C8860A" }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#C8860A", textTransform: "uppercase", letterSpacing: "0.08em" }}>Featured</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
+                {featured.map(r => (
+                  <div key={r.id} onClick={() => setOpenReport(r)} className="card" style={{
+                    padding: "20px", cursor: "pointer", borderTop: `3px solid ${TYPE_CONFIG[r.type].color}`,
+                    transition: "transform 150ms, box-shadow 150ms",
+                  }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.12)"; }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = ""; }}>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+                      <span style={{ padding: "2px 9px", borderRadius: 20, background: TYPE_CONFIG[r.type].bg, color: TYPE_CONFIG[r.type].color, fontSize: 10, fontWeight: 700 }}>{TYPE_CONFIG[r.type].icon} {r.type}</span>
+                      {r.rating && <span style={{ padding: "2px 9px", borderRadius: 20, background: "rgba(22,163,74,0.10)", color: "#16a34a", fontSize: 10, fontWeight: 700 }}>● {r.rating}</span>}
+                      {r.target && <span style={{ padding: "2px 9px", borderRadius: 20, background: "rgba(37,99,235,0.08)", color: "#2563eb", fontSize: 10, fontWeight: 700 }}>🎯 {r.target}</span>}
+                    </div>
+                    <h3 style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 800, color: "var(--navy)", lineHeight: 1.4 }}>{r.title}</h3>
+                    <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>{r.summary}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {r.tags.slice(0,2).map(t => <span key={t} style={{ padding: "2px 7px", borderRadius: 10, background: "var(--border)", color: "var(--text-muted)", fontSize: 10, fontWeight: 600 }}>{t}</span>)}
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>📅 {r.date} · ⏱ {r.readMin}m</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Divider */}
+          {featured.length > 0 && rest.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>All Reports</span>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            </div>
+          )}
+
+          {/* Report grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+            {rest.map(r => <ReportCard key={r.id} r={r} onClick={() => setOpenReport(r)} />)}
+          </div>
+
+          {filtered.length === 0 && (
+            <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+              No reports match your search. Try different keywords or clear the filter.
+              {search && <button onClick={() => setSearch("")} style={{ display: "block", margin: "12px auto 0", padding: "7px 16px", border: "none", background: "#C8860A", color: "#fff", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Clear Search</button>}
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Featured */}
-      {featured.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px", background: "#C8860A", borderRadius: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>⭐ Featured Reports</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 14 }}>
-            {featured.map(r => <ReportCard key={r.id} r={r} onClick={() => setOpenReport(r)} />)}
-          </div>
-        </div>
-      )}
-
-      {/* By type sections */}
-      {(["Research", "Technical", "Fundamental"] as ReportType[]).map(type => {
-        const reps = byType(type);
-        if (!reps.length) return null;
-        const cfg = TYPE_CONFIG[type];
-        return (
-          <div key={type} style={{ marginBottom: 28 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px", borderRadius: 8, background: cfg.bg, color: cfg.color, fontSize: 12, fontWeight: 800 }}>
-                {cfg.icon} {type}
-              </span>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{cfg.desc}</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 14 }}>
-              {reps.map(r => <ReportCard key={r.id} r={r} onClick={() => setOpenReport(r)} />)}
-            </div>
-          </div>
-        );
-      })}
-
-      {filtered.length === 0 && (
-        <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
-          No reports match your search. Try different keywords.
-        </div>
-      )}
     </div>
   );
 }

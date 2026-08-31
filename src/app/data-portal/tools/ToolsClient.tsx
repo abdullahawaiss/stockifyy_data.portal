@@ -594,82 +594,137 @@ function Zakat() {
 // ── Calculator registry ───────────────────────────────────────────────────────
 const CALC_MAP: Record<CalcId, React.FC> = { roi: ROI, cagr: CAGR, sip: SIP, compound: Compound, dcf: DCF, tax: SalaryTax, depreciation: Depreciation, fx: FX, zakat: Zakat };
 
+const CALC_DESC: Record<CalcId, string> = {
+  roi:          "Track your investment returns — net profit, ROI %, and annualised gain.",
+  cagr:         "Find the true growth rate of any investment across multiple years.",
+  sip:          "Plan monthly investments and project your wealth over 5–30 years.",
+  compound:     "See how compounding accelerates growth vs simple interest.",
+  dcf:          "Value a stock or business using discounted cash flow analysis.",
+  tax:          "Calculate your Pakistan income tax based on FY 2024-25 slabs.",
+  depreciation: "Build a depreciation schedule — straight line or declining balance.",
+  fx:           "Convert PKR to/from USD, EUR, GBP, AED and 7 more currencies.",
+  zakat:        "Calculate annual Zakat on cash, gold, investments, and business assets.",
+};
+const CALC_TIPS: Record<CalcId, string> = {
+  roi:          "💡 A 10% annual ROI doubles your money in ~7 years (Rule of 72)",
+  cagr:         "💡 PSX KSE-100 has historically delivered 12-15% CAGR over 10 years",
+  sip:          "💡 Rs 10,000/month at 12% return = Rs 23 lakh in 10 years",
+  compound:     "💡 Monthly compounding beats annual compounding by 6-8% over 20 years",
+  dcf:          "💡 Discount rate should be higher than your risk-free rate (T-bills + premium)",
+  tax:          "💡 Declare investments in tax return to reduce effective tax burden legally",
+  depreciation: "💡 Double declining is more aggressive early — useful for high-tech assets",
+  fx:           "💡 Rates are indicative. Always check your bank/forex for live rates",
+  zakat:        "💡 Nisab is approx. 7.5 tola gold or 52.5 tola silver value",
+};
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ToolsClient() {
-  const [active, setActive] = useState<CalcId>("roi");
-  const def = CALCS.find(c => c.id === active)!;
-  const CalcComponent = CALC_MAP[active];
+  const [active, setActive] = useState<CalcId | null>(null);
+
+  if (active !== null) {
+    const def = CALCS.find(c => c.id === active)!;
+    const CalcComponent = CALC_MAP[active];
+    return (
+      <div style={{ minHeight: "calc(100vh - 60px)", background: "var(--background)" }}>
+        {/* Calculator page header */}
+        <div style={{
+          background: `linear-gradient(135deg, ${def.accent}14, ${def.accent}05)`,
+          borderBottom: `2px solid ${def.accent}25`,
+          padding: "20px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => setActive(null)} style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "7px 14px",
+              borderRadius: 8, border: "1.5px solid var(--border)", background: "var(--card-bg)",
+              cursor: "pointer", fontSize: 12, color: "var(--text-muted)", fontWeight: 600,
+            }}>← All Tools</button>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: `${def.accent}18`, border: `2px solid ${def.accent}35`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>
+              {def.icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "var(--navy)" }}>{def.title}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{def.short}</div>
+            </div>
+          </div>
+          {/* Tip */}
+          <div style={{ padding: "8px 16px", borderRadius: 10, background: `${def.accent}10`, border: `1px solid ${def.accent}25`, fontSize: 12, color: "var(--text-muted)", maxWidth: 400, lineHeight: 1.5 }}>
+            {CALC_TIPS[active]}
+          </div>
+        </div>
+        {/* Calculator body */}
+        <div style={{ padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+          <CalcComponent />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Landing — card grid ── */
+  const investCalcs = CALCS.filter(c => ["roi","cagr","sip","compound","dcf"].includes(c.id));
+  const financeCalcs = CALCS.filter(c => ["tax","depreciation","fx","zakat"].includes(c.id));
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: "calc(100vh - 60px)" }}>
+    <div style={{ padding: "28px 32px", background: "var(--background)", minHeight: "calc(100vh - 60px)" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: "var(--navy)", margin: "0 0 6px" }}>
+          Financial <span style={{ color: "#D4971A" }}>Tools</span>
+        </h1>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+          9 professional-grade calculators for Pakistani investors — live results, no button needed.
+        </p>
+      </div>
 
-      {/* ── Left sidebar ── */}
-      <div style={{
-        width: 220, flexShrink: 0, background: "var(--navy)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        display: "flex", flexDirection: "column",
-        position: "sticky", top: 0, height: "100vh", overflowY: "auto",
-      }}>
-        <div style={{ padding: "18px 14px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Financial Tools</div>
+      {/* Investment section */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          📈 Investment Calculators
+          <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
-
-        {/* Investment */}
-        <div style={{ padding: "10px 10px 4px" }}>
-          <div style={{ fontSize: 9.5, fontWeight: 800, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 6px", marginBottom: 2 }}>Investment</div>
-          {CALCS.filter(c => ["roi","cagr","sip","compound","dcf"].includes(c.id)).map(c => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+          {investCalcs.map(c => (
             <button key={c.id} onClick={() => setActive(c.id)} style={{
-              display: "flex", alignItems: "center", gap: 9, width: "100%",
-              padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", textAlign: "left",
-              background: active === c.id ? `${c.accent}22` : "transparent",
-              borderLeft: active === c.id ? `3px solid ${c.accent}` : "3px solid transparent",
-              marginBottom: 2,
-            }}>
-              <span style={{ fontSize: 16 }}>{c.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: active === c.id ? 700 : 500, color: active === c.id ? "#fff" : "rgba(255,255,255,0.55)", lineHeight: 1.3 }}>{c.title}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Tax & Finance */}
-        <div style={{ padding: "4px 10px 10px" }}>
-          <div style={{ fontSize: 9.5, fontWeight: 800, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 6px", marginBottom: 2, marginTop: 8 }}>Tax & Finance</div>
-          {CALCS.filter(c => ["tax","depreciation","fx","zakat"].includes(c.id)).map(c => (
-            <button key={c.id} onClick={() => setActive(c.id)} style={{
-              display: "flex", alignItems: "center", gap: 9, width: "100%",
-              padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", textAlign: "left",
-              background: active === c.id ? `${c.accent}22` : "transparent",
-              borderLeft: active === c.id ? `3px solid ${c.accent}` : "3px solid transparent",
-              marginBottom: 2,
-            }}>
-              <span style={{ fontSize: 16 }}>{c.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: active === c.id ? 700 : 500, color: active === c.id ? "#fff" : "rgba(255,255,255,0.55)", lineHeight: 1.3 }}>{c.title}</span>
+              padding: "22px 20px", borderRadius: 14, border: `1.5px solid ${c.accent}30`,
+              background: `linear-gradient(135deg, ${c.accent}0e, var(--card-bg))`,
+              cursor: "pointer", textAlign: "left", transition: "transform 150ms, box-shadow 150ms",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 28px ${c.accent}22`; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>{c.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>{c.title}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: c.accent, marginBottom: 8 }}>{c.short}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>{CALC_DESC[c.id]}</div>
+              <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: c.accent, fontWeight: 700 }}>Open →</div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Right workspace ── */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        {/* Calculator header */}
-        <div style={{
-          background: `linear-gradient(135deg, ${def.accent}18, ${def.accent}06)`,
-          borderBottom: `2px solid ${def.accent}30`,
-          padding: "18px 28px",
-          display: "flex", alignItems: "center", gap: 14,
-        }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: `${def.accent}20`, border: `1.5px solid ${def.accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
-            {def.icon}
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "var(--navy)" }}>{def.title}</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{def.short}</div>
-          </div>
+      {/* Tax & Finance section */}
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          🧾 Tax & Finance Calculators
+          <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
-
-        {/* Calculator body */}
-        <div style={{ padding: "24px 28px", flex: 1, overflowY: "auto" }}>
-          <CalcComponent />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+          {financeCalcs.map(c => (
+            <button key={c.id} onClick={() => setActive(c.id)} style={{
+              padding: "22px 20px", borderRadius: 14, border: `1.5px solid ${c.accent}30`,
+              background: `linear-gradient(135deg, ${c.accent}0e, var(--card-bg))`,
+              cursor: "pointer", textAlign: "left", transition: "transform 150ms, box-shadow 150ms",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 28px ${c.accent}22`; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>{c.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>{c.title}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: c.accent, marginBottom: 8 }}>{c.short}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>{CALC_DESC[c.id]}</div>
+              <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: c.accent, fontWeight: 700 }}>Open →</div>
+            </button>
+          ))}
         </div>
       </div>
     </div>

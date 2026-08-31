@@ -339,24 +339,27 @@ export default function StocksClient() {
         .filter-box {
           position: relative;
           overflow: hidden;
+          border-top: none !important;
+          border-bottom: none !important;
         }
         .filter-box::before,
         .filter-box::after {
           content: "";
           position: absolute;
           width: 2px;
-          height: 50%;
+          height: 60%;
           pointer-events: none;
+          z-index: 1;
         }
         .filter-box::before {
           left: 0;
-          top: -100%;
+          top: -60%;
           background: linear-gradient(to bottom, transparent, var(--gold), transparent);
           animation: borderSlide 2.2s linear infinite;
         }
         .filter-box::after {
           right: 0;
-          top: -100%;
+          top: -60%;
           background: linear-gradient(to bottom, transparent, var(--navy), transparent);
           animation: borderSlide 2.2s linear infinite 1.1s;
         }
@@ -368,7 +371,10 @@ export default function StocksClient() {
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         style={{
           background: t.bg,
-          border: `1px solid ${t.border}`,
+          borderLeft: `1px solid ${t.border}`,
+          borderRight: `1px solid ${t.border}`,
+          borderTop: "none",
+          borderBottom: "none",
           borderRadius: 10,
           padding: "10px 16px",
           marginBottom: 14,

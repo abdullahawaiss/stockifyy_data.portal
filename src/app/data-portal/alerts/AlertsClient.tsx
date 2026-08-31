@@ -36,12 +36,14 @@ const DEMO_EVENTS: CorporateEvent[] = [
   { symbol: "NBPGETF",companyName: "NBP Pakistan Growth ETF",       sectorName: "ETFs",             type: "Dividend", dps: null },
   { symbol: "OGDC",   companyName: "Oil & Gas Dev. Co. Limited",    sectorName: "Oil & Gas",        type: "Dividend", dps: 6.00 },
   { symbol: "PPL",    companyName: "Pakistan Petroleum Limited",    sectorName: "Oil & Gas",        type: "Dividend", dps: 3.50 },
-  { symbol: "SYS",    companyName: "Systems Limited",               sectorName: "Technology",       type: "Board Meeting", dps: null },
+  { symbol: "SYS",    companyName: "Systems Limited",               sectorName: "Technology",       type: "Board Meeting", dps: 7.50 },
   { symbol: "TRG",    companyName: "TRG Pakistan Limited",          sectorName: "Technology",       type: "Board Meeting", dps: null },
   { symbol: "ENGRO",  companyName: "Engro Corporation Limited",     sectorName: "Fertilizer",       type: "Dividend", dps: 15.00 },
-  { symbol: "LUCK",   companyName: "Lucky Cement Limited",          sectorName: "Cement",           type: "Board Meeting", dps: null },
+  { symbol: "LUCK",   companyName: "Lucky Cement Limited",          sectorName: "Cement",           type: "Board Meeting", dps: 25.00 },
   { symbol: "HBL",    companyName: "Habib Bank Limited",            sectorName: "Commercial Banks", type: "Insider Transaction", dps: null },
   { symbol: "UBL",    companyName: "United Bank Limited",           sectorName: "Commercial Banks", type: "Announcement", dps: null },
+  { symbol: "IPAK",   companyName: "International Packaging Films Ltd", sectorName: "Paper & Board", type: "Board Meeting", dps: 5.00 },
+  { symbol: "FFC",    companyName: "Fauji Fertilizer Co. Ltd",      sectorName: "Fertilizer",       type: "Board Meeting", dps: 12.50 },
 ];
 
 const POPULAR = ["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","PSMC","SYS","TRG","PSO","MARI","FFC","EFERT","HUBC","DGKC","BWCL","NBP","ABL"];

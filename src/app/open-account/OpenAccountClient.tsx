@@ -41,13 +41,13 @@ const STEPS = [
 
 const ACCOUNT_TYPES = [
   { title: "Sahulat Account", badge: "MOST POPULAR", color: "#D4971A", desc: "Perfect for new investors starting their PSX journey.", limit: "Trading Limit: Rs 3,000,000", wa: "03010301246", waDisplay: "0301-0301246", items: ["CNIC / SNIC", "Bank Account", "Signatures", "Email ID", "Registered Mobile"] },
-  { title: "Full PSX Account", badge: "NO LIMIT", color: "#1a6b3a", desc: "Unlimited trading via Munir Khanani Securities.", limit: "No upper trading limit", wa: "923114944443", waDisplay: "0311-4944443", items: ["Same 5 documents", "Biometric verification", "Munir Khanani Securities", "PSX member broker access"] },
+  { title: "Full PSX Account", badge: "NO LIMIT", color: "#1a6b3a", desc: "Unlimited trading via our affiliated PSX member broker.", limit: "No upper trading limit", wa: "923114944443", waDisplay: "0311-4944443", items: ["Same 5 documents", "Biometric verification", "Affiliated PSX member broker", "Full exchange access"] },
   { title: "Overseas (RDA)", badge: "NRP", color: "#1a3a6b", desc: "Overseas Pakistanis investing in PSX via Roshan Digital Account.", limit: "Biometric Exempted", wa: "923114944443", waDisplay: "0311-4944443", items: ["CNIC / NICOP / Passport", "Foreign bank account", "RDA at any Pakistan bank", "No biometric required"] },
 ];
 
 const WHY = [
   { icon: "🏛️", title: "SECP Licensed", desc: "Licence No. SECP/LRD/LD/73/S&A/SIPL/2025" },
-  { icon: "🤝", title: "PSX Member Broker", desc: "Accounts via Munir Khanani Securities" },
+  { icon: "🤝", title: "PSX Member Broker", desc: "Accounts via our affiliated PSX member broker" },
   { icon: "📊", title: "Free Data Portal", desc: "Live heatmap, screener & real-time stock data" },
   { icon: "📞", title: "Dedicated Dealer", desc: "Personal equity dealer assigned to you" },
   { icon: "🎓", title: "26 Live Zoom Sessions", desc: "Monthly Q&A sessions with expert analysts" },
@@ -73,6 +73,7 @@ export default function OpenAccountClient() {
   const [dark, setDark] = useState(false);
   const [form, setForm] = useState({ name: "", mobile: "", type: "sahulat", email: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [formModal, setFormModal] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [pkTime, setPkTime] = useState("");
   const [marketOpen] = useState(false);
@@ -135,6 +136,51 @@ export default function OpenAccountClient() {
 
   return (
     <div style={{ minHeight: "100vh", background: pg.bg, color: pg.text, fontFamily: "inherit", overflowX: "hidden", transition: "background 0.3s, color 0.3s" }}>
+      {/* ── Application Form Modal ── */}
+      {formModal && (
+        <div onClick={e => { if (e.target === e.currentTarget) setFormModal(false); }} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(7,17,31,0.72)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ background: dark ? "#0e1f30" : "#fff", borderRadius: 20, padding: "32px 28px", width: "100%", maxWidth: 460, boxShadow: "0 32px 80px rgba(0,0,0,0.45)", position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
+            <button onClick={() => setFormModal(false)} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94a3b8", lineHeight: 1 }}>✕</button>
+            <div style={{ fontWeight: 900, fontSize: 19, color: dark ? "#fff" : "#07111F", marginBottom: 4 }}>Start Your Application</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 22, fontWeight: 400 }}>Free · No setup fee · Account in 24 hours</div>
+            {submitted ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+                <div style={{ fontWeight: 900, fontSize: 18, color: dark ? "#fff" : "#07111F", marginBottom: 8 }}>Application Received!</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.7, marginBottom: 20 }}>Thank you, <strong>{form.name}</strong>! We&apos;ll call <strong>{form.mobile}</strong> within 24 hours.</div>
+                <button onClick={() => { setSubmitted(false); setFormModal(false); }} style={{ padding: "11px 24px", background: "#D4971A", color: "#fff", border: "none", borderRadius: 9, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>Close</button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {[
+                  { key: "name", label: "Full Name *", placeholder: "As on CNIC", required: true },
+                  { key: "mobile", label: "Mobile Number *", placeholder: "03XX-XXXXXXX", required: true },
+                  { key: "email", label: "Email (optional)", placeholder: "you@example.com", required: false },
+                ].map(({ key, label, placeholder, required }) => (
+                  <div key={key} style={{ marginBottom: 14 }}>
+                    <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{label}</label>
+                    <input required={required} value={form[key as "name"|"mobile"|"email"]} onChange={e => setF(key as "name"|"mobile"|"email", e.target.value)} placeholder={placeholder}
+                      style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box" as const, border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }} />
+                  </div>
+                ))}
+                <div style={{ marginBottom: 22 }}>
+                  <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>Account Type</label>
+                  <select value={form.type} onChange={e => setF("type", e.target.value)} style={{ width: "100%", padding: "10px 13px", borderRadius: 8, boxSizing: "border-box" as const, border: `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`, background: dark ? "#1a2c45" : "#f8fafc", fontSize: 13, color: dark ? "#e2e8f0" : "#1a2035", outline: "none" }}>
+                    <option value="sahulat">Sahulat Account (up to Rs 3M)</option>
+                    <option value="full">Full PSX Account (no limit)</option>
+                    <option value="joint">Joint Account</option>
+                    <option value="rda">Overseas / RDA Account</option>
+                  </select>
+                </div>
+                <button type="submit" style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 900, fontSize: 14, cursor: "pointer", letterSpacing: "0.03em", boxShadow: "0 4px 18px rgba(200,134,10,0.4)" }}>
+                  Submit Application →
+                </button>
+                <div style={{ textAlign: "center", marginTop: 12, fontSize: 11.5, color: "#64748b" }}>No money collected at this stage</div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Sticky Navbar ── */}
       <div style={{
@@ -201,7 +247,7 @@ export default function OpenAccountClient() {
           {/* Left — headline */}
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "4px 16px", borderRadius: 20, border: "1px solid rgba(200,134,10,0.45)", background: "rgba(200,134,10,0.1)", marginBottom: 20, animation: "fadeSlideIn 0.7s ease both" }}>
-              <span style={{ fontSize: 10.5, color: "#D4971A", fontWeight: 800, letterSpacing: "0.08em" }}>SECP LICENSED · PSX MEMBER · MUNIR KHANANI SECURITIES</span>
+              <span style={{ fontSize: 10.5, color: "#D4971A", fontWeight: 800, letterSpacing: "0.08em" }}>SECP LICENSED · PSX MEMBER BROKER · AFFILIATED BROKERAGE</span>
             </div>
             <h1 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, color: dark ? "#fff" : "#07111F", margin: "0 0 14px", lineHeight: 1.12, animation: "fadeSlideIn 0.75s ease 0.1s both" }}>
               Open Your PSX Account<br />
@@ -218,9 +264,9 @@ export default function OpenAccountClient() {
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, animation: "fadeSlideIn 0.75s ease 0.35s both" }}>
-              <a href="#application-form" style={{ padding: "13px 28px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", borderRadius: 10, fontWeight: 900, fontSize: 14, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 18px rgba(200,134,10,0.35)", letterSpacing: "0.02em" }}>
+              <button onClick={() => setFormModal(true)} style={{ padding: "13px 28px", background: "linear-gradient(135deg,#D4971A,#e8a020)", color: "#fff", borderRadius: 10, fontWeight: 900, fontSize: 14, border: "none", cursor: "pointer", boxShadow: "0 4px 18px rgba(200,134,10,0.35)", letterSpacing: "0.02em" }}>
                 Open Account Now →
-              </a>
+              </button>
             </div>
           </div>
 
@@ -388,37 +434,37 @@ export default function OpenAccountClient() {
           </div>
 
           {/* Swing with Stockifyy + Elite Club — centered, same width as top-3 cols */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, alignItems: "stretch" }}>
 
-            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0 }}>
+            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0, display: "flex", flexDirection: "column" }}>
             <Reveal delay={120} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#1a4a2e", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%", display: "flex", flexDirection: "column" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>SWING TRADING</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🔄</div>
                 <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 5 }}>Swing with Stockifyy</div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#ffd700", marginBottom: 14 }}>Rs 5,000/mo &nbsp;<span style={{ fontWeight: 400, fontSize: 11, opacity: 0.7 }}>or Rs 15,000/qtr</span></div>
-                <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400 }}>
+                <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400, flex: 1 }}>
                   {["2–10 day swing trade calls", "Entry, target & stop-loss levels", "Risk management guidance", "Members-only WhatsApp group"].map(f => <li key={f}>{f}</li>)}
                 </ul>
-                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none" }}>
+                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none", marginTop: "auto" }}>
                   Join Now → 0336-2444466
                 </a>
               </div>
             </Reveal>
             </div>
-            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0 }}>
+            <div style={{ flex: "0 0 calc(33.33% - 8px)", minWidth: 0, display: "flex", flexDirection: "column" }}>
             <Reveal delay={160} from="scale">
-              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%" }}>
+              <div style={{ padding: "24px 22px", borderRadius: 16, background: "#7a3a00", color: "#fff", position: "relative", overflow: "hidden", boxSizing: "border-box", height: "100%", display: "flex", flexDirection: "column" }}>
                 <div style={{ position: "absolute", top: -28, right: -28, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                 <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 10, background: "rgba(255,255,255,0.15)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12 }}>ALL-IN-ONE</div>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>⭐</div>
                 <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 5 }}>Elite Club</div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#ffd700", marginBottom: 14 }}>Rs 99,999/year &nbsp;<span style={{ fontWeight: 400, fontSize: 11, opacity: 0.7, textDecoration: "line-through" }}>Rs 175,000</span> &nbsp;<span style={{ fontSize: 11, fontWeight: 700, color: "#86efac" }}>43% off</span></div>
-                <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400 }}>
+                <ul style={{ margin: "0 0 16px", padding: "0 0 0 15px", fontSize: 12, lineHeight: 1.9, color: "rgba(255,255,255,0.85)", fontWeight: 400, flex: 1 }}>
                   {["Swing + Trade + Invest + Research Group", "Four opportunities under one roof", "Best value for serious investors"].map(f => <li key={f}>{f}</li>)}
                 </ul>
-                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none" }}>
+                <a href="https://wa.me/923362444466" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#D4971A", color: "#fff", borderRadius: 8, fontWeight: 800, fontSize: 12, textDecoration: "none", marginTop: "auto" }}>
                   Join Elite Club → 0336-2444466
                 </a>
               </div>
@@ -462,7 +508,7 @@ export default function OpenAccountClient() {
           <strong style={{ color: "#fff" }}>M/S Stock Ifyy (Private) Limited</strong> &nbsp;·&nbsp; SECP Licence: SECP/LRD/LD/73/S&A/SIPL/2025
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-          Munir Khanani Securities &nbsp;·&nbsp;
+          Affiliated PSX Member Broker &nbsp;·&nbsp;
           <a href="tel:+923362444466" style={{ color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>0336-2444466</a>
           &nbsp;·&nbsp;
           <a href="tel:+923114944443" style={{ color: "#D4971A", fontWeight: 700, textDecoration: "none" }}>0311-4944443</a>

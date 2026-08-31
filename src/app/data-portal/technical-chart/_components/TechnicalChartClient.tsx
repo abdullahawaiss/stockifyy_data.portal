@@ -208,7 +208,7 @@ export default function TechnicalChartClient() {
       {/* TradingView iframe with padding on all sides */}
       <div style={{ flex: 1, padding: "20px 20px 16px", background: "var(--background)", boxSizing: "border-box", display: "flex" }}>
         <iframe
-          key={chartUrl}
+          key={rawSymbol}
           src={chartUrl}
           id="tv_chart"
           title={`Technical Chart — PSX:${rawSymbol}`}

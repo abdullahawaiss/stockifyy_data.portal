@@ -34,15 +34,35 @@ function toSimpleRow(a: AnnouncementRow): SimpleRow {
   };
 }
 
+function extractTime(text: string): string {
+  const m = text.match(/\b(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?)/i);
+  return m ? m[1].toUpperCase() : "—";
+}
+function extractPeriod(text: string): string {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+    "January","February","March","April","May","June","July","August","September","October","November","December"];
+  const mPat = months.join("|");
+  let m;
+  m = text.match(new RegExp(`(${mPat})[\\s.]+(\\d{4})`, "i"));
+  if (m) return `${m[1]} ${m[2]}`;
+  m = text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
+  if (m) return m[1];
+  m = text.match(/[Qq](?:tr|uarter)?[. ]?([1-4])[\s,]+(\d{4})/);
+  if (m) return `Q${m[1]} ${m[2]}`;
+  m = text.match(/(?:half|H)(?:year|yr)?[. ]?([12])[\s,]+(\d{4})/i);
+  if (m) return `H${m[1]} ${m[2]}`;
+  return "—";
+}
 function toBoardRow(a: AnnouncementRow) {
   const d = new Date(a.announcementDate);
   const fmt = (dt: Date) => `${String(dt.getDate()).padStart(2,"0")}-${String(dt.getMonth()+1).padStart(2,"0")}-${dt.getFullYear()}`;
+  const fullText = `${a.title} ${a.content ?? ""}`;
   return {
     symbol: a.symbol ?? "—",
     purpose: a.title,
     scheduledDate: fmt(d),
-    time: "—",
-    periodEnded: "",
+    time: extractTime(fullText),
+    periodEnded: extractPeriod(fullText),
   };
 }
 

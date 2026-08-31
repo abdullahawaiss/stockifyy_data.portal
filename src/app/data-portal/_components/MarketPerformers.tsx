@@ -118,7 +118,7 @@ export default function MarketPerformers({ initialData }: { initialData?: Market
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const active    = (summary?.volume  ?? []).slice(0, 12);
+  const active    = (summary?.volume  ?? []).slice(0, 10);
   const advancers = (summary?.gainers ?? []).slice(0, 12);
   const decliners = (summary?.losers  ?? []).slice(0, 12);
 
