@@ -582,7 +582,7 @@ export default function StocksClient() {
                       >
                         <td style={{ padding:"9px 12px", textAlign:"center", color:t.textMuted, fontSize:10, fontVariantNumeric:"tabular-nums" }}>{(page-1)*pageSize+i+1}</td>
                         <td style={{ padding:"9px 12px" }}>
-                          <Link href={`/dashboard/company/${row.symbol}`}
+                          <Link href={`/data-portal/company/${row.symbol}`}
                             style={{ fontWeight:800, color:t.text, fontFamily:"monospace", fontSize:12, letterSpacing:"0.04em", textDecoration:"none" }}
                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color="#16A34A"}
                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=t.text}>
