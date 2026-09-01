@@ -77,7 +77,9 @@ export default function AnnouncementsPage() {
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6">
 
       {/* ── Page title ── */}
-      <h1 className="text-2xl font-black mb-5" style={{ color: "var(--navy)" }}>Announcements</h1>
+      <h1 className="text-2xl font-black mb-5">
+        <span style={{ color: "var(--text-primary)" }}>Announce</span><span style={{ color: "#D4971A" }}>ments</span>
+      </h1>
 
       {/* ── Tabs + Search row ── */}
       <div className="flex flex-wrap items-center gap-0 mb-5 border-b" style={{ borderColor: "var(--border)" }}>

@@ -107,8 +107,9 @@ export default function ShariahClient() {
       {/* ── HEADER ───────────────────────────────────── */}
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 pt-5 pb-2 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: "var(--navy)" }}>
-            <span className="text-2xl">🕌</span> Shariah Compliant Equities
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <span className="text-2xl">🕌</span>
+            <span style={{ color: "var(--text-primary)" }}>Shariah Compliant </span><span style={{ color: "#D4971A" }}>Equities</span>
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
             {COMPANIES.length} screened stocks · {kmiCount} KMI-30 · SECP certified

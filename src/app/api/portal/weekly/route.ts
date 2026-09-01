@@ -77,11 +77,13 @@ export async function GET(req: NextRequest) {
         .where(and(...conditions)),
     ]);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       data: rows,
       pagination: { page, limit, total: Number(count), pages: Math.ceil(Number(count) / limit) },
       weekStart,
     });
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res;
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to fetch weekly data" }, { status: 500 });

@@ -24,7 +24,9 @@ export default async function LogsPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Audit & Import Logs</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Audit &amp; Import </span><span style={{ color: "#D4971A" }}>Logs</span>
+        </h1>
         {dbError && (
           <p className="mt-2 text-sm px-3 py-2 rounded" style={{ background: "#FEF3C7", color: "#92400E", border: "1px solid #FCD34D" }}>
             One or more tables do not exist yet. Run <code className="font-mono font-bold">drizzle-kit push</code> to apply migrations.

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { cachedFetch, TTL_SHORT } from "@/lib/portal-cache";
 
 export default function AnnouncementsPage() {
   const sp = useSearchParams();
@@ -17,8 +18,7 @@ export default function AnnouncementsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), ...(type && { type }), ...(symbol && { symbol }) });
-      const res = await fetch(`/api/portal/announcements?${params}`);
-      const json = await res.json();
+      const json = await cachedFetch<{ data: any[]; pagination: any }>(`/api/portal/announcements?${params}`, TTL_SHORT);
       setData(json.data ?? []);
       setPagination(json.pagination ?? { page: 1, total: 0, pages: 1 });
     } catch { setData([]); } finally { setLoading(false); }
@@ -43,7 +43,9 @@ export default function AnnouncementsPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Company Announcements</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Company </span><span style={{ color: "#D4971A" }}>Announcements</span>
+        </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{pagination.total} announcements</p>
       </div>
 

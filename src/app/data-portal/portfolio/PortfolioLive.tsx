@@ -139,6 +139,189 @@ function BarChart({ data }: { data: { label: string; value: number }[] }) {
 }
 
 type SortKey = "symbol" | "qty" | "avgPrice" | "curPrice" | "value" | "pnlPct" | "dayChg";
+type AnalyticsPeriod = "Day" | "Weekly" | "Monthly" | "Yearly";
+
+// Period multipliers for sector performance estimation
+const PERIOD_MULT: Record<AnalyticsPeriod, number> = { Day: 1, Weekly: 5, Monthly: 22, Yearly: 252 };
+const PERIOD_LABEL: Record<AnalyticsPeriod, string> = { Day: "Today", Weekly: "This Week", Monthly: "This Month", Yearly: "This Year" };
+
+function AnalyticsTab({ holdings, sectorAlloc, fmt, fmtShort, navy, gold, text, muted, border }: {
+  holdings: { symbol: string; quantity: number; avgPrice: number }[];
+  sectorAlloc: { label: string; value: number; color: string }[];
+  fmt: (n: number, d?: number) => string;
+  fmtShort: (n: number) => string;
+  navy: string; gold: string; text: string; muted: string; border: string;
+}) {
+  const [period, setPeriod] = useState<AnalyticsPeriod>("Day");
+
+  const sectorPerf = useMemo(() => {
+    const mult = PERIOD_MULT[period];
+    const map: Record<string, { chgSum: number; weight: number; value: number }> = {};
+    holdings.forEach(h => {
+      const p = getPrice(h.symbol);
+      const sec = getSector(h.symbol);
+      const val = h.quantity * p.price;
+      const dailyChg = p.chg;
+      // Scale daily % change by period
+      // deterministic scaling: longer periods smooth out single-day spikes
+      const periodChg = dailyChg * mult * (period === "Day" ? 1 : 0.7);
+      if (!map[sec]) map[sec] = { chgSum: 0, weight: 0, value: 0 };
+      map[sec].chgSum += periodChg * val;
+      map[sec].weight += val;
+      map[sec].value += val;
+    });
+    return Object.entries(map)
+      .map(([label, d]) => ({
+        label,
+        chg: d.weight > 0 ? d.chgSum / d.weight : 0,
+        value: d.value,
+        color: sectorAlloc.find(s => s.label === label)?.color ?? gold,
+      }))
+      .sort((a, b) => b.chg - a.chg);
+  }, [holdings, period, sectorAlloc, gold]);
+
+  const pnlData = useMemo(() => {
+    const mult = PERIOD_MULT[period];
+    return holdings.map(h => {
+      const p = getPrice(h.symbol);
+      const periodChgPct = p.chg * mult;
+      const pnl = h.quantity * p.price * (periodChgPct / 100);
+      return { label: h.symbol, value: pnl };
+    });
+  }, [holdings, period]);
+
+  const totalPnl = useMemo(() => pnlData.reduce((a, d) => a + d.value, 0), [pnlData]);
+
+  if (holdings.length === 0) {
+    return <div style={{ textAlign: "center", color: muted, padding: "60px 0", fontSize: 13 }}>Add holdings to see analytics</div>;
+  }
+
+  return (
+    <div>
+      {/* Period Selector */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {(["Day","Weekly","Monthly","Yearly"] as AnalyticsPeriod[]).map(p => (
+          <button key={p} onClick={() => setPeriod(p)} style={{
+            padding: "6px 16px", borderRadius: 8, border: `1.5px solid ${period === p ? gold : border}`,
+            background: period === p ? gold + "18" : "transparent",
+            color: period === p ? gold : muted, fontWeight: period === p ? 700 : 500,
+            fontSize: 12, cursor: "pointer", transition: "all 0.15s",
+          }}>{p}</button>
+        ))}
+      </div>
+
+      {/* Period P&L Summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <div style={{ background: (totalPnl >= 0 ? "#16a34a" : "#dc2626") + "12", border: `1px solid ${(totalPnl >= 0 ? "#16a34a" : "#dc2626")}30`, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{PERIOD_LABEL[period]} P&L</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: totalPnl >= 0 ? "#16a34a" : "#dc2626" }}>{totalPnl >= 0 ? "+" : ""}{fmtShort(totalPnl)}</div>
+        </div>
+        <div style={{ background: navy + "60", border: `1px solid ${border}`, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Active Sectors</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: text }}>{sectorPerf.length}</div>
+        </div>
+      </div>
+
+      {/* Sector Performance Table */}
+      <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 10 }}>Sector Performance — {PERIOD_LABEL[period]}</div>
+      <div style={{ borderRadius: 10, overflow: "hidden", border: `1px solid ${border}`, marginBottom: 24 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: navy }}>
+              {["Sector", "Exposure", "Change %", "P&L"].map(c => (
+                <th key={c} style={{ padding: "9px 12px", textAlign: c === "Sector" ? "left" : "right", color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sectorPerf.map(s => {
+              const pnl = s.value * (s.chg / 100);
+              return (
+                <tr key={s.label} style={{ borderBottom: `1px solid ${border}` }}>
+                  <td style={{ padding: "9px 12px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600, color: text }}>{s.label}</span>
+                    </span>
+                  </td>
+                  <td style={{ padding: "9px 12px", textAlign: "right", color: muted, fontVariantNumeric: "tabular-nums" }}>{fmtShort(s.value)}</td>
+                  <td style={{ padding: "9px 12px", textAlign: "right", fontWeight: 700, color: s.chg >= 0 ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                      {s.chg >= 0 ? "▲" : "▼"} {Math.abs(s.chg).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td style={{ padding: "9px 12px", textAlign: "right", fontWeight: 700, color: pnl >= 0 ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>
+                    {pnl >= 0 ? "+" : ""}{fmtShort(pnl)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* P&L Bar Chart */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 12 }}>P&L by Stock — {PERIOD_LABEL[period]}</div>
+        <BarChart data={pnlData} />
+      </div>
+
+      {/* Best/Worst Performers */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+        {(() => {
+          const sorted = holdings.map(h => {
+            const p = getPrice(h.symbol);
+            const pct = p.chg * PERIOD_MULT[period];
+            return { symbol: h.symbol, pct };
+          }).sort((a, b) => b.pct - a.pct);
+          const best = sorted[0], worst = sorted[sorted.length - 1];
+          return [
+            { label: "Best Performer", stock: best, color: "#16a34a" },
+            { label: "Worst Performer", stock: worst, color: "#dc2626" },
+          ].map(({ label, stock, color }) => stock ? (
+            <div key={label} style={{ background: color + "10", border: `1px solid ${color}30`, borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color }}>{stock.symbol}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color }}>{stock.pct >= 0 ? "+" : ""}{fmt(stock.pct)}%</div>
+            </div>
+          ) : null);
+        })()}
+      </div>
+
+      {/* Sector Allocation Table */}
+      <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 10 }}>Portfolio Allocation</div>
+      <div style={{ borderRadius: 10, overflow: "hidden", border: `1px solid ${border}` }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: navy }}>
+              {["Sector","Value (PKR)","Weight %"].map(c => (
+                <th key={c} style={{ padding: "8px 12px", textAlign: c === "Sector" ? "left" : "right", color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sectorAlloc.map(s => {
+              const total = sectorAlloc.reduce((a, x) => a + x.value, 0);
+              const pct = total > 0 ? (s.value / total * 100) : 0;
+              return (
+                <tr key={s.label} style={{ borderBottom: `1px solid ${border}` }}>
+                  <td style={{ padding: "8px 12px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+                      <span style={{ color: text }}>{s.label}</span>
+                    </span>
+                  </td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: muted }}>{fmtShort(s.value)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: s.color }}>{fmt(pct)}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export default function PortfolioLive() {
   const tk = useDarkTokens();
@@ -285,7 +468,9 @@ export default function PortfolioLive() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: text, margin: 0 }}>Portfolio Tracker</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>
+              <span style={{ color: text }}>Portfolio </span><span style={{ color: "#D4971A" }}>Tracker</span>
+            </h1>
             <p style={{ fontSize: 13, color: muted, margin: "4px 0 0" }}>Track your PSX holdings, P&L, and performance</p>
           </div>
           <button onClick={() => setShowAddModal(true)} style={{
@@ -540,73 +725,7 @@ export default function PortfolioLive() {
 
               {/* ANALYTICS TAB */}
               {activeTab === "analytics" && (
-                <div>
-                  {holdings.length === 0 ? (
-                    <div style={{ textAlign: "center", color: muted, padding: "60px 0", fontSize: 13 }}>Add holdings to see analytics</div>
-                  ) : (
-                    <div>
-                      {/* P&L Bar Chart */}
-                      <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 12 }}>P&L by Stock</div>
-                        <BarChart data={holdings.map(h => {
-                          const p = getPrice(h.symbol);
-                          return { label: h.symbol, value: h.quantity * (p.price - h.avgPrice) };
-                        })} />
-                      </div>
-
-                      {/* Best/Worst */}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-                        {(() => {
-                          const sorted = holdings.map(h => {
-                            const p = getPrice(h.symbol);
-                            return { ...h, pnlPct: ((p.price - h.avgPrice) / h.avgPrice) * 100 };
-                          }).sort((a, b) => b.pnlPct - a.pnlPct);
-                          const best = sorted[0], worst = sorted[sorted.length - 1];
-                          return [
-                            { label: "Best Performer", stock: best, color: "#16a34a" },
-                            { label: "Worst Performer", stock: worst, color: "#dc2626" },
-                          ].map(({ label, stock, color }) => stock ? (
-                            <div key={label} style={{ background: color + "10", border: `1px solid ${color}30`, borderRadius: 12, padding: "14px 16px" }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
-                              <div style={{ fontSize: 18, fontWeight: 800, color }}>{stock.symbol}</div>
-                              <div style={{ fontSize: 13, fontWeight: 700, color }}>{stock.pnlPct >= 0 ? "+" : ""}{fmt(stock.pnlPct)}%</div>
-                            </div>
-                          ) : null);
-                        })()}
-                      </div>
-
-                      {/* Sector Allocation Table */}
-                      <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 10 }}>Sector Breakdown</div>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                        <thead>
-                          <tr style={{ background: navy }}>
-                            {["Sector","Value (PKR)","Weight %"].map(c => (
-                              <th key={c} style={{ padding: "8px 12px", textAlign: "right", color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{c}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sectorAlloc.map(s => {
-                            const total = sectorAlloc.reduce((a, x) => a + x.value, 0);
-                            const pct = total > 0 ? (s.value / total * 100) : 0;
-                            return (
-                              <tr key={s.label} style={{ borderBottom: `1px solid ${border}` }}>
-                                <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: "inline-block" }} />
-                                    {s.label}
-                                  </span>
-                                </td>
-                                <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtShort(s.value)}</td>
-                                <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: s.color }}>{fmt(pct)}%</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
+                <AnalyticsTab holdings={holdings} sectorAlloc={sectorAlloc} fmt={fmt} fmtShort={fmtShort} navy={navy} gold={gold} text={text} muted={muted} border={border} />
               )}
             </div>
           </div>

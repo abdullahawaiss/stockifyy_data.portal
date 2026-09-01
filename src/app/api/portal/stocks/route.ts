@@ -792,7 +792,9 @@ export async function GET(req: NextRequest) {
       sectors: sectorList,
     };
     if (cacheKey) setCached(cacheKey, payload);
-    return NextResponse.json(payload);
+    const res = NextResponse.json(payload);
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res;
 
   } catch (err) {
     console.error("[stocks api] query failed, trying PSX live:", err);

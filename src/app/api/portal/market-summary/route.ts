@@ -8,5 +8,9 @@ export async function GET() {
   const t0 = Date.now();
   const data = await getMarketSummary();
   console.log(`[api/market-summary] ${Date.now() - t0}ms source=${data.source}`);
-  return NextResponse.json(data);
+  return NextResponse.json(data, {
+    headers: {
+      "Cache-Control": "public, s-maxage=55, stale-while-revalidate=120",
+    },
+  });
 }

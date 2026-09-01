@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
         .leftJoin(indices, eq(weeklyIndexValues.indexId, indices.id))
         .where(eq(weeklyIndexValues.weekStartDate, weekStart))
         .orderBy(weeklyIndexValues.indexCode);
-      return NextResponse.json({ data: rows, period: "weekly", weekStart });
+      const res = NextResponse.json({ data: rows, period: "weekly", weekStart });
+      res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+      return res;
     }
 
     // Daily
@@ -56,7 +58,9 @@ export async function GET(req: NextRequest) {
       .where(eq(dailyIndexValues.tradingDate, date))
       .orderBy(dailyIndexValues.indexCode);
 
-    return NextResponse.json({ data: rows, period: "daily", date });
+    const res2 = NextResponse.json({ data: rows, period: "daily", date });
+    res2.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return res2;
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to fetch index data" }, { status: 500 });

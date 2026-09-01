@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatNumber, formatVolume, formatPct, getWeekLabel } from "@/lib/utils";
+import { cachedFetch } from "@/lib/portal-cache";
 import { PctCell } from "@/components/ui/DataTable";
 import { format, startOfWeek, addWeeks, subWeeks } from "date-fns";
 
@@ -57,8 +58,7 @@ export default function WeeklyPage() {
         sortBy,
         sortDir,
       });
-      const res = await fetch(`/api/portal/weekly?${params}`);
-      const json = await res.json();
+      const json = await cachedFetch<{ data: any[]; pagination: any }>(`/api/portal/weekly?${params}`);
       setData(json.data ?? []);
       setPagination(json.pagination ?? { page: 1, total: 0, pages: 1 });
     } catch {
@@ -105,7 +105,9 @@ export default function WeeklyPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Weekly Market Data</h1>
+          <h1 className="text-xl font-bold">
+            <span style={{ color: "var(--text-primary)" }}>Weekly Market </span><span style={{ color: "#D4971A" }}>Data</span>
+          </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             
             Week: {getWeekLabel(currentWeek)} · {pagination.total} records

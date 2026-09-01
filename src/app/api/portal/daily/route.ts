@@ -86,11 +86,13 @@ export async function GET(req: NextRequest) {
         .where(and(...conditions)),
     ]), 2000); // fail fast after 2s when DB is unavailable
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       data: rows,
       pagination: { page, limit, total: Number(count), pages: Math.ceil(Number(count) / limit) },
       date,
     });
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res;
   } catch {
     const today = new Date().toISOString().slice(0, 10);
 

@@ -250,7 +250,9 @@ export default function PageClient() {
       <div style={{ padding: "20px 20px 0", maxWidth: 1400, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: text, margin: 0 }}>Stock Screener</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
+              <span style={{ color: text }}>Stock </span><span style={{ color: "#D4971A" }}>Screener</span>
+            </h1>
             <p style={{ fontSize: 13, color: muted, margin: "4px 0 0" }}>Filter and discover PSX listed stocks by fundamental & technical criteria</p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

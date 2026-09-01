@@ -11,7 +11,9 @@ export default async function AdminPage() {
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-6">
         <div className="text-[9.5px] font-bold tracking-[0.15em] uppercase mb-0.5" style={{ color: "#D4971A" }}>Admin Panel</div>
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Overview</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Over</span><span style={{ color: "#D4971A" }}>view</span>
+        </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
           Logged in as {session?.fullName} · {session?.role}
         </p>

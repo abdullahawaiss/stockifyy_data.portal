@@ -54,7 +54,9 @@ export default function ImportPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Data Import Centre</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Data Import </span><span style={{ color: "#D4971A" }}>Centre</span>
+        </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Upload CSV or XLSX files to import market data</p>
       </div>
 

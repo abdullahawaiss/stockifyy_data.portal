@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { fetchMarketSummary } from "@/lib/market-cache";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fmtNum, fmtVol, getMarketStatus } from "../_data";
@@ -127,7 +128,7 @@ function TopMovers({ summary }: { summary: MarketSummary | null }) {
                     {fmtNum(r.close)}
                   </div>
                   <div className="text-[9px] font-bold" style={{ color: up ? "#16A34A" : "#DC2626" }}>
-                    {up ? "▲" : "▼"}{Math.abs(r.pct).toFixed(2)}%
+                    {up ? "â–²" : "â–¼"}{Math.abs(r.pct).toFixed(2)}%
                   </div>
                 </div>
               </Link>
@@ -151,8 +152,7 @@ export default function MarketCommandCenter() {
 
   useEffect(() => {
     function load() {
-      fetch("/api/portal/market-summary")
-        .then(r => r.json())
+      fetchMarketSummary()
         .then(setSummary)
         .catch(() => {});
     }
@@ -184,7 +184,7 @@ export default function MarketCommandCenter() {
         <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-muted)" }}>{time} PKT</span>
         {summary && (
           <span className="ml-auto text-[9.5px]" style={{ color: "var(--text-muted)" }}>
-            Live · {new Date(summary.updatedAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" })}
+            Live Â· {new Date(summary.updatedAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" })}
           </span>
         )}
       </div>
@@ -201,7 +201,7 @@ export default function MarketCommandCenter() {
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[11px] font-bold tabular-nums" style={{ color: kseUp ? "#16A34A" : "#DC2626" }}>
-                    {kseUp ? "▲" : "▼"} {fmtNum(Math.abs(kse.change), 2)}
+                    {kseUp ? "â–²" : "â–¼"} {fmtNum(Math.abs(kse.change), 2)}
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                     style={{ color: kseUp ? "#16A34A" : "#DC2626", background: kseUp ? "rgba(22,163,74,0.08)" : "rgba(220,38,38,0.08)" }}>
@@ -210,7 +210,7 @@ export default function MarketCommandCenter() {
                 </div>
               </>
             ) : (
-              <div className="text-2xl font-black" style={{ color: "var(--text-muted)" }}>—</div>
+              <div className="text-2xl font-black" style={{ color: "var(--text-muted)" }}>â€”</div>
             )}
           </div>
         </div>
@@ -246,3 +246,4 @@ export default function MarketCommandCenter() {
     </div>
   );
 }
+

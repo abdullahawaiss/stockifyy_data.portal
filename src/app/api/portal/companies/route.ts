@@ -6,6 +6,12 @@ import { PSX_STOCKS, searchPsxStocks } from "@/lib/psx-stocks-static";
 
 export const dynamic = "force-dynamic";
 
+// Server-side in-memory cache keyed by full query string (10 min TTL)
+const _cache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 10 * 60_000;
+function getCached(key: string) { const h = _cache.get(key); return h && Date.now() - h.ts < CACHE_TTL ? h.data : null; }
+function setCached(key: string, data: unknown) { _cache.set(key, { data, ts: Date.now() }); }
+
 // Fast timeout helper — fails after ms milliseconds
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), ms))]);
@@ -20,6 +26,15 @@ export async function GET(req: NextRequest) {
   // Raised cap from 100 → 2000 so watchlist / screener can load all stocks
   const limit = Math.min(2000, Math.max(10, parseInt(sp.get("limit") ?? "50")));
   const offset = (page - 1) * limit;
+
+  // Return cached response if fresh
+  const cacheKey = `${search}|${sectorCode}|${shariah}|${page}|${limit}`;
+  const hit = getCached(cacheKey);
+  if (hit) {
+    const res = NextResponse.json(hit);
+    res.headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=1200");
+    return res;
+  }
 
   try {
 
@@ -55,10 +70,14 @@ export async function GET(req: NextRequest) {
       db.select({ count: sql<number>`count(*)` }).from(companies).where(and(...conditions)),
     ]), 2000); // fail fast after 2s when DB is unavailable
 
-    return NextResponse.json({
+    const payload = {
       data: rows,
       pagination: { page, limit, total: Number(count), pages: Math.ceil(Number(count) / limit) },
-    });
+    };
+    setCached(cacheKey, payload);
+    const res = NextResponse.json(payload);
+    res.headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=1200");
+    return res;
   } catch {
     // DB unavailable — return static PSX list so clients always get data fast
     const src = search ? searchPsxStocks(search, limit) : PSX_STOCKS.slice(offset, offset + limit);

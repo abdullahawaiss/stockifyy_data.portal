@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { fetchMarketSummary } from "@/lib/market-cache";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fmtNum, fmtVol } from "../_data";
@@ -10,7 +11,7 @@ type Row = MarketSummary["gainers"][number];
 function StockTable({ rows, positive, loading }: { rows: Row[]; positive: boolean; loading: boolean }) {
   const color = positive ? "#16A34A" : "#DC2626";
   const label = positive ? "Top Advancers" : "Top Decliners";
-  const icon  = positive ? "▲" : "▼";
+  const icon  = positive ? "â–²" : "â–¼";
 
   return (
     <div className="card overflow-hidden flex flex-col h-full">
@@ -53,7 +54,7 @@ function StockTable({ rows, positive, loading }: { rows: Row[]; positive: boolea
                 {fmtNum(s.close)}
               </div>
               <div className="col-span-4 text-right text-[10px] font-bold tabular-nums" style={{ color }}>
-                {positive ? "▲" : "▼"}{Math.abs(s.change).toFixed(2)} ({Math.abs(s.pct).toFixed(2)}%)
+                {positive ? "â–²" : "â–¼"}{Math.abs(s.change).toFixed(2)} ({Math.abs(s.pct).toFixed(2)}%)
               </div>
               <div className="col-span-3 text-right text-[10px] tabular-nums" style={{ color: "var(--text-muted)" }}>
                 {fmtVol(s.vol)}
@@ -73,8 +74,7 @@ export default function GainersLosersSection({ gainersOnly, losersOnly, initialD
 
   useEffect(() => {
     if (initialData) return;
-    fetch("/api/portal/market-summary")
-      .then(r => r.json())
+    fetchMarketSummary()
       .then((d: MarketSummary) => { setGainers(d.gainers ?? []); setLosers(d.losers ?? []); })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -97,8 +97,7 @@ export function VolumeLeadersPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/portal/market-summary")
-      .then(r => r.json())
+    fetchMarketSummary()
       .then((d: MarketSummary) => setRows(d.volume ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -139,3 +138,4 @@ export function VolumeLeadersPanel() {
 // Keep export for any existing imports
 export { StockDetailModal };
 export type { StockInfo };
+

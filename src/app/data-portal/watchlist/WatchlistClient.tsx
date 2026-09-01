@@ -135,12 +135,33 @@ function saveWatchlist(items: WatchItem[]) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch {}
 }
 
+// Stock icon component (consistent with stocks table)
+const SYM_COLORS: [number,number,number][] = [
+  [37,99,235],[5,150,105],[220,38,38],[124,58,237],[217,119,6],
+  [14,165,233],[239,68,68],[16,185,129],[168,85,247],[245,158,11],
+];
+function symColor(sym: string): string {
+  let h = 0; for (const c of sym) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const [r,g,b] = SYM_COLORS[h % SYM_COLORS.length]; return `rgb(${r},${g},${b})`;
+}
+function WLStockIcon({ symbol, size = 32 }: { symbol: string; size?: number }) {
+  const color = symColor(symbol);
+  return (
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, background: color + "18", border: `1.5px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <span style={{ fontSize: size * 0.36, fontWeight: 800, color, letterSpacing: "-0.5px", fontFamily: "monospace" }}>{symbol.slice(0,2)}</span>
+    </div>
+  );
+}
+
+type ViewMode = "cards" | "list" | "sector";
+
 export default function WatchlistClient() {
   const tk = useDarkTokens();
   const [items, setItems] = useState<WatchItem[]>([]);
   const [query, setQuery] = useState("");
   const [showDrop, setShowDrop] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const dropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); setItems(loadWatchlist()); }, []);
@@ -201,116 +222,116 @@ export default function WatchlistClient() {
   const navy = "#07111F";
   const gold = "#D4971A";
 
+  // Group items by sector for sector view
+  const sectorMap = useMemo(() => {
+    const map = new Map<string, WatchItem[]>();
+    items.forEach(item => {
+      const s = item.sector || "Other";
+      if (!map.has(s)) map.set(s, []);
+      map.get(s)!.push(item);
+    });
+    return map;
+  }, [items]);
+
   if (!mounted) return null;
+
+  // Sector icons
+  const SECTOR_ICONS2: Record<string,string> = {
+    "banks":"🏦","cement":"🏗","oil":"⛽","fertilizer":"🌾","tech":"💻","textile":"🧵",
+    "power":"⚡","auto":"🚗","food":"🍽","insurance":"🛡","pharma":"💊","chemical":"⚗",
+  };
+  function getSectorIcon2(sector: string): string {
+    const l = sector.toLowerCase();
+    for (const [k, v] of Object.entries(SECTOR_ICONS2)) { if (l.includes(k)) return v; }
+    return "🏢";
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: bg, padding: "24px 20px", color: text, fontFamily: "inherit" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        {/* ── Header ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: text, margin: 0 }}>
-              My Watchlist
+            <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
+              <span style={{ color: text }}>My </span><span style={{ color: "#D4971A" }}>Watchlist</span>
             </h1>
-            <p style={{ fontSize: 13, color: muted, margin: "4px 0 0" }}>
-              Track and monitor your favourite PSX stocks
-            </p>
+            <p style={{ fontSize: 12, color: muted, margin: "3px 0 0" }}>Track &amp; monitor favourite PSX stocks in real-time</p>
           </div>
-          <div style={{ fontSize: 12, color: muted, background: card, border: `1px solid ${border}`, borderRadius: 8, padding: "6px 14px" }}>
-            {new Date().toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long" })}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            {/* View mode switcher */}
+            <div style={{ display: "flex", background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 3, gap: 2 }}>
+              {(["cards","list","sector"] as ViewMode[]).map(vm => {
+                const icons: Record<ViewMode, string> = { cards: "⊞", list: "☰", sector: "⊙" };
+                const labels: Record<ViewMode, string> = { cards: "Cards", list: "List", sector: "Sector" };
+                return (
+                  <button key={vm} onClick={() => setViewMode(vm)} style={{ padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: viewMode === vm ? navy : "transparent", color: viewMode === vm ? gold : muted, transition: "all 0.15s" }}>
+                    {icons[vm]} {labels[vm]}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 11, color: muted, background: card, border: `1px solid ${border}`, borderRadius: 8, padding: "6px 12px" }}>
+              {new Date().toLocaleDateString("en-PK", { weekday: "short", day: "numeric", month: "short" })}
+            </div>
           </div>
         </div>
 
-        {/* Stats Strip */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginBottom: 24 }}>
+        {/* ── Stats Strip ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 18 }}>
           {[
-            { label: "Total Watched", value: items.length.toString(), icon: "👁", color: gold },
+            { label: "Watched", value: items.length.toString(), icon: "⊙", color: gold },
             { label: "Up Today", value: stats.up.toString(), icon: "▲", color: "#16a34a" },
             { label: "Down Today", value: stats.down.toString(), icon: "▼", color: "#dc2626" },
+            { label: "Unchanged", value: stats.flat.toString(), icon: "─", color: muted },
             { label: "Avg Change", value: (stats.avgChg >= 0 ? "+" : "") + stats.avgChg.toFixed(2) + "%", icon: "~", color: stats.avgChg >= 0 ? "#16a34a" : "#dc2626" },
-            { label: "Total P&L", value: "PKR " + fmt(stats.totalPnl), icon: "₨", color: stats.totalPnl >= 0 ? "#16a34a" : "#dc2626" },
+            { label: "Total P&L", value: "₨ " + (Math.abs(stats.totalPnl) >= 1e3 ? (stats.totalPnl/1e3).toFixed(1)+"K" : fmt(stats.totalPnl)), icon: "₨", color: stats.totalPnl >= 0 ? "#16a34a" : "#dc2626" },
           ].map(stat => (
-            <div key={stat.label} style={{ background: card, border: `1px solid ${border}`, borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: stat.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                {stat.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>{stat.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: stat.color, marginTop: 2 }}>{stat.value}</div>
-              </div>
+            <div key={stat.label} style={{ background: card, border: `1px solid ${border}`, borderLeft: `3px solid ${stat.color}`, borderRadius: 10, padding: "12px 14px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>{stat.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: stat.color, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
             </div>
           ))}
-          {/* Donut mini */}
-          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 12, padding: "10px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <DonutStat up={stats.up} down={stats.down} total={items.length} />
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Portfolio Mix</div>
-              <div style={{ fontSize: 11, color: "#16a34a", marginTop: 2 }}>▲ {stats.up} Up</div>
-              <div style={{ fontSize: 11, color: "#dc2626" }}>▼ {stats.down} Down</div>
-            </div>
-          </div>
         </div>
 
-        {/* Search + Add Bar */}
-        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
-          <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" }}>
+        {/* ── Search + Quick Add ── */}
+        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 18 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ flex: 1, minWidth: 220, position: "relative" }} ref={dropRef}>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: muted, fontSize: 16 }}>🔍</span>
-                <input
-                  value={query}
-                  onChange={e => { setQuery(e.target.value); setShowDrop(true); }}
-                  onFocus={() => setShowDrop(true)}
-                  placeholder="Search symbol or company name..."
-                  style={{
-                    width: "100%", boxSizing: "border-box", padding: "10px 12px 10px 38px",
-                    border: `1.5px solid ${border}`, borderRadius: 10, fontSize: 14,
-                    background: tk.dark ? "#07111F" : "#F8F6F1", color: text, outline: "none",
-                  }}
-                />
-              </div>
+              <input
+                value={query}
+                onChange={e => { setQuery(e.target.value); setShowDrop(true); }}
+                onFocus={() => setShowDrop(true)}
+                placeholder="🔍  Search symbol or company…"
+                style={{ width: "100%", boxSizing: "border-box", padding: "9px 14px", border: `1.5px solid ${border}`, borderRadius: 9, fontSize: 13, background: tk.dark ? "#07111F" : "#F8F6F1", color: text, outline: "none" }}
+              />
               {showDrop && suggestions.length > 0 && (
-                <div style={{
-                  position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
-                  background: card, border: `1px solid ${border}`, borderRadius: 10,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)", marginTop: 4, maxHeight: 260, overflowY: "auto",
-                }}>
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: card, border: `1px solid ${border}`, borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.18)", marginTop: 4, maxHeight: 240, overflowY: "auto" }}>
                   {suggestions.map(s => (
-                    <button key={s.symbol} onClick={() => addStock(s.symbol, s.name)} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      width: "100%", padding: "10px 14px", background: "none", border: "none",
-                      borderBottom: `1px solid ${border}`, cursor: "pointer", textAlign: "left",
-                    }}
+                    <button key={s.symbol} onClick={() => addStock(s.symbol, s.name)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", background: "none", border: "none", borderBottom: `1px solid ${border}`, cursor: "pointer", textAlign: "left" }}
                     onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(255,255,255,0.04)" : "#f8fafc")}
                     onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                      <div>
-                        <span style={{ fontWeight: 700, color: gold, fontSize: 13 }}>{s.symbol}</span>
-                        <span style={{ color: muted, fontSize: 12, marginLeft: 8 }}>{s.name}</span>
+                      <WLStockIcon symbol={s.symbol} size={28} />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 800, color: gold, fontSize: 12 }}>{s.symbol}</span>
+                        <span style={{ color: muted, fontSize: 11, marginLeft: 8 }}>{s.name}</span>
                       </div>
-                      <span style={{ fontSize: 11, color: muted, background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{s.sector}</span>
+                      <span style={{ fontSize: 10, color: muted, background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{s.sector}</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Popular chips */}
-          <div>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginRight: 10 }}>Quick Add:</span>
-            <div style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-              {POPULAR_CHIPS.filter(sym => !items.some(i => i.symbol === sym)).slice(0, 14).map(sym => {
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Quick Add:</span>
+              {POPULAR_CHIPS.filter(sym => !items.some(i => i.symbol === sym)).slice(0, 12).map(sym => {
                 const s = PSX_STOCKS.find(x => x.symbol === sym);
+                const isSh = SHARIAH_SYMBOLS.has(sym);
                 return (
-                  <button key={sym} onClick={() => addStock(sym, s?.name ?? sym)} style={{
-                    padding: "4px 12px", borderRadius: 20, border: `1px solid ${border}`,
-                    background: "none", color: text, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
+                  <button key={sym} onClick={() => addStock(sym, s?.name ?? sym)} style={{ padding: "4px 10px", borderRadius: 16, border: `1px solid ${isSh ? "#16a34a40" : border}`, background: isSh ? "#16a34a0a" : "none", color: isSh ? "#16a34a" : text, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
                   onMouseEnter={e => { e.currentTarget.style.background = gold + "20"; e.currentTarget.style.borderColor = gold; e.currentTarget.style.color = gold; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = border; e.currentTarget.style.color = text; }}>
-                    {sym}
+                  onMouseLeave={e => { e.currentTarget.style.background = isSh ? "#16a34a0a" : "none"; e.currentTarget.style.borderColor = isSh ? "#16a34a40" : border; e.currentTarget.style.color = isSh ? "#16a34a" : text; }}>
+                    {isSh ? "☾ " : "+ "}{sym}
                   </button>
                 );
               })}
@@ -318,105 +339,201 @@ export default function WatchlistClient() {
           </div>
         </div>
 
-        {/* Stock Cards Grid */}
-        {items.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px", background: card, borderRadius: 16, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: text, margin: "0 0 8px" }}>Start building your watchlist</h3>
-            <p style={{ color: muted, fontSize: 14, marginBottom: 24 }}>Search for stocks above or pick from popular stocks to begin tracking</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 600, margin: "0 auto" }}>
-              {POPULAR_CHIPS.slice(0, 10).map(sym => {
+        {/* ── Empty State ── */}
+        {items.length === 0 && (
+          <div style={{ textAlign: "center", padding: "64px 20px", background: card, borderRadius: 16, border: `1px solid ${border}` }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: text, margin: "0 0 6px" }}>Start building your watchlist</h3>
+            <p style={{ color: muted, fontSize: 13, marginBottom: 20 }}>Search above or click to add popular PSX stocks</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 560, margin: "0 auto" }}>
+              {POPULAR_CHIPS.slice(0, 12).map(sym => {
                 const s = PSX_STOCKS.find(x => x.symbol === sym);
                 return (
-                  <button key={sym} onClick={() => addStock(sym, s?.name ?? sym)} style={{
-                    padding: "8px 16px", borderRadius: 20, border: `1.5px solid ${gold}40`,
-                    background: gold + "10", color: gold, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  }}>
+                  <button key={sym} onClick={() => addStock(sym, s?.name ?? sym)} style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${gold}40`, background: gold + "10", color: gold, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                     + {sym}
                   </button>
                 );
               })}
             </div>
           </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 16 }}>
+        )}
+
+        {/* ── CARDS VIEW ── */}
+        {items.length > 0 && viewMode === "cards" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
             {items.map(item => {
               const q = getQuote(item.symbol);
               const pnl = q.close - item.addedPrice;
               const pnlPct = (pnl / item.addedPrice) * 100;
               const isUp = q.pct >= 0;
               const isShariah = SHARIAH_SYMBOLS.has(item.symbol);
-
+              const sIcon = getSectorIcon2(item.sector);
               return (
-                <div key={item.id} style={{
-                  background: card, border: `1px solid ${border}`, borderRadius: 14,
-                  padding: "16px", position: "relative", transition: "box-shadow 0.2s",
-                  borderTop: `3px solid ${isUp ? "#16a34a" : "#dc2626"}`,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.12)")}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}>
+                <div key={item.id} style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", position: "relative", transition: "box-shadow 0.2s, transform 0.2s", borderTop: `3px solid ${isUp ? "#16a34a" : "#dc2626"}` }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 28px rgba(0,0,0,0.14)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; (e.currentTarget as HTMLElement).style.transform = "none"; }}>
+                  <button onClick={() => removeStock(item.id)} style={{ position: "absolute", top: 10, right: 10, background: "none", border: "none", cursor: "pointer", color: muted, fontSize: 14, padding: "2px 5px", borderRadius: 4 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")} onMouseLeave={e => (e.currentTarget.style.color = muted)}>✕</button>
 
-                  {/* Remove button */}
-                  <button onClick={() => removeStock(item.id)} style={{
-                    position: "absolute", top: 10, right: 10, background: "none", border: "none",
-                    cursor: "pointer", color: muted, fontSize: 16, lineHeight: 1, padding: "2px 4px",
-                    borderRadius: 4, transition: "color 0.15s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
-                  onMouseLeave={e => (e.currentTarget.style.color = muted)}
-                  title="Remove from watchlist">✕</button>
-
-                  {/* Symbol + Name */}
                   <Link href={`/data-portal/company/${item.symbol}`} style={{ textDecoration: "none" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, paddingRight: 24 }}>
-                      <span style={{
-                        background: navy, color: gold, fontWeight: 800, fontSize: 13,
-                        padding: "3px 10px", borderRadius: 6, letterSpacing: "0.04em",
-                      }}>{item.symbol}</span>
-                      {isShariah && (
-                        <span style={{ background: "#16a34a20", color: "#16a34a", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 10 }}>☪ SHARIAH</span>
-                      )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, paddingRight: 24 }}>
+                      <WLStockIcon symbol={item.symbol} size={36} />
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ fontWeight: 900, fontSize: 14, color: navy, fontFamily: "monospace" }}>{item.symbol}</span>
+                          {isShariah && <svg viewBox="0 0 14 14" width={11} height={11}><path d="M7,1.5 A5.5,5.5 0 1 0 7,12.5 A3.8,3.8 0 1 1 7,1.5 Z" fill="#16A34A"/><circle cx="10" cy="4.5" r="1.1" fill="#16A34A"/></svg>}
+                        </div>
+                        <div style={{ fontSize: 11, color: muted, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: muted, marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 24 }}>{item.name}</div>
+
+                    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: text, fontVariantNumeric: "tabular-nums" }}>{fmt(q.close)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: isUp ? "#16a34a" : "#dc2626", marginTop: 1 }}>
+                          {isUp ? "▲" : "▼"} {fmt(Math.abs(q.change))} ({isUp ? "+" : ""}{q.pct.toFixed(2)}%)
+                        </div>
+                      </div>
+                      <SparkLine pct={q.pct} />
+                    </div>
                   </Link>
 
-                  {/* Price Row */}
-                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingTop: 10, borderTop: `1px solid ${border}` }}>
                     <div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: text, fontVariantNumeric: "tabular-nums" }}>
-                        {fmt(q.close)}
-                      </div>
-                      <div style={{ fontSize: 12, color: isUp ? "#16a34a" : "#dc2626", fontWeight: 700, marginTop: 2 }}>
-                        {isUp ? "▲" : "▼"} {fmt(Math.abs(q.change))} ({isUp ? "+" : ""}{q.pct.toFixed(2)}%)
-                      </div>
+                      <div style={{ fontSize: 9, color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sector</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: text, marginTop: 2 }}>{sIcon} {item.sector.replace("Commercial Banks","Banking").replace("Oil & Gas Exploration","Oil & Gas")}</div>
                     </div>
-                    <SparkLine pct={q.pct} />
-                  </div>
-
-                  {/* Sector badge + P&L from add price */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-                    <span style={{
-                      fontSize: 10.5, fontWeight: 600, padding: "3px 10px", borderRadius: 10,
-                      background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", color: muted,
-                    }}>{item.sector.replace("Commercial Banks", "Banks").replace("Oil & Gas Exploration", "Oil & Gas")}</span>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 10, color: muted }}>Since Added</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: pnl >= 0 ? "#16a34a" : "#dc2626" }}>
-                        {pnl >= 0 ? "+" : ""}{fmt(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%)
-                      </div>
+                      <div style={{ fontSize: 9, color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Since Added</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: pnl >= 0 ? "#16a34a" : "#dc2626", marginTop: 2 }}>{pnl >= 0 ? "+" : ""}{fmt(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)</div>
                     </div>
-                  </div>
-
-                  {/* Vol */}
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${border}`, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 10.5, color: muted }}>Volume</span>
-                    <span style={{ fontSize: 10.5, color: text, fontWeight: 600 }}>{fmtVol(q.vol)}</span>
+                    <div>
+                      <div style={{ fontSize: 9, color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Volume</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: text, marginTop: 2 }}>{fmtVol(q.vol)}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 9, color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Add Price</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: text, marginTop: 2 }}>{fmt(item.addedPrice)}</div>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* ── LIST VIEW ── */}
+        {items.length > 0 && viewMode === "list" && (
+          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: navy }}>
+                    {["#","Stock","Sector","Price","Change","Change %","Volume","Add Price","P&L","Action"].map((h,i) => (
+                      <th key={h} style={{ padding: "10px 14px", textAlign: i > 2 ? "right" : "left", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap", color: "#94a3b8" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, idx) => {
+                    const q = getQuote(item.symbol);
+                    const pnl = q.close - item.addedPrice;
+                    const pnlPct = (pnl / item.addedPrice) * 100;
+                    const isUp = q.pct >= 0;
+                    const isShariah = SHARIAH_SYMBOLS.has(item.symbol);
+                    const sIcon = getSectorIcon2(item.sector);
+                    return (
+                      <tr key={item.id} style={{ borderBottom: `1px solid ${border}`, background: idx % 2 === 0 ? card : (tk.dark ? "rgba(255,255,255,0.02)" : "#FAFAFA") }}
+                      onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(212,151,26,0.05)" : "#FFFBEB")}
+                      onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? card : (tk.dark ? "rgba(255,255,255,0.02)" : "#FAFAFA"))}>
+                        <td style={{ padding: "10px 14px", color: muted, fontSize: 11 }}>{idx + 1}</td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <WLStockIcon symbol={item.symbol} size={30} />
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <Link href={`/data-portal/company/${item.symbol}`} style={{ fontWeight: 800, color: text, fontFamily: "monospace", fontSize: 12, textDecoration: "none" }}>{item.symbol}</Link>
+                                {isShariah && <svg viewBox="0 0 14 14" width={11} height={11}><path d="M7,1.5 A5.5,5.5 0 1 0 7,12.5 A3.8,3.8 0 1 1 7,1.5 Z" fill="#16A34A"/><circle cx="10" cy="4.5" r="1.1" fill="#16A34A"/></svg>}
+                              </div>
+                              <div style={{ fontSize: 10, color: muted, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}><span style={{ fontSize: 11, color: muted }}>{sIcon} {item.sector.replace("Commercial Banks","Banking")}</span></td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: text, fontVariantNumeric: "tabular-nums" }}>{fmt(q.close)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: isUp ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>{isUp ? "▲" : "▼"} {fmt(Math.abs(q.change))}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: isUp ? "#16a34a" : "#dc2626" }}>
+                          <span style={{ background: isUp ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.1)", padding: "2px 8px", borderRadius: 12 }}>{isUp ? "+" : ""}{q.pct.toFixed(2)}%</span>
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", color: muted, fontVariantNumeric: "tabular-nums", fontSize: 11 }}>{fmtVol(q.vol)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", color: muted, fontVariantNumeric: "tabular-nums" }}>{fmt(item.addedPrice)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: pnl >= 0 ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>
+                          {pnl >= 0 ? "+" : ""}{fmt(pnl)}<br/><span style={{ fontSize: 10, fontWeight: 600 }}>({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%)</span>
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                          <button onClick={() => removeStock(item.id)} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid #dc2626", background: "none", color: "#dc2626", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>✕</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTOR VIEW ── */}
+        {items.length > 0 && viewMode === "sector" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {[...sectorMap.entries()].map(([sector, sectorItems]) => {
+              const sIcon = getSectorIcon2(sector);
+              const up = sectorItems.filter(i => getQuote(i.symbol).pct >= 0).length;
+              return (
+                <div key={sector} style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", background: navy, gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 18 }}>{sIcon}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{sector}</span>
+                      <span style={{ fontSize: 10, background: "rgba(255,255,255,0.1)", color: "#94a3b8", padding: "2px 8px", borderRadius: 10 }}>{sectorItems.length} stocks</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, fontSize: 11 }}>
+                      <span style={{ color: "#86efac" }}>▲ {up} Up</span>
+                      <span style={{ color: "#fca5a5" }}>▼ {sectorItems.length - up} Down</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 0 }}>
+                    {sectorItems.map((item, i) => {
+                      const q = getQuote(item.symbol);
+                      const pnl = q.close - item.addedPrice;
+                      const isUp = q.pct >= 0;
+                      const isShariah = SHARIAH_SYMBOLS.has(item.symbol);
+                      return (
+                        <div key={item.id} style={{ padding: "14px 16px", borderBottom: `1px solid ${border}`, borderRight: (i + 1) % 4 !== 0 ? `1px solid ${border}` : "none", display: "flex", gap: 10, alignItems: "center" }}>
+                          <WLStockIcon symbol={item.symbol} size={32} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                              <Link href={`/data-portal/company/${item.symbol}`} style={{ fontWeight: 800, fontSize: 12, color: text, fontFamily: "monospace", textDecoration: "none" }}>{item.symbol}</Link>
+                              {isShariah && <svg viewBox="0 0 14 14" width={10} height={10}><path d="M7,1.5 A5.5,5.5 0 1 0 7,12.5 A3.8,3.8 0 1 1 7,1.5 Z" fill="#16A34A"/><circle cx="10" cy="4.5" r="1.1" fill="#16A34A"/></svg>}
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: text, fontVariantNumeric: "tabular-nums" }}>{fmt(q.close)}</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626" }}>
+                              {isUp ? "▲" : "▼"} {q.pct.toFixed(2)}%
+                              {" · "}
+                              <span style={{ color: pnl >= 0 ? "#16a34a" : "#dc2626" }}>P&L: {pnl >= 0 ? "+" : ""}{fmt(pnl)}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => removeStock(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: muted, fontSize: 13 }}
+                          onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")} onMouseLeave={e => (e.currentTarget.style.color = muted)}>✕</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
       </div>
     </div>
   );

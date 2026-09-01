@@ -39,7 +39,8 @@ function MarketStatusPill({ collapsed }: { collapsed: boolean }) {
 }
 
 // ── Nav tree ──────────────────────────────────────────────────
-const NAV = [
+type NavItem2 = { label: string; href: string; icon: React.ReactNode; children?: { label: string; href: string; icon: React.ReactNode }[] };
+const NAV: NavItem2[] = [
   {
     label: "Dashboard",
     href: "/data-portal",
@@ -59,6 +60,26 @@ const NAV = [
         <polyline points="16 7 22 7 22 13"/>
       </svg>
     ),
+    children: [
+      {
+        label: "Companies",
+        href: "/data-portal/companies",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-4 0v2M8 7V5a2 2 0 00-4 0v2"/>
+          </svg>
+        ),
+      },
+      {
+        label: "Comparison",
+        href: "/data-portal/comparison",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+        ),
+      },
+    ],
   },
   {
     label: "Watch-List",
@@ -179,15 +200,57 @@ function NavItem({
   collapsed,
   onMobileClose,
 }: {
-  item: typeof NAV[number];
+  item: NavItem2;
   collapsed: boolean;
   onMobileClose?: () => void;
 }) {
   const pathname = usePathname();
   const isActive = pathname === item.href || (item.href === "/data-portal" && pathname === "/data-portal");
+  const hasChildren = !!item.children?.length;
+  const isChildActive = hasChildren && item.children!.some(c => pathname === c.href || pathname.startsWith(c.href));
+  const [open, setOpen] = useState(isChildActive);
   const activeColor = "#D4971A";
 
-  const row = (
+  const isParentActive = pathname === item.href;
+
+  const row = hasChildren ? (
+    <div
+      className="group flex items-center rounded-lg relative"
+      style={{
+        height: 38,
+        background: isParentActive ? "rgba(212,175,55,0.12)" : isChildActive ? "rgba(212,175,55,0.06)" : "transparent",
+        transition: "background 160ms ease",
+      }}
+      onMouseEnter={e => { if (!isParentActive && !isChildActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+      onMouseLeave={e => { if (!isParentActive && !isChildActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+    >
+      {(isParentActive || isChildActive) && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
+          style={{ height: 22, background: activeColor, boxShadow: `0 0 6px ${activeColor}` }} />
+      )}
+      {/* Link area — navigates to the page */}
+      <Link href={item.href} onClick={onMobileClose}
+        className="flex items-center gap-2.5 px-2.5 flex-1 min-w-0"
+        style={{ height: "100%", color: isParentActive ? activeColor : isChildActive ? activeColor : "rgba(255,255,255,0.7)", textDecoration: "none" }}>
+        <span className="flex-shrink-0" style={{ color: isParentActive || isChildActive ? activeColor : "rgba(255,255,255,0.5)" }}>
+          {item.icon}
+        </span>
+        {!collapsed && (
+          <span className="text-[12.5px] font-medium tracking-tight truncate">{item.label}</span>
+        )}
+      </Link>
+      {/* Arrow button — toggles sub-menu only */}
+      {!collapsed && (
+        <button onClick={() => setOpen(o => !o)}
+          style={{ width: 26, height: 26, flexShrink: 0, marginRight: 4, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "rgba(255,255,255,0.3)" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >
+          <span style={{ fontSize: 8, display: "inline-block", transform: open ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▶</span>
+        </button>
+      )}
+    </div>
+  ) : (
     <Link
       href={item.href}
       onClick={onMobileClose}
@@ -201,7 +264,6 @@ function NavItem({
       onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
       onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
     >
-      {/* Active indicator bar */}
       {isActive && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
@@ -218,6 +280,39 @@ function NavItem({
       )}
     </Link>
   );
+
+  if (hasChildren && open && !collapsed) {
+    return (
+      <div>
+        {collapsed ? <Tooltip label={item.label}>{row}</Tooltip> : row}
+        <div style={{ paddingLeft: 10, borderLeft: "1px solid rgba(212,175,55,0.15)", marginLeft: 18, marginTop: 2, marginBottom: 2 }}>
+          {item.children!.map(child => {
+            const childActive = pathname === child.href;
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                onClick={onMobileClose}
+                className="flex items-center gap-2 px-2 rounded-md relative"
+                style={{
+                  height: 32, fontSize: 11.5, fontWeight: 500,
+                  color: childActive ? activeColor : "rgba(255,255,255,0.55)",
+                  background: childActive ? "rgba(212,175,55,0.10)" : "transparent",
+                  transition: "background 150ms, color 150ms",
+                }}
+                onMouseEnter={e => { if (!childActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={e => { if (!childActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                {childActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full" style={{ height: 16, background: activeColor }} />}
+                <span style={{ color: childActive ? activeColor : "rgba(255,255,255,0.35)" }}>{child.icon}</span>
+                {child.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return collapsed ? <Tooltip label={item.label}>{row}</Tooltip> : row;
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { formatNumber, formatPct, formatChange, getWeekLabel } from "@/lib/utils";
+import { cachedFetch } from "@/lib/portal-cache";
 
 export default function IndicesPage() {
   const sp = useSearchParams();
@@ -15,8 +16,7 @@ export default function IndicesPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ period, ...(date && { date }) });
-      const res = await fetch(`/api/portal/indices?${params}`);
-      const json = await res.json();
+      const json = await cachedFetch<{ data: any[]; date?: string }>(`/api/portal/indices?${params}`);
       setData(json.data ?? []);
       if (!date && json.date) setDate(json.date);
     } catch { setData([]); } finally { setLoading(false); }
@@ -35,7 +35,9 @@ export default function IndicesPage() {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Market Indices</h1>
+          <h1 className="text-xl font-bold">
+            <span style={{ color: "var(--text-primary)" }}>Market </span><span style={{ color: "#D4971A" }}>Indices</span>
+          </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>{date || "Latest available"}</p>
         </div>
         <div className="inline-flex rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>

@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { fetchMarketSummary } from "@/lib/market-cache";
 import { useState, useEffect } from "react";
 import { fmtNum, fmtVol, getMarketStatus } from "../_data";
 
@@ -54,7 +55,7 @@ function IdxCard({ idx, isOpen }: { idx: IndexRow; isOpen: boolean }) {
 
         <div className="flex items-center gap-1.5 mt-1">
           <span className="text-[11px] font-bold tabular-nums" style={{ color }}>
-            {up ? "▲" : "▼"} {fmtNum(Math.abs(idx.change), 2)}
+            {up ? "â–²" : "â–¼"} {fmtNum(Math.abs(idx.change), 2)}
           </span>
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
             style={{ background: up ? "rgba(22,163,74,0.08)" : "rgba(220,38,38,0.08)", color }}>
@@ -102,8 +103,7 @@ export default function IndexCardsClient({ initialData }: { initialData?: { indi
   useEffect(() => {
     if (initialData) return; // already have data from server
     function load() {
-      fetch("/api/portal/market-summary")
-        .then(r => r.json())
+      fetchMarketSummary()
         .then(d => {
           // If DB has index data use it, otherwise build from stocks summary
           if (Array.isArray(d.indices) && d.indices.length > 0) {
@@ -124,11 +124,11 @@ export default function IndexCardsClient({ initialData }: { initialData?: { indi
             if (ordered.length > 0) {
               setIndices(ordered);
             } else {
-              // DB/PSX returned different codes — show top 5 by close value
+              // DB/PSX returned different codes â€” show top 5 by close value
               setIndices([...map.values()].filter(r => r.close > 0).sort((a,b) => b.close - a.close).slice(0, 5));
             }
           }
-          // else: no index data available — show nothing rather than fake data
+          // else: no index data available â€” show nothing rather than fake data
         })
         .catch(() => {})
         .finally(() => setLoading(false));
@@ -166,3 +166,4 @@ function normalizeCode(raw: string): string {
   };
   return m[raw.trim().toUpperCase()] ?? m[raw.trim()] ?? raw;
 }
+

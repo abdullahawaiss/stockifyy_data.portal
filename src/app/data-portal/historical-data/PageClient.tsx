@@ -43,7 +43,9 @@ export default function HistoricalDataPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-5">
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Historical Data</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Historical </span><span style={{ color: "#D4971A" }}>Data</span>
+        </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Retrieve daily or weekly price history for any listed company</p>
       </div>
 

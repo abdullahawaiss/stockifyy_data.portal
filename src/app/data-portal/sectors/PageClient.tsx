@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { formatNumber, formatVolume, formatPct } from "@/lib/utils";
+import { cachedFetch } from "@/lib/portal-cache";
 
 export default function SectorsPage() {
   const sp = useSearchParams();
@@ -13,8 +14,7 @@ export default function SectorsPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/portal/sectors?period=${period}`);
-      const json = await res.json();
+      const json = await cachedFetch<{ data: any[] }>(`/api/portal/sectors?period=${period}`);
       setData(json.data ?? []);
     } catch { setData([]); } finally { setLoading(false); }
   }
@@ -32,7 +32,9 @@ export default function SectorsPage() {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Sector Summary</h1>
+          <h1 className="text-xl font-bold">
+            <span style={{ color: "var(--text-primary)" }}>Sector </span><span style={{ color: "#D4971A" }}>Summary</span>
+          </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Performance by market sector</p>
         </div>
         <div className="inline-flex rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>

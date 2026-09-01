@@ -32,7 +32,9 @@ export async function GET(req: NextRequest) {
         .leftJoin(sectors, eq(weeklySectorSummaries.sectorId, sectors.id))
         .where(eq(weeklySectorSummaries.weekStartDate, weekStart))
         .orderBy(desc(weeklySectorSummaries.avgWeeklyPctChange));
-      return NextResponse.json({ data: rows, period: "weekly", weekStart });
+      const res = NextResponse.json({ data: rows, period: "weekly", weekStart });
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res;
     }
 
     const date = sp.get("date") ?? new Date().toISOString().slice(0, 10);
@@ -55,7 +57,9 @@ export async function GET(req: NextRequest) {
       .leftJoin(sectors, eq(dailySectorSummaries.sectorId, sectors.id))
       .where(eq(dailySectorSummaries.tradingDate, date))
       .orderBy(desc(dailySectorSummaries.avgPercentageChange));
-    return NextResponse.json({ data: rows, period: "daily", date });
+    const res2 = NextResponse.json({ data: rows, period: "daily", date });
+    res2.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res2;
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to fetch sector data" }, { status: 500 });

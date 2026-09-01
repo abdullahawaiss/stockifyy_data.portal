@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { cachedFetch } from "@/lib/portal-cache";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber, formatVolume } from "@/lib/utils";
@@ -102,6 +103,27 @@ function getSectorIcon(name: string): string {
   return "🏢";
 }
 
+// ── Stock symbol avatar: coloured circle with initials ──────────────────
+const SYMBOL_COLORS: [number, number, number][] = [
+  [37,99,235],[5,150,105],[220,38,38],[124,58,237],[217,119,6],
+  [14,165,233],[239,68,68],[16,185,129],[168,85,247],[245,158,11],
+];
+function symbolColor(sym: string): string {
+  let h = 0;
+  for (let i = 0; i < sym.length; i++) h = (h * 31 + sym.charCodeAt(i)) >>> 0;
+  const [r,g,b] = SYMBOL_COLORS[h % SYMBOL_COLORS.length];
+  return `rgb(${r},${g},${b})`;
+}
+function StockIcon({ symbol, size = 28 }: { symbol: string; size?: number }) {
+  const color = symbolColor(symbol);
+  const letters = symbol.slice(0, 2);
+  return (
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, background: color + "18", border: `1.5px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <span style={{ fontSize: size * 0.38, fontWeight: 800, color, letterSpacing: "-0.5px", lineHeight: 1, fontFamily: "monospace" }}>{letters}</span>
+    </div>
+  );
+}
+
 const MKT_ITEMS: { label: string; mt: MarketType }[] = [
   { label:"Regular Market",               mt:"REGULAR MARKET" },
   { label:"Deliverable Futures Contract",  mt:"DELIVERABLE FUTURES CONTRACT" },
@@ -178,7 +200,7 @@ export default function StocksClient() {
   const [search,      setSearch]      = useState("");
   const [sortBy,      setSortBy]      = useState("symbol");
   const [sortDir,     setSortDir]     = useState<SortDir>("asc");
-  const [pageSize,    setPageSize]    = useState(25);
+  const [pageSize,    setPageSize]    = useState(10);
   const [page,        setPage]        = useState(1);
 
   const fetchData = useCallback(async (silent = false) => {
@@ -187,9 +209,8 @@ export default function StocksClient() {
     try {
       const params = new URLSearchParams();
       if (date) params.set("date", date);
-      const res = await fetch(`/api/portal/stocks?${params}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const json = await cachedFetch<any>(`/api/portal/stocks?${params}`);
       let rows: StockRow[] = json.rows ?? [];
       const secs = json.sectors ?? [];
       const d    = json.date ?? date;
@@ -582,15 +603,25 @@ export default function StocksClient() {
                       >
                         <td style={{ padding:"9px 12px", textAlign:"center", color:t.textMuted, fontSize:10, fontVariantNumeric:"tabular-nums" }}>{(page-1)*pageSize+i+1}</td>
                         <td style={{ padding:"9px 12px" }}>
-                          <Link href={`/data-portal/company/${row.symbol}`}
-                            style={{ fontWeight:800, color:t.text, fontFamily:"monospace", fontSize:12, letterSpacing:"0.04em", textDecoration:"none" }}
-                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color="#16A34A"}
-                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=t.text}>
-                            {row.symbol}
-                          </Link>
-                          {row.shariahStatus === "compliant" && (
-                            <span style={{ marginLeft:3, fontSize:11, verticalAlign:"middle" }} title="Shariah Compliant">☪️</span>
-                          )}
+                          <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                            <StockIcon symbol={row.symbol} size={28} />
+                            <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                                <Link href={`/data-portal/company/${row.symbol}`}
+                                  style={{ fontWeight:800, color:t.text, fontFamily:"monospace", fontSize:12, letterSpacing:"0.04em", textDecoration:"none" }}
+                                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color="#16A34A"}
+                                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=t.text}>
+                                  {row.symbol}
+                                </Link>
+                                {row.shariahStatus === "compliant" && (
+                                  <svg viewBox="0 0 14 14" width={12} height={12} aria-label="Shariah Compliant" style={{ flexShrink:0 }}>
+                                    <path d="M7,1.5 A5.5,5.5 0 1 0 7,12.5 A3.8,3.8 0 1 1 7,1.5 Z" fill="#16A34A" />
+                                    <circle cx="10" cy="4.5" r="1.1" fill="#16A34A" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </td>
                         <td style={{ padding:"9px 12px", color:t.textSec, maxWidth:140 }}>
                           <span style={{ display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontSize:11 }} title={row.companyName ?? ""}>{row.companyName ?? "—"}</span>

@@ -30,7 +30,9 @@ export default function DownloadsPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Data Downloads</h1>
+        <h1 className="text-xl font-bold">
+          <span style={{ color: "var(--text-primary)" }}>Data </span><span style={{ color: "#D4971A" }}>Downloads</span>
+        </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Download market data in CSV and Excel formats</p>
       </div>
 
