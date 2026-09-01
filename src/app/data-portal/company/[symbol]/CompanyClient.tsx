@@ -152,6 +152,7 @@ function PriceChart({ sym, latestClose }: { sym: string; latestClose: number | n
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState<"line"|"candle">("line");
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; candle: Candle; pct: number } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -161,6 +162,31 @@ function PriceChart({ sym, latestClose }: { sym: string; latestClose: number | n
       .then(d=>{ setCandles(Array.isArray(d)?d:d.candles??[]); setLoading(false); })
       .catch(()=>setLoading(false));
   }, [sym, period]);
+
+  const chartMeta = useMemo(() => {
+    if (candles.length === 0) return null;
+    const prices = candles.map(c => c.close);
+    const minP = Math.min(...prices) * 0.995;
+    const maxP = Math.max(...prices) * 1.005;
+    const pad = { l: 55, r: 16, t: 20, b: 55 };
+    return { prices, minP, maxP, pad };
+  }, [candles]);
+
+  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas || !chartMeta || candles.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const { minP, maxP, pad } = chartMeta;
+    const cW = canvas.width - pad.l - pad.r;
+    const idx = Math.round(((mx - pad.l) / cW) * (candles.length - 1));
+    const clamped = Math.max(0, Math.min(candles.length - 1, idx));
+    const candle = candles[clamped];
+    const xOf = (i: number) => pad.l + (i / (candles.length - 1)) * cW;
+    const yOf = (p: number) => pad.t + (canvas.height - pad.t - pad.b) - ((p - minP) / (maxP - minP)) * (canvas.height - pad.t - pad.b);
+    const pct = clamped > 0 ? ((candle.close - candles[0].close) / candles[0].close) * 100 : 0;
+    setHover({ x: xOf(clamped), y: yOf(candle.close), candle, pct });
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -234,6 +260,19 @@ function PriceChart({ sym, latestClose }: { sym: string; latestClose: number | n
     ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, 2*Math.PI);
     ctx.fillStyle = isUp ? "#16A34A" : "#DC2626"; ctx.fill();
 
+    // Hover crosshair
+    if (hover) {
+      ctx.strokeStyle = "rgba(212,151,26,0.5)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(hover.x, pad.t); ctx.lineTo(hover.x, H - pad.b + 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad.l, hover.y); ctx.lineTo(W - pad.r, hover.y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(hover.x, hover.y, 5, 0, 2*Math.PI);
+      ctx.fillStyle = GOLD; ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
     // X-axis date labels (6 labels)
     const step = Math.floor(candles.length / 5);
     ctx.fillStyle = "var(--text-muted,#94a3b8)"; ctx.font = "9px system-ui"; ctx.textAlign = "center";
@@ -243,7 +282,7 @@ function PriceChart({ sym, latestClose }: { sym: string; latestClose: number | n
       const label = d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
       ctx.fillText(label, xOf(i), H - pad.b + 24);
     });
-  }, [candles, chartType]);
+  }, [candles, chartType, hover]);
 
   const pct = candles.length >= 2 ? ((candles[candles.length-1].close - candles[0].close) / candles[0].close) * 100 : 0;
   const isPos = pct >= 0;
@@ -276,7 +315,17 @@ function PriceChart({ sym, latestClose }: { sym: string; latestClose: number | n
             <div style={{width:28,height:28,border:`3px solid ${GOLD}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
           </div>
         )}
-        <canvas ref={canvasRef} style={{width:"100%",height:260,display:"block"}} />
+        {hover && (
+          <div style={{position:"absolute",top:8,left:60,zIndex:10,background:"var(--card-bg)",border:`1px solid ${GOLD}44`,borderRadius:8,padding:"6px 12px",fontSize:11,pointerEvents:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",display:"flex",gap:14}}>
+            <span style={{color:"var(--text-muted)"}}>{new Date(hover.candle.time*1000).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
+            <span style={{fontWeight:800,color:"var(--text-primary)"}}>₨{hover.candle.close.toFixed(2)}</span>
+            <span style={{fontWeight:700,color:hover.pct>=0?"#16a34a":"#dc2626"}}>{hover.pct>=0?"+":""}{hover.pct.toFixed(2)}%</span>
+            <span style={{color:"var(--text-muted)"}}>Vol: {fmtV(hover.candle.volume)}</span>
+          </div>
+        )}
+        <canvas ref={canvasRef} style={{width:"100%",height:260,display:"block",cursor:"crosshair"}}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHover(null)} />
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -466,7 +515,7 @@ function DonutChart({ data }: { data:{label:string;pct:number;color:string}[] })
 type ChartSubTab = "Price"|"Market Cap"|"Index vs Company"|"SIP"|"Trading View";
 const CHART_SUB_TABS: ChartSubTab[] = ["Price","Market Cap","Index vs Company","SIP","Trading View"];
 
-/* ─── Market Cap chart (static SVG) ──────────────────────────────────────── */
+/* ─── Market Cap chart (interactive SVG) ─────────────────────────────────── */
 function MarketCapChart({ sym, meta }: { sym: string; meta: CompanyMeta }) {
   const scale = parseFloat(meta.mktCap.replace(/[BM]/,"")) || 1;
   const pts = [0.12,0.18,0.22,0.15,0.28,0.35,0.41,0.30,0.38,0.52,0.62,0.55,0.70,0.85,0.80,0.75,0.88,0.95,1.0,0.92];
@@ -479,9 +528,25 @@ function MarketCapChart({ sym, meta }: { sym: string; meta: CompanyMeta }) {
   const fillPts=`${xOf(0)},${H-pad.b} ${points} ${xOf(vals.length-1)},${H-pad.b}`;
   const years=["2008","2010","2012","2014","2016","2018","2020","2022","2024","2026"];
   const yLabels=[0.25,0.5,0.75,1.0].map(f=>minV+(maxV-minV)*f);
+  const [hi, setHi] = useState<number|null>(null);
+  function onMove(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * W;
+    const idx = Math.round(((mx - pad.l) / (W - pad.l - pad.r)) * (vals.length - 1));
+    setHi(Math.max(0, Math.min(vals.length - 1, idx)));
+  }
   return(
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%"}}>
+    <div style={{position:"relative"}}>
+      {hi !== null && (
+        <div style={{position:"absolute",top:0,left:56,zIndex:5,background:"var(--card-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"5px 12px",fontSize:11,pointerEvents:"none",boxShadow:"0 4px 14px rgba(0,0,0,0.12)",display:"flex",gap:12}}>
+          <span style={{color:"var(--text-muted)"}}>{years[Math.floor(hi/2)]??years[years.length-1]}</span>
+          <span style={{color:"#2563EB",fontWeight:800}}>PKR {(vals[hi]/1000).toFixed(1)}B Market Cap</span>
+          <span style={{color:hi>0?(vals[hi]>vals[hi-1]?"#16a34a":"#dc2626"):"var(--text-muted)",fontWeight:700}}>
+            {hi>0?((vals[hi]-vals[hi-1])/vals[hi-1]*100>0?"+":"")+((vals[hi]-vals[hi-1])/vals[hi-1]*100).toFixed(1)+"%":"base"}
+          </span>
+        </div>
+      )}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",cursor:"crosshair"}} onMouseMove={onMove} onMouseLeave={()=>setHi(null)}>
         {yLabels.map((v,i)=>{
           const y=yOf(v);
           return <g key={i}><line x1={pad.l} x2={W-pad.r} y1={y} y2={y} stroke="var(--border)" strokeWidth={0.7}/><text x={pad.l-4} y={y+4} textAnchor="end" fontSize={8} fill="var(--text-muted)">{(v/1000).toFixed(0)}B</text></g>;
@@ -489,11 +554,15 @@ function MarketCapChart({ sym, meta }: { sym: string; meta: CompanyMeta }) {
         <defs><linearGradient id="mcGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity="0.25"/><stop offset="100%" stopColor="#2563EB" stopOpacity="0"/></linearGradient></defs>
         <polygon points={fillPts} fill="url(#mcGrad)"/>
         <polyline points={points} fill="none" stroke="#2563EB" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+        {hi !== null && <>
+          <line x1={xOf(hi)} x2={xOf(hi)} y1={pad.t} y2={H-pad.b} stroke={GOLD} strokeWidth={1} strokeDasharray="3,3" opacity={0.7}/>
+          <circle cx={xOf(hi)} cy={yOf(vals[hi])} r={4} fill="#2563EB" stroke="var(--card-bg)" strokeWidth={1.5}/>
+        </>}
         {years.map((y,i)=><text key={y} x={xOf(i*2)} y={H-4} textAnchor="middle" fontSize={8} fill="var(--text-muted)">{y}</text>)}
-        <text x={W/2} y={14} textAnchor="middle" fontSize={10} fill="var(--text-muted)" fontWeight={700}>{sym} Market Cap (PKR M)</text>
+        <text x={W/2} y={14} textAnchor="middle" fontSize={10} fill="var(--text-muted)" fontWeight={700}>{sym} Market Cap (PKR B)</text>
       </svg>
       <div style={{display:"flex",gap:16,marginTop:8,justifyContent:"center",flexWrap:"wrap"}}>
-        {[{l:"Current Mkt Cap",v:"PKR "+meta.mktCap},{l:"Shares Out",v:meta.sharesOut},{l:"52W Range",v:"PKR 140–PKR 220"}].map(s=>(
+        {[{l:"Current Mkt Cap",v:"PKR "+meta.mktCap},{l:"Shares Out",v:meta.sharesOut}].map(s=>(
           <div key={s.l} style={{textAlign:"center"}}><div style={{fontSize:9,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{s.l}</div><div style={{fontSize:13,fontWeight:700,color:"var(--navy)"}}>{s.v}</div></div>
         ))}
       </div>
@@ -510,12 +579,32 @@ function IndexVsCompanyChart({ sym }: { sym: string }) {
   const xOf=(i:number)=>pad.l+(i/(pts1.length-1))*(W-pad.l-pad.r);
   const yOf=(v:number)=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
   const dates=["03-Aug","05-Aug","07-Aug","11-Aug","13-Aug","18-Aug","20-Aug","24-Aug","27-Aug","31-Aug"];
+  const [hoverIdx, setHoverIdx] = useState<number|null>(null);
+  function onSvgMove(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * W;
+    const idx = Math.round(((mx - pad.l) / (W - pad.l - pad.r)) * (pts1.length - 1));
+    setHoverIdx(Math.max(0, Math.min(pts1.length - 1, idx)));
+  }
+  const hi = hoverIdx;
   return(
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%"}}>
+    <div style={{position:"relative"}}>
+      {hi !== null && (
+        <div style={{position:"absolute",top:0,left:0,zIndex:5,background:"var(--card-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"5px 12px",fontSize:11,pointerEvents:"none",boxShadow:"0 4px 14px rgba(0,0,0,0.12)",display:"flex",gap:12}}>
+          <span style={{color:"var(--text-muted)"}}>{dates[Math.floor(hi/2)]??dates[dates.length-1]}</span>
+          <span style={{color:"#2563EB",fontWeight:700}}>{sym}: {(pts1[hi]-100).toFixed(1)}%</span>
+          <span style={{color:"#DC2626",fontWeight:700}}>KSE-100: {(pts2[hi]-100).toFixed(1)}%</span>
+        </div>
+      )}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",cursor:"crosshair"}} onMouseMove={onSvgMove} onMouseLeave={()=>setHoverIdx(null)}>
         {[0.25,0.5,0.75,1].map((f,i)=>{const v=minV+(maxV-minV)*f;return <line key={i} x1={pad.l} x2={W-pad.r} y1={yOf(v)} y2={yOf(v)} stroke="var(--border)" strokeWidth={0.7}/>;  })}
         <polyline points={pts1.map((v,i)=>`${xOf(i)},${yOf(v)}`).join(" ")} fill="none" stroke="#2563EB" strokeWidth={2} strokeLinejoin="round"/>
         <polyline points={pts2.map((v,i)=>`${xOf(i)},${yOf(v)}`).join(" ")} fill="none" stroke="#DC2626" strokeWidth={1.5} strokeDasharray="4,3" strokeLinejoin="round"/>
+        {hi !== null && <>
+          <line x1={xOf(hi)} x2={xOf(hi)} y1={pad.t} y2={H-pad.b} stroke={GOLD} strokeWidth={1} strokeDasharray="3,3" opacity={0.6}/>
+          <circle cx={xOf(hi)} cy={yOf(pts1[hi])} r={4} fill="#2563EB" stroke="var(--card-bg)" strokeWidth={1.5}/>
+          <circle cx={xOf(hi)} cy={yOf(pts2[hi])} r={4} fill="#DC2626" stroke="var(--card-bg)" strokeWidth={1.5}/>
+        </>}
         {dates.map((d,i)=><text key={d} x={xOf(i*2)} y={H-4} textAnchor="middle" fontSize={7} fill="var(--text-muted)">{d}</text>)}
         <text x={pad.l+4} y={14} fontSize={9} fill="#2563EB" fontWeight={700}>{sym}</text>
         <text x={pad.l+4+40} y={14} fontSize={9} fill="#DC2626">  — Index (KSE-100)</text>
@@ -526,17 +615,41 @@ function IndexVsCompanyChart({ sym }: { sym: string }) {
 
 /* ─── SIP chart ──────────────────────────────────────────────────────────── */
 function SIPChart({ sym }: { sym: string }) {
-  const years=10; const monthly=10000; const ratePA=0.22; const rate=ratePA/12;
+  const [monthly, setMonthly] = useState(10000);
+  const [years, setYears] = useState(10);
+  const [ratePA, setRatePA] = useState(22);
+  const rate=ratePA/100/12;
   const rows=Array.from({length:years},(_,y)=>{
     const n=(y+1)*12; const fv=monthly*((Math.pow(1+rate,n)-1)/rate)*(1+rate); return{y:y+1,inv:monthly*(y+1)*12,fv};
   });
   const maxFv=Math.max(...rows.map(r=>r.fv));
-  const H=150,W=480,pad={l:52,r:12,t:20,b:36},bw=22,gap=10;
+  const H=150,W=480,pad={l:52,r:12,t:20,b:36};
+  const bw=Math.max(10, Math.floor((W-pad.l-pad.r)/years - 6));
+  const gap=Math.floor((W-pad.l-pad.r-bw*years)/(years+1));
+  const lastRow=rows[rows.length-1];
   return(
-    <div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {/* Controls */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Monthly (₨)</div>
+          <input type="number" value={monthly} onChange={e=>setMonthly(Math.max(1000,+e.target.value))} min={1000} step={1000}
+            style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid var(--border)",background:"var(--card-bg)",color:"var(--text-primary)",fontSize:13,boxSizing:"border-box"}} />
+        </div>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Years</div>
+          <input type="number" value={years} onChange={e=>setYears(Math.min(30,Math.max(1,+e.target.value)))} min={1} max={30}
+            style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid var(--border)",background:"var(--card-bg)",color:"var(--text-primary)",fontSize:13,boxSizing:"border-box"}} />
+        </div>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Annual Return %</div>
+          <input type="number" value={ratePA} onChange={e=>setRatePA(Math.min(100,Math.max(1,+e.target.value)))} min={1} max={100}
+            style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid var(--border)",background:"var(--card-bg)",color:"var(--text-primary)",fontSize:13,boxSizing:"border-box"}} />
+        </div>
+      </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%"}}>
         {rows.map((r,i)=>{
-          const x=pad.l+i*(bw+gap);
+          const x=pad.l+gap+(i*(bw+gap));
           const fvH=(r.fv/maxFv)*(H-pad.t-pad.b);
           const invH=(r.inv/maxFv)*(H-pad.t-pad.b);
           const base=H-pad.b;
@@ -544,16 +657,16 @@ function SIPChart({ sym }: { sym: string }) {
             <g key={r.y}>
               <rect x={x} y={base-fvH} width={bw} height={fvH} rx={3} fill="#059669" opacity={0.7}/>
               <rect x={x} y={base-invH} width={bw} height={invH} rx={3} fill="#2563EB" opacity={0.85}/>
-              <text x={x+bw/2} y={H-4} textAnchor="middle" fontSize={8} fill="var(--text-muted)">Y{r.y}</text>
+              <text x={x+bw/2} y={H-4} textAnchor="middle" fontSize={Math.max(6,8-Math.floor(years/10))} fill="var(--text-muted)">Y{r.y}</text>
             </g>
           );
         })}
-        <text x={W/2} y={14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">SIP PKR 10,000/mo × 10Y @ 22% p.a. in {sym}</text>
+        <text x={W/2} y={14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">SIP ₨{monthly.toLocaleString()}/mo × {years}Y @ {ratePA}% p.a. in {sym}</text>
       </svg>
-      <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:6}}>
-        <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#2563EB"}}/><span style={{fontSize:11,color:"var(--text-muted)"}}>Invested</span></div>
+      <div style={{display:"flex",gap:16,justifyContent:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#2563EB"}}/><span style={{fontSize:11,color:"var(--text-muted)"}}>Invested: ₨{(lastRow.inv/1e6).toFixed(2)}M</span></div>
         <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#059669"}}/><span style={{fontSize:11,color:"var(--text-muted)"}}>Corpus</span></div>
-        <div style={{fontSize:11,color:"var(--positive)",fontWeight:700}}>Final Corpus: PKR {(rows[9].fv/1e6).toFixed(1)}M</div>
+        <div style={{fontSize:11,color:"var(--positive)",fontWeight:700}}>Final Corpus: ₨{(lastRow.fv/1e6).toFixed(2)}M (+{(((lastRow.fv-lastRow.inv)/lastRow.inv)*100).toFixed(0)}%)</div>
       </div>
     </div>
   );
@@ -1213,11 +1326,45 @@ function CompanySearch() {
   );
 }
 
+/* ─── Live Quote hook ────────────────────────────────────────────────────── */
+interface LiveQuote { price: number; change: number; changePct: number; open: number; high: number; low: number; volume: number; tradingDate: string; }
+function useLiveQuote(sym: string, seed: DailyRow | null) {
+  const [quote, setQuote] = useState<LiveQuote | null>(seed ? {
+    price: seed.close ?? 0, change: seed.priceChange ?? 0, changePct: seed.percentageChange ?? 0,
+    open: seed.open ?? 0, high: seed.high ?? 0, low: seed.low ?? 0,
+    volume: seed.volume ?? 0, tradingDate: seed.tradingDate,
+  } : null);
+  const [fresh, setFresh] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchQuote() {
+      try {
+        const r = await fetch(`/api/portal/chart/quote?symbol=${sym}`);
+        if (!r.ok || cancelled) return;
+        const d = await r.json();
+        if (d.price) {
+          setQuote({ price: d.price, change: d.change ?? 0, changePct: d.changePct ?? 0,
+            open: d.open ?? 0, high: d.high ?? 0, low: d.low ?? 0,
+            volume: d.volume ?? 0, tradingDate: d.tradingDate ?? "" });
+          setFresh(true);
+        }
+      } catch { /* keep seed */ }
+    }
+    fetchQuote();
+    const interval = setInterval(fetchQuote, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [sym]);
+
+  return { quote, fresh };
+}
+
 /* ─── Main ───────────────────────────────────────────────────────────────── */
 export default function CompanyClient({ company, latestDaily, latestWeekly, recentDaily, recentWeekly, announcements, sym }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("Fundamentals");
   const meta = getMeta(sym);
-  const pct = fmtPct(latestDaily?.percentageChange);
+  const { quote, fresh } = useLiveQuote(sym, latestDaily);
+  const pct = fmtPct(quote?.changePct ?? latestDaily?.percentageChange);
   const d = latestDaily;
 
   return (
@@ -1245,16 +1392,19 @@ export default function CompanyClient({ company, latestDaily, latestWeekly, rece
           </div>
           {/* Right: price */}
           <div style={{textAlign:"right"}}>
-            {d?(
+            {quote?(
               <>
-                <div style={{fontSize:36,fontWeight:900,color:"#fff",lineHeight:1}}>PKR {fmt(d.close)}</div>
-                <div style={{fontSize:14,fontWeight:700,marginTop:5,color:pct.pos===true?"#86efac":pct.pos===false?"#fca5a5":"rgba(255,255,255,0.6)"}}>
-                  {d.priceChange!=null?((d.priceChange>0?"+":"")+fmt(d.priceChange)):""} ({pct.text}) Today
+                <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
+                  <div style={{fontSize:36,fontWeight:900,color:"#fff",lineHeight:1}}>PKR {fmt(quote.price)}</div>
+                  {fresh && <span style={{fontSize:9,fontWeight:700,background:"rgba(22,163,74,0.2)",color:"#86efac",padding:"2px 7px",borderRadius:10,border:"1px solid rgba(22,163,74,0.3)"}}>LIVE</span>}
                 </div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:3}}>As of {d.tradingDate} · PSX</div>
+                <div style={{fontSize:14,fontWeight:700,marginTop:5,color:pct.pos===true?"#86efac":pct.pos===false?"#fca5a5":"rgba(255,255,255,0.6)"}}>
+                  {quote.change!=null?((quote.change>0?"+":"")+fmt(quote.change)):""} ({pct.text}) Today
+                </div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:3}}>As of {quote.tradingDate||d?.tradingDate||"—"} · PSX</div>
                 {/* Mini stats */}
                 <div style={{display:"flex",gap:16,marginTop:10,justifyContent:"flex-end",flexWrap:"wrap"}}>
-                  {([["Open",fmt(d.open)],["High",fmt(d.high)],["Low",fmt(d.low)],["Vol",fmtV(d.volume)]] as [string,string][]).map(([l,v])=>(
+                  {([["Open",fmt(quote.open)],["High",fmt(quote.high)],["Low",fmt(quote.low)],["Vol",fmtV(quote.volume)]] as [string,string][]).map(([l,v])=>(
                     <div key={l} style={{textAlign:"right"}}>
                       <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.07em"}}>{l}</div>
                       <div style={{fontSize:12,fontWeight:700,color:"#fff"}}>{v}</div>

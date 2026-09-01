@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { searchPsxStocks, PSX_STOCKS } from "@/lib/psx-stocks-static";
 import { useDarkTokens } from "@/hooks/useDarkMode";
 
@@ -81,6 +81,126 @@ function loadHoldings(): Holding[] { try { return JSON.parse(localStorage.getIte
 function saveHoldings(h: Holding[]) { try { localStorage.setItem(LS_HOLD, JSON.stringify(h)); } catch {} }
 function loadTx(): Transaction[] { try { return JSON.parse(localStorage.getItem(LS_TX) ?? "[]"); } catch { return []; } }
 function saveTx(t: Transaction[]) { try { localStorage.setItem(LS_TX, JSON.stringify(t)); } catch {} }
+
+// Arc path helpers for interactive donut
+function polarXY(cx: number, cy: number, r: number, a: number): [number, number] {
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+}
+function arcPath(cx: number, cy: number, R: number, ri: number, a0: number, a1: number): string {
+  const [x1, y1] = polarXY(cx, cy, R, a0);
+  const [x2, y2] = polarXY(cx, cy, R, a1);
+  const [ix1, iy1] = polarXY(cx, cy, ri, a0);
+  const [ix2, iy2] = polarXY(cx, cy, ri, a1);
+  const lg = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${x1} ${y1} A${R} ${R} 0 ${lg} 1 ${x2} ${y2} L${ix2} ${iy2} A${ri} ${ri} 0 ${lg} 0 ${ix1} ${iy1}Z`;
+}
+
+interface StockSlice {
+  symbol: string;
+  name: string;
+  value: number;
+  shares: number;
+  color: string;
+}
+
+function StockDonutChart({ slices, totalVal, gold, text, muted, border, card }: {
+  slices: StockSlice[];
+  totalVal: number;
+  gold: string; text: string; muted: string; border: string; card: string;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const total = slices.reduce((a, s) => a + s.value, 0);
+  if (total === 0 || slices.length === 0) {
+    return (
+      <div style={{ textAlign: "center", color: muted, fontSize: 13, padding: "20px 0" }}>
+        No holdings yet
+      </div>
+    );
+  }
+
+  const cx = 100, cy = 100, R = 78, ri = 50;
+  let angle = -Math.PI / 2;
+  const paths = slices.map((s, i) => {
+    const span = (s.value / total) * 2 * Math.PI;
+    const a0 = angle, a1 = angle + span;
+    angle = a1;
+    const isHov = hovered === i;
+    const scale = isHov ? 1.04 : 1;
+    // expand hovered slice outward
+    const midA = (a0 + a1) / 2;
+    const dx = isHov ? Math.cos(midA) * 5 : 0;
+    const dy = isHov ? Math.sin(midA) * 5 : 0;
+    return { path: arcPath(cx, cy, R, ri, a0, a1), color: s.color, i, dx, dy, scale, midA };
+  });
+
+  const hov = hovered !== null ? slices[hovered] : null;
+  const hovPct = hov ? (hov.value / total * 100).toFixed(1) : null;
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "relative" }}>
+        <svg width={200} height={200} viewBox="0 0 200 200">
+          {paths.map(p => (
+            <path
+              key={p.i}
+              d={p.path}
+              fill={p.color}
+              opacity={hovered === null ? 0.9 : hovered === p.i ? 1 : 0.4}
+              transform={`translate(${p.dx}, ${p.dy})`}
+              style={{ cursor: "pointer", transition: "opacity 0.15s, transform 0.15s" }}
+              onMouseEnter={() => setHovered(p.i)}
+              onMouseLeave={() => setHovered(null)}
+            />
+          ))}
+          {/* center hole */}
+          <circle cx={cx} cy={cy} r={ri - 2} fill={card} />
+          {/* center text */}
+          {hov ? (
+            <>
+              <text x={cx} y={cy - 8} textAnchor="middle" fontSize={11} fontWeight={800} fill={hov.color}>{hov.symbol}</text>
+              <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill={text}>{hovPct}%</text>
+              <text x={cx} y={cy + 20} textAnchor="middle" fontSize={9} fill={muted}>of portfolio</text>
+            </>
+          ) : (
+            <>
+              <text x={cx} y={cy - 4} textAnchor="middle" fontSize={10} fill={muted}>Total Value</text>
+              <text x={cx} y={cy + 12} textAnchor="middle" fontSize={11} fontWeight={800} fill={text}>
+                ₨{totalVal >= 1_000_000 ? (totalVal / 1_000_000).toFixed(1) + "M" : totalVal >= 1000 ? (totalVal / 1000).toFixed(0) + "K" : totalVal.toFixed(0)}
+              </text>
+            </>
+          )}
+        </svg>
+
+        {/* Tooltip */}
+        {hov && (
+          <div style={{
+            position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+            background: card, border: `1.5px solid ${hov.color}`, borderRadius: 10,
+            padding: "10px 14px", minWidth: 170, pointerEvents: "none", zIndex: 10,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+          }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: hov.color, marginBottom: 2 }}>{hov.symbol}</div>
+            <div style={{ fontSize: 11, color: text, marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{hov.name}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>
+              {[
+                ["Shares", hov.shares.toLocaleString("en-PK", { maximumFractionDigits: 0 })],
+                ["Weight", hovPct + "%"],
+                ["Value", "₨" + (hov.value >= 1_000_000 ? (hov.value / 1_000_000).toFixed(2) + "M" : (hov.value / 1000).toFixed(1) + "K")],
+              ].map(([label, val]) => (
+                <div key={label}>
+                  <div style={{ fontSize: 9, color: muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: text }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // SVG Donut for sector allocation
 function DonutChart({ slices }: { slices: { label: string; value: number; color: string }[] }) {
@@ -377,6 +497,16 @@ export default function PortfolioLive() {
     return { invested, currentVal, pnl, pnlPct, todayChg, xirrEst };
   }, [holdings]);
 
+  const stockSlices = useMemo((): StockSlice[] => {
+    const COLORS = ["#D4971A","#16a34a","#2563eb","#7c3aed","#0891b2","#dc2626","#f59e0b","#10b981","#6366f1","#ec4899","#f97316","#14b8a6","#8b5cf6","#e11d48","#0ea5e9"];
+    return [...holdings]
+      .map((h, i) => {
+        const p = getPrice(h.symbol);
+        return { symbol: h.symbol, name: h.name || h.symbol, value: h.quantity * p.price, shares: h.quantity, color: COLORS[i % COLORS.length] };
+      })
+      .sort((a, b) => b.value - a.value);
+  }, [holdings]);
+
   const sectorAlloc = useMemo(() => {
     const map: Record<string, number> = {};
     holdings.forEach(h => {
@@ -504,6 +634,31 @@ export default function PortfolioLive() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Stock Allocation Donut */}
+            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>Stock Allocation</div>
+              <StockDonutChart slices={stockSlices} totalVal={summary.currentVal} gold={gold} text={text} muted={muted} border={border} card={card} />
+              {stockSlices.length > 0 && (
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 5, marginTop: 16 }}>
+                  {stockSlices.slice(0, 7).map(s => {
+                    const pct = summary.currentVal > 0 ? (s.value / summary.currentVal * 100) : 0;
+                    return (
+                      <div key={s.symbol} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: text, fontWeight: 600 }}>{s.symbol}</span>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: muted }}>{pct.toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                  {stockSlices.length > 7 && (
+                    <div style={{ fontSize: 10, color: muted, textAlign: "center", marginTop: 2 }}>+{stockSlices.length - 7} more</div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Sector Donut */}

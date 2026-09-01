@@ -482,13 +482,12 @@ export default function AnnouncementsSection({ initialData }: { initialData?: An
   const [loading, setLoading] = useState(initialData === undefined);
 
   useEffect(() => {
-    if (Array.isArray(initialData)) return; // server already sent data (even if empty)
     fetch("/api/portal/announcements?limit=50")
       .then(r => r.json())
-      .then(d => setAllRows(d.data ?? []))
+      .then(d => { const rows = d.data ?? []; if (rows.length > 0) setAllRows(rows); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [initialData]);
+  }, []);
 
   const simpleRows = useMemo(() => allRows.map(toSimpleRow), [allRows]);
   const boardRows  = useMemo(() => allRows.filter(a => catOf(a.announcementType) === "Board Meetings").map(toBoardRow), [allRows]);

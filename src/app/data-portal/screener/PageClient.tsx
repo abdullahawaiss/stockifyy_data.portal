@@ -151,6 +151,8 @@ export default function PageClient() {
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   useEffect(() => {
     setMounted(true);
@@ -166,6 +168,8 @@ export default function PageClient() {
     ALL_ROWS.forEach(r => { map[r.sectorName] = (map[r.sectorName] ?? 0) + 1; });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, []);
+
+  useEffect(() => { setPage(1); }, [filters]);
 
   const filtered = useMemo(() => {
     return ALL_ROWS.filter(r => {
@@ -194,9 +198,11 @@ export default function PageClient() {
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(v => !v);
     else { setSortKey(key); setSortAsc(false); }
+    setPage(1);
   }
 
   function toggleSector(sec: string) {
+    setPage(1);
     setFilters(f => ({ ...f, sectors: f.sectors.includes(sec) ? f.sectors.filter(s => s !== sec) : [...f.sectors, sec] }));
   }
   function toggleMarketCap(cap: string) {
@@ -289,10 +295,10 @@ export default function PageClient() {
       </div>
 
       {/* Body: filter panel + table */}
-      <div style={{ display: "flex", gap: 0, flex: 1, maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 20px 24px", boxSizing: "border-box", alignItems: "flex-start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 16, maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 20px 24px", boxSizing: "border-box" }}>
 
         {/* Filter Panel */}
-        <div style={{ width: 260, flexShrink: 0, marginRight: 16, position: "sticky", top: 80, background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}>
+        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", overflowY: "auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: text }}>Filters</span>
             <button onClick={() => setFilters(DEFAULT_FILTERS)} style={{ fontSize: 11, color: gold, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Reset All</button>
@@ -383,12 +389,12 @@ export default function PageClient() {
               <thead>
                 <tr style={{ background: navy }}>
                   {([
-                    ["symbol","Symbol"],["companyName","Company"],["sectorName","Sector"],
-                    ["close","Close"],["pct","Chg %"],["volume","Volume"],["pe","P/E"],
-                    ["dps","DPS"],["divYield","Div Yield"],
-                  ] as [SortKey, string][]).map(([key, label]) => (
+                    ["symbol","Symbol",false],["companyName","Company",false],["sectorName","Sector",false],
+                    ["close","Close",true],["pct","Chg %",true],["volume","Volume",true],["pe","P/E",true],
+                    ["dps","DPS",true],["divYield","Div Yield",true],
+                  ] as [SortKey, string, boolean][]).map(([key, label, right]) => (
                     <th key={key} onClick={() => toggleSort(key)} style={{
-                      padding: "10px 12px", textAlign: "right", color: "rgba(255,255,255,0.85)",
+                      padding: "10px 12px", textAlign: right ? "right" : "left", color: "rgba(255,255,255,0.85)",
                       fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase",
                       cursor: "pointer", whiteSpace: "nowrap", userSelect: "none",
                     }}>
@@ -400,20 +406,20 @@ export default function PageClient() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((r, idx) => {
+                {sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r, idx) => {
                   const inWl = watchlist.includes(r.symbol);
                   const pColor = r.pct >= 0 ? "#16a34a" : "#dc2626";
                   return (
                     <tr key={r.symbol} style={{ borderBottom: `1px solid ${border}`, background: idx % 2 === 0 ? "transparent" : (tk.dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)") }}
                       onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(255,255,255,0.04)" : "#F8F6F1")}
                       onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : (tk.dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)"))}>
-                      <td style={{ padding: "9px 12px", textAlign: "right" }}>
+                      <td style={{ padding: "9px 12px", textAlign: "left" }}>
                         <Link href={`/data-portal/company/${r.symbol}`} style={{ textDecoration: "none" }}>
                           <span style={{ background: navy, color: gold, fontWeight: 800, fontSize: 12, padding: "2px 8px", borderRadius: 5 }}>{r.symbol}</span>
                         </Link>
                       </td>
-                      <td style={{ padding: "9px 12px", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: text }}>{r.companyName}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right" }}>
+                      <td style={{ padding: "9px 12px", textAlign: "left", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: text }}>{r.companyName}</td>
+                      <td style={{ padding: "9px 12px", textAlign: "left" }}>
                         <span style={{ fontSize: 11, color: muted, background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
                           {r.sectorName.length > 16 ? r.sectorName.slice(0, 16) + "…" : r.sectorName}
                         </span>
@@ -450,6 +456,28 @@ export default function PageClient() {
               </div>
             )}
           </div>
+          {/* Pagination */}
+          {sorted.length > PAGE_SIZE && (() => {
+            const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+            const pages: (number | "…")[] = [];
+            for (let i = 1; i <= totalPages; i++) {
+              if (i === 1 || i === totalPages || Math.abs(i - page) <= 2) pages.push(i);
+              else if (pages[pages.length - 1] !== "…") pages.push("…");
+            }
+            return (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 16px", borderTop: `1px solid ${border}` }}>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${border}`, background: card, color: page === 1 ? muted : text, cursor: page === 1 ? "default" : "pointer", fontSize: 13, fontWeight: 600, opacity: page === 1 ? 0.4 : 1 }}>‹ Prev</button>
+                {pages.map((p, i) => p === "…"
+                  ? <span key={`ellipsis-${i}`} style={{ color: muted, fontSize: 13, padding: "0 4px" }}>…</span>
+                  : <button key={p} onClick={() => setPage(p as number)}
+                      style={{ width: 34, height: 34, borderRadius: 7, border: `1px solid ${page === p ? gold : border}`, background: page === p ? gold : card, color: page === p ? "#fff" : text, cursor: "pointer", fontSize: 13, fontWeight: page === p ? 800 : 600 }}>{p}</button>
+                )}
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${border}`, background: card, color: page === totalPages ? muted : text, cursor: page === totalPages ? "default" : "pointer", fontSize: 13, fontWeight: 600, opacity: page === totalPages ? 0.4 : 1 }}>Next ›</button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
