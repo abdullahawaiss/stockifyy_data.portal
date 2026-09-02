@@ -92,7 +92,15 @@ async function getCompanyData(sym: string): Promise<{ company: any; latestDaily:
     return { company, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };
   }
 
-  return { company: null, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };
+  // Last resort: create a minimal stub so we show something instead of "not found"
+  const stubCompany = {
+    id: null, symbol: sym, name: sym,
+    sectorId: null, description: null,
+    listingDate: null, fiscalYearEnd: null,
+    website: null, freeFloat: null,
+    shariahStatus: null, marketCapCategory: null, sectorName: null,
+  };
+  return { company: stubCompany, latestDaily: null, latestWeekly: null, recentDaily: [], recentWeekly: [], announcements: [], fromLive: false };
 }
 
 export default async function CompanyPage({ params }: Props) {
