@@ -19,6 +19,7 @@ function periodPct(name: string, daily: number, period: Period): number {
 const SectorPanel = memo(function SectorPanel({ initialData }: { initialData?: MarketSummary["sectors"] }) {
   const [sectors, setSectors] = useState<MarketSummary["sectors"]>(() => initialData ?? []);
   const [loading, setLoading] = useState(!initialData);
+  const [tooltip, setTooltip] = useState<{ name: string; pct: number; companies: number; x: number; y: number } | null>(null);
   const [period, setPeriod] = useState<Period>("Daily");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -132,20 +133,29 @@ const SectorPanel = memo(function SectorPanel({ initialData }: { initialData?: M
                 .replace("Cement", "Cement");
 
               return (
-                <div key={sec.name}
-                  className="rounded-xl shrink-0 px-3 py-2.5 text-center transition-all hover:scale-105 cursor-default select-none"
-                  style={{
-                    minWidth: 90,
-                    background: up ? "rgba(34,197,94,0.10)" : "rgba(239,68,68,0.10)",
-                    border: `1px solid ${up ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"}`,
-                  }}>
-                  <div className="text-[10px] font-bold leading-tight" style={{ color: up ? "#065F46" : "#991B1B" }}>
-                    {label}
+                <Link href={`/data-portal/companies?sector=${encodeURIComponent(sec.name)}`} key={sec.name}
+                  style={{ textDecoration: "none" }}
+                  onMouseEnter={e => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setTooltip({ name: sec.name, pct: sec.pct, companies: (sec as { companies?: number }).companies ?? 0, x: rect.left + rect.width / 2, y: rect.bottom + 6 });
+                  }}
+                  onMouseLeave={() => setTooltip(null)}>
+                  <div
+                    className="rounded-xl shrink-0 px-3 py-2.5 text-center transition-all hover:scale-105 cursor-pointer select-none"
+                    style={{
+                      minWidth: 90,
+                      background: up ? "rgba(34,197,94,0.10)" : "rgba(239,68,68,0.10)",
+                      border: `1px solid ${up ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"}`,
+                      boxShadow: tooltip?.name === sec.name ? `0 0 0 2px ${up ? "#16A34A" : "#DC2626"}` : "none",
+                    }}>
+                    <div className="text-[10px] font-bold leading-tight" style={{ color: up ? "#065F46" : "#991B1B" }}>
+                      {label}
+                    </div>
+                    <div className="text-[12px] font-black mt-1" style={{ color: up ? "#16A34A" : "#DC2626" }}>
+                      {up ? "▲" : "▼"}{Math.abs(sec.pct).toFixed(2)}%
+                    </div>
                   </div>
-                  <div className="text-[12px] font-black mt-1" style={{ color: up ? "#16A34A" : "#DC2626" }}>
-                    {up ? "▲" : "▼"}{Math.abs(sec.pct).toFixed(2)}%
-                  </div>
-                </div>
+                </Link>
               );
             })
           )}
@@ -162,6 +172,22 @@ const SectorPanel = memo(function SectorPanel({ initialData }: { initialData?: M
           </button>
         )}
       </div>
+      {tooltip && (
+        <div style={{
+          position: "fixed", left: tooltip.x, top: tooltip.y, transform: "translateX(-50%)",
+          zIndex: 9999, background: "var(--navy,#07111F)", color: "#fff",
+          borderRadius: 10, padding: "8px 14px", pointerEvents: "none",
+          fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
+          border: "1px solid rgba(255,255,255,0.12)",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 2 }}>{tooltip.name}</div>
+          <div style={{ color: tooltip.pct >= 0 ? "#4ade80" : "#f87171" }}>
+            {tooltip.pct >= 0 ? "▲" : "▼"} {Math.abs(tooltip.pct).toFixed(2)}%
+          </div>
+          {tooltip.companies > 0 && <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, marginTop: 2 }}>{tooltip.companies} companies</div>}
+          <div style={{ fontSize: 9, color: "#D4971A", marginTop: 3 }}>Click to view sector →</div>
+        </div>
+      )}
     </div>
   );
 });

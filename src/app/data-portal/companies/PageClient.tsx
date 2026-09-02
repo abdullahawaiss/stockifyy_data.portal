@@ -71,7 +71,7 @@ function HeatCell({ change, size = 10 }: { change: number; size?: number }) {
   return <span style={{ display: "inline-block", width: size, height: size, borderRadius: 2, background: bg, flexShrink: 0 }} />;
 }
 
-type View = "grid" | "heatmap" | "list";
+type View = "grid" | "list";
 const PAGE_SIZE = 24;
 const GOLD = "#D4971A", NAVY = "#07111F";
 
@@ -81,7 +81,7 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sector, setSector] = useState("All");
-  const [view, setView] = useState<View>("grid");
+  const [view, setView] = useState<View>("list");
   const [sortBy, setSortBy] = useState<"symbol" | "change" | "price">("symbol");
   const [page, setPage] = useState(1);
 
@@ -161,10 +161,10 @@ export default function CompaniesPage() {
           <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "3px 0 0" }}>{data.length} listed companies · Mini sparklines · Sector heatmap</p>
         </div>
         <div style={{ display: "flex", gap: 4, background: "var(--light-bg)", borderRadius: 10, padding: 4, border: "1px solid var(--border)" }}>
-          {(["grid", "heatmap", "list"] as View[]).map(v => (
+          {(["grid", "list"] as View[]).map(v => (
             <button key={v} onClick={() => { setView(v); resetPage(); }}
               style={{ padding: "5px 14px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, background: view === v ? GOLD : "transparent", color: view === v ? NAVY : "var(--text-muted)", transition: "all 150ms" }}>
-              {v === "grid" ? "⊞ Grid" : v === "heatmap" ? "▦ Heatmap" : "≡ List"}
+              {v === "grid" ? "⊞ Grid" : "≡ List"}
             </button>
           ))}
         </div>
@@ -198,8 +198,6 @@ export default function CompaniesPage() {
         <div style={{ textAlign: "center", padding: 60, color: "var(--text-muted)" }}>
           <div style={{ fontSize: 28, marginBottom: 10, animation: "spin 1s linear infinite" }}>⟳</div>Loading companies...
         </div>
-      ) : view === "heatmap" ? (
-        <HeatmapView sectorMap={sectorMap} cardMap={cardMap} onFilter={s => { setSector(s); setView("grid"); resetPage(); }} />
       ) : view === "list" ? (
         <><ListView paginated={paginated} cardMap={cardMap} /><Pagination page={page} totalPages={totalPages} total={sorted.length} onPage={setPage} /></>
       ) : (

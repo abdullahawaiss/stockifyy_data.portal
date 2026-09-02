@@ -1231,8 +1231,13 @@ const CATS = ["all","general","investment","trading","valuation","corporate"];
 export default function ToolsClient() {
   const [cat, setCat] = useState("all");
   const [active, setActive] = useState<string>("salary");
+  const [search, setSearch] = useState("");
 
-  const filtered = useMemo(() => cat === "all" ? CALCS : CALCS.filter(c => c.category === cat), [cat]);
+  const filtered = useMemo(() => {
+    let list = cat === "all" ? CALCS : CALCS.filter(c => c.category === cat);
+    if (search) { const q = search.toLowerCase(); list = list.filter(c => c.label.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)); }
+    return list;
+  }, [cat, search]);
   const current  = useMemo(() => CALCS.find(c => c.id === active) ?? CALCS[0], [active]);
 
   function pickCat(key: string) {
@@ -1287,8 +1292,13 @@ export default function ToolsClient() {
         {/* LEFT — calculator list */}
         <div style={{ width: 240, flexShrink: 0, borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", background: "var(--card-bg)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "9px 14px", background: NAVY, borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
               {cat === "all" ? "All Calculators" : CAT_META[cat].label} · {filtered.length}
+            </div>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "rgba(255,255,255,0.3)", pointerEvents: "none" }}>🔍</span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calculators…"
+                style={{ width: "100%", boxSizing: "border-box", paddingLeft: 26, paddingRight: 8, paddingTop: 5, paddingBottom: 5, borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, outline: "none" }} />
             </div>
           </div>
           <div style={{ overflowY: "auto", flex: 1 }}>

@@ -213,9 +213,54 @@ export default function PageClient() {
     const header = "Symbol,Company,Sector,Close,Chg%,Volume,P/E,DPS,DivYield%,Shariah";
     const rows = sorted.map(r => `${r.symbol},"${r.companyName}","${r.sectorName}",${fmtN(r.close)},${fmtN(r.pct)},${r.volume},${fmtN(r.pe)},${fmtN(r.dps)},${fmtN(r.divYield)},${r.shariah ? "Yes" : "No"}`);
     const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "psx-screener.csv"; a.click();
-    URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "psx-screener.csv"; a.click(); URL.revokeObjectURL(url);
+  }
+
+  function exportPDF() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = sorted.slice(0, 200);
+    const html = `<!DOCTYPE html><html><head><title>PSX Screener — Stockifyy</title><style>
+      body{font-family:sans-serif;font-size:11px;margin:20px}
+      h2{font-size:16px;margin-bottom:12px}
+      table{width:100%;border-collapse:collapse}
+      th{background:#07111F;color:#D4971A;padding:6px 10px;text-align:left;font-size:10px;text-transform:uppercase}
+      td{padding:5px 10px;border-bottom:1px solid #eee}
+      tr:nth-child(even){background:#f9f9f9}
+      .pos{color:#16a34a}.neg{color:#dc2626}
+    </style></head><body>
+    <h2>PSX Screener — ${rows.length} results · Stockifyy · ${new Date().toLocaleDateString("en-PK")}</h2>
+    <table><thead><tr><th>Symbol</th><th>Company</th><th>Sector</th><th>Close</th><th>Chg%</th><th>Volume</th><th>P/E</th><th>DPS</th><th>Div Yield</th><th>Shariah</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td><b>${r.symbol}</b></td><td>${r.companyName}</td><td>${r.sectorName}</td><td>${fmtN(r.close)}</td><td class="${r.pct>=0?"pos":"neg"}">${r.pct>=0?"+":""}${fmtN(r.pct)}%</td><td>${fmtVol(r.volume)}</td><td>${fmtN(r.pe,1)}</td><td>${fmtN(r.dps)}</td><td>${r.divYield?fmtN(r.divYield)+"%":"—"}</td><td>${r.shariah?"☪":""}</td></tr>`).join("")}
+    </tbody></table></body></html>`;
+    printWindow.document.write(html); printWindow.document.close();
+    setTimeout(() => { printWindow.print(); }, 400);
+  }
+
+  function exportPNG() {
+    const rows = sorted.slice(0, 50);
+    const COLS = ["Symbol","Company","Sector","Close","Chg%","Volume","P/E","Div Yield"];
+    const CW = [70,160,120,65,60,70,50,70]; const ROW_H = 22, HEADER_H = 28, PAD = 8;
+    const totalW = CW.reduce((a,b)=>a+b,0)+PAD*2, totalH = HEADER_H + rows.length*ROW_H + PAD*2;
+    const canvas = document.createElement("canvas"); canvas.width = totalW*2; canvas.height = totalH*2;
+    const ctx = canvas.getContext("2d")!; ctx.scale(2,2);
+    ctx.fillStyle = "#F8F6F1"; ctx.fillRect(0,0,totalW,totalH);
+    ctx.fillStyle = "#07111F"; ctx.fillRect(0,0,totalW,HEADER_H+PAD);
+    ctx.font = "bold 9px sans-serif"; ctx.fillStyle = "#D4971A";
+    let x = PAD;
+    COLS.forEach((c,i) => { ctx.fillText(c, x+4, 20); x += CW[i]; });
+    rows.forEach((r,ri) => {
+      const y = PAD + HEADER_H + ri*ROW_H;
+      if (ri%2===1) { ctx.fillStyle = "rgba(0,0,0,0.03)"; ctx.fillRect(0,y,totalW,ROW_H); }
+      ctx.font = "9px sans-serif"; x = PAD;
+      const vals = [r.symbol, r.companyName.slice(0,20), r.sectorName.slice(0,16), fmtN(r.close), (r.pct>=0?"+":"")+fmtN(r.pct)+"%", fmtVol(r.volume), fmtN(r.pe,1), r.divYield?fmtN(r.divYield)+"%":"—"];
+      vals.forEach((v,i) => {
+        ctx.fillStyle = i===4?(r.pct>=0?"#16a34a":"#dc2626"):(i===0?"#07111F":"#475569");
+        if (i===0) { ctx.font = "bold 9px sans-serif"; } else { ctx.font = "9px sans-serif"; }
+        ctx.fillText(v, x+4, y+14); x += CW[i];
+      });
+    });
+    const link = document.createElement("a"); link.download = "psx-screener.png"; link.href = canvas.toDataURL("image/png"); link.click();
   }
 
   function saveScreen() {
@@ -266,7 +311,13 @@ export default function PageClient() {
               {sorted.length} Results
             </span>
             <button onClick={exportCSV} style={{ padding: "7px 14px", background: card, border: `1px solid ${border}`, borderRadius: 8, color: text, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-              ↓ Export CSV
+              ↓ CSV
+            </button>
+            <button onClick={exportPDF} style={{ padding: "7px 14px", background: card, border: `1px solid ${border}`, borderRadius: 8, color: text, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              ↓ PDF
+            </button>
+            <button onClick={exportPNG} style={{ padding: "7px 14px", background: card, border: `1px solid ${border}`, borderRadius: 8, color: text, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              ↓ PNG
             </button>
             <button onClick={() => setShowSaveInput(v => !v)} style={{ padding: "7px 14px", background: gold, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
               💾 Save Screen
@@ -295,10 +346,10 @@ export default function PageClient() {
       </div>
 
       {/* Body: filter panel + table */}
-      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 16, maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 20px 24px", boxSizing: "border-box" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 16, maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 20px 24px", boxSizing: "border-box", height: "calc(100vh - 190px)", minHeight: 500 }}>
 
         {/* Filter Panel */}
-        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", overflowY: "auto" }}>
+        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "16px", overflowY: "auto", height: "100%" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: text }}>Filters</span>
             <button onClick={() => setFilters(DEFAULT_FILTERS)} style={{ fontSize: 11, color: gold, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Reset All</button>

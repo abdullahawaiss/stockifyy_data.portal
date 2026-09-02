@@ -105,6 +105,7 @@ export const PSX_STOCKS_STATIC: PsxStock[] = [
   { symbol:"PSMC",   name:"Pak Suzuki Motor Co. Ltd",             sector:"Automobile" },
   { symbol:"INDU",   name:"Indus Motor Company Limited",          sector:"Automobile" },
   { symbol:"HCAR",   name:"Honda Atlas Cars (Pakistan) Ltd",      sector:"Automobile" },
+  { symbol:"SAZGAR", name:"Sazgar Engineering Works Limited",      sector:"Automobile" },
   { symbol:"ATLH",   name:"Atlas Honda Limited",                  sector:"Automobile" },
   { symbol:"GHNI",   name:"Ghandhara Nissan Limited",             sector:"Automobile" },
   { symbol:"GHDNI",  name:"Ghandhara Industries Limited",         sector:"Automobile" },

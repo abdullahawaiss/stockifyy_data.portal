@@ -482,7 +482,7 @@ export default function AnnouncementsSection({ initialData }: { initialData?: An
   const [loading, setLoading] = useState(initialData === undefined);
 
   useEffect(() => {
-    fetch("/api/portal/announcements?limit=50")
+    fetch("/api/portal/announcements?limit=200")
       .then(r => r.json())
       .then(d => { const rows = d.data ?? []; if (rows.length > 0) setAllRows(rows); })
       .catch(() => {})

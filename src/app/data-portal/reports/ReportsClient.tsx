@@ -47,7 +47,7 @@ const REPORTS: Report[] = [
 
   /* ─── RESEARCH ──────────────────────────────────────────── */
   {
-    id: 4, type: "Research", featured: false, date: "25 Aug 2026", readMin: 9, analyst: "Sector Research",
+    id: 4, type: "Research", featured: true, date: "25 Aug 2026", readMin: 9, analyst: "Sector Research",
     title: "Banking Sector: NIM Dynamics in a Declining Rate Environment",
     summary: "SBP's 900bps rate cut cycle has compressed NIMs differently across banks. MEBL and MCB best positioned. Modelling NIM trajectories for FY27 for all PSX-listed commercial banks.",
     tags: ["Banking", "NIM", "Rate Cut", "FY27 Estimates"],
