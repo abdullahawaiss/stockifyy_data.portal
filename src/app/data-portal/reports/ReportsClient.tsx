@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 
 type ReportType = "Research" | "Technical" | "Fundamental";
@@ -22,83 +22,129 @@ interface Report {
 }
 
 const REPORTS: Report[] = [
+  /* ─── FEATURED ─────────────────────────────────────────── */
   {
-    id: 1, type: "Research", featured: true, date: "15 Aug 2025", readMin: 12, analyst: "Stockifyy Research",
-    title: "Pakistan Market Outlook — Q3 2025",
-    summary: "A comprehensive analysis of macroeconomic indicators, SBP policy direction, and sector rotation trends expected in Q3 2025.",
-    tags: ["Macro", "Market Outlook", "SBP Policy"],
-    content: `**Executive Summary**\n\nKSE-100 has delivered strong year-to-date returns of 18.2%, outperforming regional peers. SBP has cut policy rate by 700bps over 12 months to 12%, and further easing is expected. This creates a favorable backdrop for equities, particularly rate-sensitive sectors like Banking, Cement, and Real Estate.\n\n**Key Themes for Q3 2025**\n\n1. **Rate Cut Cycle**: Another 100–150bps cut expected before year-end. Banks will see NIM compression but improved loan demand.\n2. **PKR Stability**: Rupee has stabilized near 278–282 against USD, supported by IMF inflows and current account improvement.\n3. **Sector Rotation**: Capital flowing from defensive sectors to high-beta plays (Technology, Auto, Textile).\n4. **Corporate Earnings**: Q1FY26 results expected to be strong across Cement, Fertilizer and Banking sectors.\n\n**Top Picks**: MEBL, LUCK, ENGRO, SYS, TRG`,
+    id: 1, type: "Research", featured: true, date: "28 Aug 2026", readMin: 14, analyst: "Stockifyy Research",
+    title: "Pakistan Market Outlook — H2 2026: Turning the Corner",
+    summary: "IMF programme on track, PKR stable at 278–282, SBP policy rate at 11%. KSE-100 at 132,000+ eyes 145,000 by December. In-depth sector rotation, macro risks, and our top 10 conviction picks for H2 2026.",
+    tags: ["Macro", "H2 2026 Outlook", "KSE-100", "IMF", "SBP Policy"],
+    content: `**Executive Summary**\n\nKSE-100 has delivered YTD returns of 22.4% as of August 2026, making Pakistan one of Asia's best-performing markets. The combination of a successful IMF programme review, FX stability, and falling rates has restored investor confidence. We maintain a constructive bias for H2 2026.\n\n**Macro Picture — August 2026**\n\n1. **SBP Rate**: Policy rate cut to 11% in July 2026 (down 900bps from the peak of 22%). Another 100bps cut expected in October.\n2. **Inflation**: CPI at 9.2% YoY — first single-digit print in 3 years.\n3. **PKR**: Stable at 278–282 vs USD. Current account swung to a surplus of $180M in Q1 FY27.\n4. **IMF**: 5th review completed successfully; $1.2Bn tranche disbursed in June 2026.\n5. **Remittances**: $3.1Bn in July 2026 — a record monthly inflow through official channels.\n\n**Sector Rotation Strategy H2 2026**\n\n- **Overweight**: Banking (MEBL, HBL, MCB), Cement (LUCK, MLCF), Technology (SYS, TRG)\n- **Neutral**: Energy (OGDC, PPL), Fertilizer (FFC, EFERT)\n- **Underweight**: Textiles (demand concerns), Auto (inventory build)\n\n**Top 10 Conviction Picks**: MEBL, LUCK, HBL, TRG, SYS, MCB, ENGRO, BAHL, MLCF, MARI\n\n**Risk Factors**: Geopolitical tensions, oil price spike, IMF programme derailment, monsoon impact on agriculture.`,
   },
   {
-    id: 2, type: "Technical", featured: true, date: "16 Aug 2025", readMin: 5, analyst: "Technical Desk",
-    title: "KSE-100 Weekly Technical Outlook",
-    summary: "KSE-100 approaching strong resistance at 118,000. RSI divergence forming. Key support levels, breakout scenarios, and trade setups for the week.",
-    tags: ["KSE-100", "RSI", "Support & Resistance"],
-    content: `**Technical Picture**\n\nKSE-100 closed at 116,742 — approaching the critical 118,000 resistance zone. RSI (14) at 68 showing bearish divergence on the weekly chart.\n\n**Key Levels**\n- Resistance: 118,000 / 119,500\n- Support: 114,500 / 112,800\n- 50-DMA: 111,200 (strong support)\n\n**Scenarios**\n1. **Bull Case**: Break above 118,000 with volume → target 122,000–125,000\n2. **Bear Case**: Rejection at 118,000 → pullback to 114,500\n\n**Trade Setup**: Wait for close above 118,200 before adding longs. Tight stop at 116,000.`,
+    id: 2, type: "Technical", featured: true, date: "27 Aug 2026", readMin: 6, analyst: "Technical Desk",
+    title: "KSE-100 Weekly Technical: Breakout Confirmed at 132K",
+    summary: "KSE-100 has confirmed a weekly close above the 131,500 neckline — a classic inverse head-and-shoulders breakout with measured target of 145,000. RSI healthy at 62. Key support/resistance and trade setups.",
+    tags: ["KSE-100", "Inverse H&S", "Breakout", "RSI", "Support & Resistance"],
+    content: `**Technical Picture — Week Ending 29 Aug 2026**\n\nKSE-100 closed at 132,240, confirming a breakout from a 16-week inverse head-and-shoulders pattern. Volume on breakout day was 45% above 20-DMA — a strong bullish signal.\n\n**Key Levels**\n- Breakout Level (now support): 131,500\n- Immediate Resistance: 134,200\n- H&S Measured Target: 145,000 (12-week view)\n- 50-DMA: 124,800 (rising fast)\n- 200-DMA: 111,600\n\n**Oscillators**\n- RSI (14): 62 — positive, room before overbought\n- MACD: Bullish crossover on daily, expanding histogram\n- Stochastic: 71 — watch for any short-term cooling\n\n**Trade Setups**\n1. **Primary**: Long on any retest of 131,500–132,000 zone. Target 140,000. Stop 129,800.\n2. **Momentum**: Add on breakout above 134,200 with volume. Target 138,000 in 3–4 weeks.\n\n**Sector Leaders**: Banking and Cement indices both at 52-week highs.`,
   },
   {
-    id: 3, type: "Fundamental", featured: true, date: "14 Aug 2025", readMin: 11, analyst: "Equity Research", symbol: "LUCK", rating: "BUY", target: "Rs 1,250",
-    title: "LUCK — FY25 Results Review & FY26 Estimates",
-    summary: "FY25 EPS came in at Rs 84.2, beating estimates by 7%. Revised FY26 earnings model, DCF valuation, and updated price target of Rs 1,250.",
-    tags: ["LUCK", "Earnings Review", "DCF", "Price Target"],
-    content: `**Investment Thesis**\n\nLucky Cement remains our top pick in the Cement sector with a BUY rating and revised 12-month price target of Rs 1,250 (upside: 34% from CMP of Rs 932).\n\n**FY25 Results Beat**\n- EPS: Rs 84.2 vs estimate of Rs 78.8 (+7% beat)\n- Revenue: Rs 142Bn (+11% YoY)\n- EBITDA Margin: 28.4% (vs 25.1% last year)\n- DPS: Rs 20 (final dividend)\n\n**FY26 Outlook**\n- Volume growth: +8–10% supported by CPEC Phase-II infrastructure\n- Retention price recovery: PKR 50–60/bag improvement expected\n- Export contribution increasing — Iraq, Afghanistan routes\n\n**Valuation**: DCF intrinsic value Rs 1,180; P/E target multiple 15× → Rs 1,263`,
+    id: 3, type: "Fundamental", featured: true, date: "26 Aug 2026", readMin: 13, analyst: "Equity Research", symbol: "MEBL", rating: "BUY", target: "Rs 285",
+    title: "Meezan Bank — FY26 Results Review: Record Profitability",
+    summary: "MEBL delivered FY26 EPS of Rs 24.8 (up 31% YoY), beating consensus by 9%. ROE hits 35% — highest in Pakistan's banking history. Revised PT of Rs 285 with BUY. Dividend of Rs 6.50/share announced.",
+    tags: ["MEBL", "FY26 Results", "BUY", "Banking", "Islamic Finance"],
+    content: `**Investment Thesis — MEBL: Pakistan's Premier Islamic Bank**\n\nWe reiterate our BUY rating on Meezan Bank with a revised 12-month price target of Rs 285 (upside: 38% from CMP of Rs 207). MEBL is our top pick in the banking sector.\n\n**FY26 Results Highlights**\n- EPS: Rs 24.8 vs consensus Rs 22.7 (+9.3% beat)\n- Net Income: Rs 52.8Bn (+31% YoY)\n- ROE: 35.1% — record high; best in sector\n- CASA Ratio: 68.2% (vs 64.5% FY25) — cheapest cost of funds in sector\n- NPL Ratio: 0.8% — lowest in Pakistan\n- DPS: Rs 6.50 final + Rs 4.00 interim = Rs 10.50 total FY26\n- Dividend Yield: 5.1% at CMP\n\n**Why MEBL Wins in Rate-Cut Cycle**\nContrary to conventional banks, MEBL's profit-sharing deposits re-price downward as rates fall, actually IMPROVING margins. The bank also benefits from rising demand for Islamic financing products.\n\n**FY27 Estimates**\n- EPS (Stockifyy): Rs 29.5 (+19% YoY)\n- ROE: 36%+\n- DPS estimate: Rs 12.00\n\n**Valuation**: 2.0× FY27 P/B → Rs 285 target. Current 1.45× P/B is undemanding for this quality.`,
+  },
+
+  /* ─── RESEARCH ──────────────────────────────────────────── */
+  {
+    id: 4, type: "Research", featured: false, date: "25 Aug 2026", readMin: 9, analyst: "Sector Research",
+    title: "Banking Sector: NIM Dynamics in a Declining Rate Environment",
+    summary: "SBP's 900bps rate cut cycle has compressed NIMs differently across banks. MEBL and MCB best positioned. Modelling NIM trajectories for FY27 for all PSX-listed commercial banks.",
+    tags: ["Banking", "NIM", "Rate Cut", "FY27 Estimates"],
+    content: `**Impact of Rate Cuts on NIM — FY26 vs FY27**\n\nThe SBP's cumulative 900bps rate cut from 22% to 11% has reshaped the banking sector's earnings structure. Average sector NIM declined from 6.2% to 5.1% — but quality banks with strong CASA are holding up far better.\n\n**NIM Rankings FY26 (Estimated)**\n- MEBL: 5.8% (stable — Islamic model)\n- MCB: 5.1%\n- HBL: 4.9%\n- UBL: 4.7%\n- NBP: 3.8% (worst — high investment portfolio)\n\n**FY27 Catalysts for Earnings Recovery**\n- Loan growth recovering: +18% industry advance growth expected\n- Fee income rising: trade finance, FX, and digital banking\n- NPL coverage solid: sector-wide 95%+\n\n**Top Picks**: MEBL (BUY, Rs 285), MCB (BUY, Rs 270), HBL (ACCUMULATE, Rs 215)`,
   },
   {
-    id: 4, type: "Research", featured: false, date: "10 Aug 2025", readMin: 8, analyst: "Sector Research",
-    title: "Banking Sector: Rate Cut Impact Analysis",
-    summary: "Deep dive into how the recent 150bps rate reduction affects NIM compression, loan growth, and valuations across PSX-listed banks.",
-    tags: ["Banking", "Interest Rates", "NIM"],
-    content: `**Impact of 150bps Rate Cut on Banks**\n\nThe SBP's 150bps policy rate cut will compress NIMs by 30–50bps across the banking sector. However, improved loan demand and declining NPLs provide partial offset.\n\n**Winners vs Losers**\n- **Better positioned**: Banks with high CASA ratios (MEBL, MCB, HBL) will see smaller NIM compression.\n- **More exposed**: Banks with investment-heavy portfolios will see larger book mark-to-market.\n\n**Key Metrics to Watch**: CASA ratio, Advance-to-Deposit ratio, NPL coverage ratio.\n\n**Top Picks**: MEBL (BUY, target Rs 260), HBL (BUY, target Rs 210)`,
+    id: 5, type: "Research", featured: false, date: "22 Aug 2026", readMin: 11, analyst: "Sector Research",
+    title: "Cement Sector H2 2026: Volume Recovery & Pricing Power",
+    summary: "Cement dispatches rose 14% YoY in July 2026 driven by infrastructure spending and CPEC Phase-II. Local retention prices up Rs 60–80/bag. Our updated model for LUCK, MLCF, DGKC with revised price targets.",
+    tags: ["Cement", "LUCK", "MLCF", "Dispatches", "FY27"],
   },
   {
-    id: 5, type: "Research", featured: false, date: "5 Aug 2025", readMin: 10, analyst: "Sector Research",
-    title: "Cement Sector Update: Demand Recovery & Margins",
-    summary: "Industry dispatches recovering post-monsoon. Cost normalization and CPEC Phase-II project pipeline outlook for FY26.",
-    tags: ["Cement", "Dispatches", "FY26"],
+    id: 6, type: "Research", featured: false, date: "18 Aug 2026", readMin: 8, analyst: "Sector Research",
+    title: "Technology Sector: IT Exports Hit $3.8Bn — New Record",
+    summary: "Pakistan's IT exports reached $3.8Bn in FY26, growing 28% YoY. TRG, SYS, and AVN benefitting from global nearshoring trend. Regulatory tailwinds from SECP's new REIT-style tech listing framework.",
+    tags: ["Technology", "TRG", "SYS", "IT Exports", "SECP"],
   },
   {
-    id: 6, type: "Research", featured: false, date: "28 Jul 2025", readMin: 9, analyst: "Sector Research",
-    title: "Energy Chain: RLNG Pricing & Power Sector Dynamics",
-    summary: "Impact of revised RLNG tariffs on gas distribution companies and the downstream effect on power-sector circular debt.",
-    tags: ["Energy", "RLNG", "Circular Debt"],
+    id: 7, type: "Research", featured: false, date: "14 Aug 2026", readMin: 10, analyst: "Sector Research",
+    title: "Fertilizer Sector: Urea Prices, Gas Allocation & FY27 Dividends",
+    summary: "Urea prices stabilized at Rs 3,850/bag. FFC and EFERT remain cash cows with >10% dividend yields. Impact of revised SNGPL gas allocation on cost structure and DPS sustainability for next 3 years.",
+    tags: ["Fertilizer", "FFC", "EFERT", "Urea", "Dividend Yield"],
   },
   {
-    id: 7, type: "Technical", featured: false, date: "12 Aug 2025", readMin: 4, analyst: "Technical Desk", symbol: "ENGRO",
-    title: "ENGRO — Cup & Handle Breakout in Progress",
-    summary: "ENGRO completing a 14-week cup-and-handle pattern on the weekly chart. Volume confirmation observed. Target and stop-loss levels defined.",
-    tags: ["ENGRO", "Chart Pattern", "Breakout"],
+    id: 8, type: "Research", featured: false, date: "10 Aug 2026", readMin: 7, analyst: "Sector Research",
+    title: "Oil & Gas E&P: Pakistan's Exploration Renaissance",
+    summary: "OGDC and MARI are drilling 12 new wells in FY27 — the highest exploration activity since 2018. Bullish on MARI (target Rs 2,700) given recent reserve upgrade; cautious on PPL given receivable build.",
+    tags: ["OGDC", "MARI", "PPL", "Exploration", "E&P"],
+  },
+
+  /* ─── TECHNICAL ─────────────────────────────────────────── */
+  {
+    id: 9, type: "Technical", featured: false, date: "24 Aug 2026", readMin: 4, analyst: "Technical Desk", symbol: "LUCK",
+    title: "LUCK — Weekly Bullish Flag Targets Rs 1,350",
+    summary: "Lucky Cement is consolidating within a textbook 4-week bullish flag at Rs 1,180. Measured move targets Rs 1,350. Volume declining on flag — typical pattern. Entry, target and stop levels.",
+    tags: ["LUCK", "Flag Pattern", "Breakout", "Chart Setup"],
   },
   {
-    id: 8, type: "Technical", featured: false, date: "8 Aug 2025", readMin: 3, analyst: "Technical Desk", symbol: "HBL",
-    title: "HBL — Golden Cross Signal on Daily Chart",
-    summary: "50-DMA has crossed above 200-DMA for HBL, generating a classic golden cross. Historical performance of similar setups on PSX banking stocks.",
-    tags: ["HBL", "Moving Averages", "Golden Cross"],
+    id: 10, type: "Technical", featured: false, date: "21 Aug 2026", readMin: 5, analyst: "Technical Desk", symbol: "TRG",
+    title: "TRG — Base Breakout with 52-Week High Volume",
+    summary: "TRG broke above its 14-month base at Rs 175 with volume 3× the 20-DMA — a major technical signal. Measured target Rs 240. Comparing this setup with TRG's 2020 and 2022 base breakouts.",
+    tags: ["TRG", "Volume Breakout", "52-Week High", "Technology"],
   },
   {
-    id: 9, type: "Technical", featured: false, date: "30 Jul 2025", readMin: 6, analyst: "Technical Desk",
-    title: "Sector Rotation: Inflows Moving to Textile",
-    summary: "Relative strength analysis shows capital rotating out of defensive sectors into textile exporters ahead of PKR stabilisation trade.",
-    tags: ["Sector Rotation", "Textile", "Relative Strength"],
+    id: 11, type: "Technical", featured: false, date: "17 Aug 2026", readMin: 3, analyst: "Technical Desk", symbol: "HBL",
+    title: "HBL — Golden Cross Confirms Uptrend; Target Rs 220",
+    summary: "50-DMA crossed above 200-DMA on HBL for the first time in 18 months. RSI at 58 — clean momentum. Historical back-test of HBL golden cross setups shows average 30% gain over 6 months.",
+    tags: ["HBL", "Golden Cross", "Moving Averages", "Banking"],
   },
   {
-    id: 10, type: "Fundamental", featured: false, date: "9 Aug 2025", readMin: 9, analyst: "Equity Research", symbol: "MARI", rating: "BUY", target: "Rs 2,400",
-    title: "MARI Gas — Reserve Upgrade & Valuation",
-    summary: "Newly certified reserves add 15% upside to our NAV estimate. Full model update with revised production profile and SRO pricing assumptions.",
-    tags: ["MARI", "NAV", "Reserves", "Gas"],
+    id: 12, type: "Technical", featured: false, date: "12 Aug 2026", readMin: 6, analyst: "Technical Desk",
+    title: "PSX Sector Relative Strength — August 2026 Update",
+    summary: "Banking and Cement leading; Textile lagging. Relative strength rankings across all 10 PSX sectors with RS ratio charts vs KSE-100 benchmark. Actionable rotation signals for the next 4–6 weeks.",
+    tags: ["Sector Rotation", "Relative Strength", "PSX Sectors"],
   },
   {
-    id: 11, type: "Fundamental", featured: false, date: "3 Aug 2025", readMin: 14, analyst: "Equity Research", symbol: "MCB", rating: "BUY", target: "Rs 260",
-    title: "MCB Bank — Initiating Coverage: BUY",
-    summary: "Initiating coverage on MCB with a BUY rating. Strong CASA base, below-peer NPL ratio, and rising dividend yield make it a top pick in the banking space.",
-    tags: ["MCB", "Initiation", "BUY", "Banking"],
+    id: 13, type: "Technical", featured: false, date: "8 Aug 2026", readMin: 4, analyst: "Technical Desk", symbol: "ENGRO",
+    title: "ENGRO — Inverse H&S at Multi-Month Support Zone",
+    summary: "ENGRO has formed a 9-week inverse head-and-shoulders at Rs 295–310 support. Neckline at Rs 340. A close above would signal a move to Rs 390+. Risk-reward at current levels is 3.8:1.",
+    tags: ["ENGRO", "Inverse H&S", "Support Zone", "Chart Pattern"],
+  },
+
+  /* ─── FUNDAMENTAL ───────────────────────────────────────── */
+  {
+    id: 14, type: "Fundamental", featured: false, date: "23 Aug 2026", readMin: 12, analyst: "Equity Research", symbol: "MCB", rating: "BUY", target: "Rs 270",
+    title: "MCB Bank FY26 Preview: EPS of Rs 35 Expected",
+    summary: "MCB reports on September 5. We model EPS of Rs 35 — a 16% beat on consensus Rs 30.2. Strong CASA of 55%, improving advance quality, and a Rs 10 final dividend. Initiating with BUY target Rs 270.",
+    tags: ["MCB", "FY26 Preview", "BUY", "EPS Estimate", "Banking"],
+    content: `**MCB Bank — FY26 Preview & Initiation**\n\nWe initiate coverage on MCB Bank with a BUY rating and 12-month price target of Rs 270, representing 35% upside from CMP of Rs 200.\n\n**Our FY26 Estimates vs Consensus**\n- EPS (Stockifyy): Rs 35.0 vs consensus Rs 30.2 (+16% above)\n- Net Income: Rs 40.5Bn\n- ROE: 24.8%\n- DPS: Rs 10.0 final (Rs 16.0 total FY26)\n\n**Why MCB is Mispriced**\nMCB trades at 1.4× P/B vs peers at 1.8–2.0× despite being one of the most profitable private banks. The discount reflects historic skepticism around its conservative lending growth — but this conservatism is now an ASSET in a rate-cutting environment.\n\n**Catalyst Calendar**\n- Sept 5: FY26 results announcement\n- Dec 2026: SBP rate cut (expected -100bps)\n- March 2027: MSCI FM Index inclusion review\n\n**Valuation**: 1.9× FY27 P/B → Rs 270 target.`,
   },
   {
-    id: 12, type: "Fundamental", featured: false, date: "25 Jul 2025", readMin: 8, analyst: "Equity Research", symbol: "OGDC",
-    title: "OGDC — Quarterly Cash Flow & Receivables Deep-Dive",
-    summary: "Analysing Rs 340Bn+ in outstanding receivables, expected recovery timeline, and impact on dividend sustainability over the next 3 years.",
-    tags: ["OGDC", "Cash Flow", "Receivables", "Dividend"],
+    id: 15, type: "Fundamental", featured: false, date: "20 Aug 2026", readMin: 10, analyst: "Equity Research", symbol: "OGDC", rating: "ACCUMULATE", target: "Rs 185",
+    title: "OGDC — Receivable Recovery & Dividend Sustainability",
+    summary: "Rs 380Bn in government receivables remain a key overhang. But FY26 cash recovery of Rs 65Bn signals progress. We model dividend of Rs 9/share for FY26 — 5.8% yield at CMP of Rs 155.",
+    tags: ["OGDC", "Receivables", "Dividend", "E&P", "Government Policy"],
+  },
+  {
+    id: 16, type: "Fundamental", featured: false, date: "16 Aug 2026", readMin: 8, analyst: "Equity Research", symbol: "SYS", rating: "BUY", target: "Rs 850",
+    title: "Systems Limited — Record IT Exports; Raising PT to Rs 850",
+    summary: "SYS delivered FY26 revenue of Rs 29Bn (+35% YoY) driven by North America and Gulf expansion. EPS Rs 72. Raising price target from Rs 730 to Rs 850. Pakistan's most compelling tech growth story.",
+    tags: ["SYS", "IT Exports", "FY26 Results", "BUY", "Technology"],
+  },
+  {
+    id: 17, type: "Fundamental", featured: false, date: "11 Aug 2026", readMin: 9, analyst: "Equity Research", symbol: "FFC", rating: "BUY", target: "Rs 145",
+    title: "FFC — Initiating Coverage: 11.5% Dividend Yield, BUY",
+    summary: "Fauji Fertilizers' high payout policy (Rs 16/share DPS expected FY26) and defensive earnings make it ideal for income investors. Urea demand structural story intact. BUY with Rs 145 target.",
+    tags: ["FFC", "Fertilizer", "Dividend", "Initiation", "BUY"],
+  },
+  {
+    id: 18, type: "Fundamental", featured: false, date: "5 Aug 2026", readMin: 11, analyst: "Equity Research", symbol: "MARI", rating: "BUY", target: "Rs 2,700",
+    title: "MARI Gas — Reserve Upgrade Adds 18% to NAV; Raising PT",
+    summary: "Newly certified 2P reserves of 3.8Tcf represent an 18% upside vs our prior estimate. Full NAV model updated with revised production profile, SRO pricing, and Kirthar well results. Raising PT to Rs 2,700.",
+    tags: ["MARI", "NAV", "Reserve Upgrade", "Gas", "BUY"],
   },
 ];
+
+const PAGE_SIZE = 6;
 
 const TYPE_CONFIG: Record<ReportType, { color: string; bg: string; icon: string; desc: string }> = {
   Research:    { color: "#2563eb", bg: "rgba(37,99,235,0.10)",  icon: "🔍", desc: "Macro, sector & industry analysis" },
@@ -115,7 +161,6 @@ function ReportModal({ r, onClose }: { r: Report; onClose: () => void }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.50)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ background: "var(--card-bg,#fff)", borderRadius: 14, width: "min(760px, 100%)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", overflow: "hidden" }}>
-        {/* Modal header */}
         <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
@@ -125,7 +170,7 @@ function ReportModal({ r, onClose }: { r: Report; onClose: () => void }) {
               {r.target && <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(37,99,235,0.08)", color: "#2563eb", fontSize: 11, fontWeight: 700 }}>Target: {r.target}</span>}
             </div>
             <h2 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 800, color: "var(--navy)", lineHeight: 1.35 }}>{r.title}</h2>
-            <div style={{ display: "flex", gap: 14, fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ display: "flex", gap: 14, fontSize: 11, color: "var(--text-muted)", flexWrap: "wrap" }}>
               {r.analyst && <span>✍️ {r.analyst}</span>}
               <span>📅 {r.date}</span>
               <span>⏱ {r.readMin} min read</span>
@@ -134,25 +179,16 @@ function ReportModal({ r, onClose }: { r: Report; onClose: () => void }) {
           </div>
           <button onClick={onClose} style={{ border: "none", background: "rgba(0,0,0,0.06)", borderRadius: 8, width: 32, height: 32, fontSize: 18, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 12 }}>×</button>
         </div>
-
-        {/* Modal body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.7, borderLeft: "3px solid var(--border)", paddingLeft: 12 }}>{r.summary}</p>
-
           {r.content ? (
             <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.8 }}>
               {lines.map((line, i) => {
-                if (line.startsWith("**") && line.endsWith("**")) {
-                  return <h3 key={i} style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", margin: "16px 0 6px" }}>{line.slice(2, -2)}</h3>;
-                }
-                if (line.startsWith("- ")) {
-                  return <div key={i} style={{ paddingLeft: 16, color: "var(--text)", marginBottom: 3 }}>• {line.slice(2).replace(/\*\*(.*?)\*\*/g, '$1')}</div>;
-                }
-                if (line.startsWith("1. ") || line.match(/^\d\./)) {
-                  return <div key={i} style={{ paddingLeft: 16, color: "var(--text)", marginBottom: 3 }}>{line}</div>;
-                }
+                if (line.startsWith("**") && line.endsWith("**")) return <h3 key={i} style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", margin: "16px 0 6px" }}>{line.slice(2, -2)}</h3>;
+                if (line.startsWith("- ")) return <div key={i} style={{ paddingLeft: 16, color: "var(--text)", marginBottom: 3 }}>• {line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1")}</div>;
+                if (line.match(/^\d\./)) return <div key={i} style={{ paddingLeft: 16, color: "var(--text)", marginBottom: 3 }}>{line}</div>;
                 if (!line.trim()) return <div key={i} style={{ height: 6 }} />;
-                return <p key={i} style={{ margin: "0 0 8px", color: "var(--text)" }}>{line.replace(/\*\*(.*?)\*\*/g, '$1')}</p>;
+                return <p key={i} style={{ margin: "0 0 8px", color: "var(--text)" }}>{line.replace(/\*\*(.*?)\*\*/g, "$1")}</p>;
               })}
             </div>
           ) : (
@@ -161,11 +197,8 @@ function ReportModal({ r, onClose }: { r: Report; onClose: () => void }) {
               Full report available to Stockifyy Premium subscribers.
             </div>
           )}
-
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-            {r.tags.map(tag => (
-              <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "var(--border,#e2e8f0)", color: "var(--text-muted)", fontSize: 11, fontWeight: 600 }}>{tag}</span>
-            ))}
+            {r.tags.map(tag => <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "var(--border,#e2e8f0)", color: "var(--text-muted)", fontSize: 11, fontWeight: 600 }}>{tag}</span>)}
           </div>
         </div>
       </div>
@@ -184,21 +217,18 @@ function ReportCard({ r, onClick }: { r: Report; onClick: () => void }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: cfg.bg, color: cfg.color, fontSize: 11, fontWeight: 700 }}>{r.type}</span>
-          {r.featured && <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(200,134,10,0.12)", color: "#C8860A", fontSize: 11, fontWeight: 700 }}>Featured</span>}
           {r.rating && <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(22,163,74,0.10)", color: "#16a34a", fontSize: 11, fontWeight: 700 }}>{r.rating}</span>}
         </div>
         <div style={{ display: "flex", gap: 10, fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
           <span>📅 {r.date}</span>
-          <span>⏱ {r.readMin} min</span>
+          <span>⏱ {r.readMin}m</span>
         </div>
       </div>
       <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)", margin: "0 0 6px", lineHeight: 1.4 }}>{r.title}</h3>
       <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 12px", lineHeight: 1.6 }}>{r.summary}</p>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-          {r.tags.slice(0, 3).map(t => (
-            <span key={t} style={{ padding: "2px 8px", borderRadius: 20, background: "var(--border,#e2e8f0)", color: "var(--text-muted)", fontSize: 10, fontWeight: 600 }}>{t}</span>
-          ))}
+          {r.tags.slice(0, 3).map(t => <span key={t} style={{ padding: "2px 8px", borderRadius: 20, background: "var(--border,#e2e8f0)", color: "var(--text-muted)", fontSize: 10, fontWeight: 600 }}>{t}</span>)}
         </div>
         <span style={{ fontSize: 12, color: "#C8860A", fontWeight: 700, whiteSpace: "nowrap", marginLeft: 8 }}>Read Report →</span>
       </div>
@@ -206,11 +236,35 @@ function ReportCard({ r, onClick }: { r: Report; onClick: () => void }) {
   );
 }
 
+// ── Pagination ───────────────────────────────────────────────────────────────
+function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  if (total <= 1) return null;
+  const pages = Array.from({ length: total }, (_, i) => i + 1);
+  return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 28, paddingBottom: 8 }}>
+      <button onClick={() => onChange(page - 1)} disabled={page === 1}
+        style={{ padding: "6px 13px", borderRadius: 8, border: "1.5px solid var(--border)", background: "var(--card-bg)", color: page===1?"var(--text-muted)":"var(--text-primary)", cursor: page===1?"not-allowed":"pointer", fontSize: 13, fontWeight: 700 }}>‹</button>
+      {pages.map(p => (
+        <button key={p} onClick={() => onChange(p)}
+          style={{ width: 36, height: 36, borderRadius: 8, border: p===page?"2px solid #C8860A":"1.5px solid var(--border)", background: p===page?"#C8860A":"var(--card-bg)", color: p===page?"#fff":"var(--text-primary)", cursor: "pointer", fontSize: 13, fontWeight: p===page?800:600, transition: "all 0.12s" }}>
+          {p}
+        </button>
+      ))}
+      <button onClick={() => onChange(page + 1)} disabled={page === total}
+        style={{ padding: "6px 13px", borderRadius: 8, border: "1.5px solid var(--border)", background: "var(--card-bg)", color: page===total?"var(--text-muted)":"var(--text-primary)", cursor: page===total?"not-allowed":"pointer", fontSize: 13, fontWeight: 700 }}>›</button>
+    </div>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function ReportsClient() {
-  const [filter, setFilter] = useState<FilterType>("All Reports");
-  const [search, setSearch] = useState("");
+  const [filter, setFilter]     = useState<FilterType>("All Reports");
+  const [search, setSearch]     = useState("");
   const [openReport, setOpenReport] = useState<Report | null>(null);
+  const [page, setPage]         = useState(1);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => { setPage(1); }, [filter, search]);
 
   const filtered = useMemo(() => {
     let r = REPORTS;
@@ -219,21 +273,24 @@ export default function ReportsClient() {
     return r;
   }, [filter, search]);
 
+  const featured = useMemo(() => filtered.filter(r => r.featured), [filtered]);
+  const rest     = useMemo(() => filtered.filter(r => !r.featured), [filtered]);
+
+  const totalPages  = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+  const pageItems   = rest.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const counts = useMemo(() => ({
     all: REPORTS.length,
-    Research: REPORTS.filter(r => r.type === "Research").length,
-    Technical: REPORTS.filter(r => r.type === "Technical").length,
+    Research:    REPORTS.filter(r => r.type === "Research").length,
+    Technical:   REPORTS.filter(r => r.type === "Technical").length,
     Fundamental: REPORTS.filter(r => r.type === "Fundamental").length,
   }), []);
 
   const allTags = useMemo(() => {
     const freq: Record<string, number> = {};
     REPORTS.forEach(r => r.tags.forEach(t => { freq[t] = (freq[t] || 0) + 1; }));
-    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 18).map(([t]) => t);
+    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([t]) => t);
   }, []);
-
-  const featured = filtered.filter(r => r.featured);
-  const rest = filtered.filter(r => !r.featured);
 
   const FILTERS: [FilterType, string, number][] = [
     ["All Reports", "📰", counts.all],
@@ -252,11 +309,10 @@ export default function ReportsClient() {
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(212,151,26,0.8)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>STOCKIFYY · RESEARCH DESK</div>
             <h1 style={{ fontSize: 26, fontWeight: 900, color: "#fff", margin: "0 0 6px", lineHeight: 1.1 }}>
-              Market Reports <span style={{ color: "#D4971A" }}>& Analysis</span>
+              Market Reports <span style={{ color: "#D4971A" }}>&amp; Analysis</span>
             </h1>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", margin: 0 }}>In-depth research, technical and fundamental coverage by the Stockifyy team</p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", margin: 0 }}>In-depth research, technical and fundamental coverage by the Stockifyy team · Updated Aug 2026</p>
           </div>
-          {/* Stats chips */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {FILTERS.slice(1).map(([type, icon, count]) => {
               const cfg = TYPE_CONFIG[type as ReportType];
@@ -272,12 +328,11 @@ export default function ReportsClient() {
         </div>
       </div>
 
-      {/* ── Body: sidebar + content ── */}
+      {/* ── Body ── */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 32px", display: "flex", gap: 28, alignItems: "flex-start" }}>
 
         {/* ── Left sidebar ── */}
         <div style={{ width: 210, flexShrink: 0, position: "sticky", top: 72 }}>
-          {/* Filter by type */}
           <div className="card" style={{ padding: "16px 14px", marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Filter By Type</div>
             {FILTERS.map(([f, icon, count]) => (
@@ -294,7 +349,6 @@ export default function ReportsClient() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="card" style={{ padding: "12px 14px", marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Search</div>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Report title, ticker…"
@@ -302,15 +356,13 @@ export default function ReportsClient() {
             {search && <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</div>}
           </div>
 
-          {/* Tags cloud */}
           <div className="card" style={{ padding: "14px" }}>
             <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Popular Tags</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {allTags.map(tag => (
-                <button key={tag} onClick={() => setSearch(tag)} style={{
+                <button key={tag} onClick={() => setSearch(search === tag ? "" : tag)} style={{
                   padding: "3px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer",
-                  background: search === tag ? "#C8860A" : "var(--border)", color: search === tag ? "#fff" : "var(--text-muted)",
-                  border: "none",
+                  background: search === tag ? "#C8860A" : "var(--border)", color: search === tag ? "#fff" : "var(--text-muted)", border: "none",
                 }}>{tag}</button>
               ))}
             </div>
@@ -320,21 +372,19 @@ export default function ReportsClient() {
         {/* ── Main content ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
-          {/* Featured reports — prominent cards */}
+          {/* Featured — always shown at top, not paginated */}
           {featured.length > 0 && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                 <div style={{ height: 3, width: 24, borderRadius: 2, background: "#C8860A" }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#C8860A", textTransform: "uppercase", letterSpacing: "0.08em" }}>Featured</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#C8860A", textTransform: "uppercase", letterSpacing: "0.08em" }}>Featured Reports</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
                 {featured.map(r => (
-                  <div key={r.id} onClick={() => setOpenReport(r)} className="card" style={{
-                    padding: "20px", cursor: "pointer", borderTop: `3px solid ${TYPE_CONFIG[r.type].color}`,
-                    transition: "transform 150ms, box-shadow 150ms",
-                  }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.12)"; }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = ""; }}>
+                  <div key={r.id} onClick={() => setOpenReport(r)} className="card"
+                    style={{ padding: "20px", cursor: "pointer", borderTop: `3px solid ${TYPE_CONFIG[r.type].color}`, transition: "transform 150ms, box-shadow 150ms" }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.12)"; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = ""; }}>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
                       <span style={{ padding: "2px 9px", borderRadius: 20, background: TYPE_CONFIG[r.type].bg, color: TYPE_CONFIG[r.type].color, fontSize: 10, fontWeight: 700 }}>{TYPE_CONFIG[r.type].icon} {r.type}</span>
                       {r.rating && <span style={{ padding: "2px 9px", borderRadius: 20, background: "rgba(22,163,74,0.10)", color: "#16a34a", fontSize: 10, fontWeight: 700 }}>● {r.rating}</span>}
@@ -344,7 +394,7 @@ export default function ReportsClient() {
                     <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>{r.summary}</p>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ display: "flex", gap: 4 }}>
-                        {r.tags.slice(0,2).map(t => <span key={t} style={{ padding: "2px 7px", borderRadius: 10, background: "var(--border)", color: "var(--text-muted)", fontSize: 10, fontWeight: 600 }}>{t}</span>)}
+                        {r.tags.slice(0, 2).map(t => <span key={t} style={{ padding: "2px 7px", borderRadius: 10, background: "var(--border)", color: "var(--text-muted)", fontSize: 10, fontWeight: 600 }}>{t}</span>)}
                       </div>
                       <span style={{ fontSize: 11, color: "var(--text-muted)" }}>📅 {r.date} · ⏱ {r.readMin}m</span>
                     </div>
@@ -358,15 +408,22 @@ export default function ReportsClient() {
           {featured.length > 0 && rest.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
               <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>All Reports</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                All Reports · Page {page} of {totalPages}
+              </span>
               <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
             </div>
           )}
 
-          {/* Report grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
-            {rest.map(r => <ReportCard key={r.id} r={r} onClick={() => setOpenReport(r)} />)}
-          </div>
+          {/* Paginated report grid */}
+          {pageItems.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+              {pageItems.map(r => <ReportCard key={r.id} r={r} onClick={() => setOpenReport(r)} />)}
+            </div>
+          )}
+
+          {/* Pagination */}
+          <Pagination page={page} total={totalPages} onChange={setPage} />
 
           {filtered.length === 0 && (
             <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
