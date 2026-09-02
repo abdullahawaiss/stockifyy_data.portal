@@ -33,7 +33,7 @@ async function prompt(question: string, silent = false): Promise<string> {
 
   return new Promise(resolve => {
     if (silent) {
-      let input = "";
+      let input = "";   
       process.stdin.on("data", (char: Buffer) => {
         const c = char.toString("utf8");
         if (c === "\n" || c === "\r" || c === "") {
