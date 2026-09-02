@@ -161,14 +161,24 @@ function LineAreaSVG({ data, color = GOLD, label = "" }: { data: number[]; color
 /* ─── split layout: inputs left, results right ────────────────────────────── */
 function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.ReactNode | null }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) 1fr", height: "100%", minHeight: 0, overflow: "hidden" }}>
-      {/* LEFT — inputs */}
-      <div style={{ padding: "16px 18px", borderRight: "1px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 0 }}>
-        {inputs}
+    <div style={{ display: "flex", height: "100%", minHeight: 0, overflow: "hidden" }}>
+      {/* LEFT — inputs panel */}
+      <div style={{ width: "44%", minWidth: 280, maxWidth: 440, display: "flex", flexDirection: "column", borderRight: "1px solid var(--border)", background: "var(--card-bg)" }}>
+        <div style={{ padding: "14px 20px 10px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>Enter Values</div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+          {inputs}
+        </div>
       </div>
-      {/* RIGHT — results */}
-      <div style={{ padding: "16px 18px", overflowY: "auto", background: "var(--light-bg,rgba(0,0,0,0.015))" }}>
-        {result ?? <NoResult />}
+      {/* RIGHT — results panel */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", background: "var(--light-bg,rgba(0,0,0,0.015))" }}>
+        <div style={{ padding: "14px 24px 10px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Results</div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+          {result ?? <NoResult />}
+        </div>
       </div>
     </div>
   );
@@ -1256,69 +1266,70 @@ export default function ToolsClient() {
   /* ── CALCULATOR VIEW ─────────────────────────────────────────────────────── */
   if (selected && current) {
     const accent = CAT_META[current.category]?.color ?? GOLD;
+    const showDrop = calcSearch.trim().length > 0;
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg)", boxSizing: "border-box" }}>
 
-        {/* ── Top bar ── */}
-        <div style={{ background: NAVY, padding: "10px 20px", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-          {/* Back button */}
-          <button onClick={backToGrid} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.14)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}>
-            ← Back
+        {/* ── Top navigation bar ── */}
+        <div style={{ background: NAVY, padding: "0 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, height: 60, borderBottom: `3px solid ${accent}` }}>
+          {/* Back */}
+          <button onClick={backToGrid}
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0, transition: "background 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.13)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}>
+            ← All Calculators
           </button>
-          {/* Icon + Title */}
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: accent + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{current.icon}</div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
+
+          {/* Icon + name */}
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: accent + "22", border: `1px solid ${accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{current.icon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 15, fontWeight: 900, color: "#fff" }}>{current.label}</span>
-              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 9px", borderRadius: 8, background: accent + "22", color: accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>{CAT_META[current.category]?.label}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", whiteSpace: "nowrap" }}>{current.label}</span>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 20, background: accent + "25", color: accent, textTransform: "uppercase", letterSpacing: "0.07em", flexShrink: 0 }}>{CAT_META[current.category]?.label}</span>
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{current.desc}</div>
           </div>
-          <div style={{ width: 4, height: 36, borderRadius: 2, background: accent, flexShrink: 0 }} />
-        </div>
-        <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, transparent)`, flexShrink: 0 }} />
 
-        {/* ── Body: sidebar + calculator ── */}
-        <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
-
-          {/* Sidebar: search + calc list */}
-          <div style={{ width: 220, flexShrink: 0, background: "var(--card-bg)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "10px 12px", background: NAVY, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Switch Calculator</div>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "rgba(255,255,255,0.3)", pointerEvents: "none" }}>🔍</span>
-                <input value={calcSearch} onChange={e => setCalcSearch(e.target.value)} placeholder="Search…" autoFocus={false}
-                  style={{ width: "100%", boxSizing: "border-box", paddingLeft: 26, paddingRight: 8, paddingTop: 5, paddingBottom: 5, borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, outline: "none" }} />
+          {/* Search bar to switch calculator */}
+          <div style={{ position: "relative", flexShrink: 0, width: 270 }}>
+            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(255,255,255,0.35)", pointerEvents: "none" }}>🔍</span>
+            <input
+              value={calcSearch}
+              onChange={e => setCalcSearch(e.target.value)}
+              onBlur={() => setTimeout(() => setCalcSearch(""), 200)}
+              placeholder="Switch calculator…"
+              style={{ width: "100%", boxSizing: "border-box", paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 12, outline: "none" }} />
+            {showDrop && (
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 999, background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.25)", overflow: "hidden", maxHeight: 320, overflowY: "auto" }}>
+                {sideFiltered.length === 0
+                  ? <div style={{ padding: "16px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>No results</div>
+                  : sideFiltered.map(c => {
+                    const a = CAT_META[c.category]?.color ?? GOLD;
+                    return (
+                      <button key={c.id} onMouseDown={() => openCalc(c.id)}
+                        style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: c.id === selected ? a + "14" : "transparent", border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+                        onMouseEnter={e => { if (c.id !== selected) e.currentTarget.style.background = "var(--light-bg)"; }}
+                        onMouseLeave={e => { if (c.id !== selected) e.currentTarget.style.background = "transparent"; }}>
+                        <span style={{ fontSize: 15, width: 24, textAlign: "center", flexShrink: 0 }}>{c.icon}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: c.id === selected ? a : "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
+                          <div style={{ fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.desc}</div>
+                        </div>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 10, background: a + "18", color: a, textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0 }}>{CAT_META[c.category]?.label}</span>
+                      </button>
+                    );
+                  })
+                }
               </div>
-            </div>
-            <div style={{ overflowY: "auto", flex: 1 }}>
-              {sideFiltered.map(c => {
-                const isActive = c.id === selected;
-                const a = CAT_META[c.category]?.color ?? GOLD;
-                return (
-                  <button key={c.id} onClick={() => openCalc(c.id)}
-                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", padding: 0, border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer", background: isActive ? a + "12" : "transparent", transition: "background 0.12s" }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--light-bg)"; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
-                    <div style={{ width: 3, alignSelf: "stretch", background: isActive ? a : "transparent", flexShrink: 0 }} />
-                    <div style={{ width: 26, height: 26, borderRadius: 6, background: a + (isActive ? "25" : "14"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, margin: "7px 8px", flexShrink: 0 }}>{c.icon}</div>
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8, paddingTop: 6, paddingBottom: 6 }}>
-                      <div style={{ fontSize: 11, fontWeight: isActive ? 800 : 600, color: isActive ? a : "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
-                      <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.desc}</div>
-                    </div>
-                  </button>
-                );
-              })}
-              {sideFiltered.length === 0 && <div style={{ padding: "20px 14px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>No results</div>}
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Calculator content — fills remaining space, no outer scroll */}
-          <div style={{ flex: 1, minWidth: 0, overflow: "hidden", background: "var(--bg)" }}>
-            {current.component}
-          </div>
+        {/* ── Calculator content — full width, no sidebar ── */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+          {current.component}
         </div>
       </div>
     );
