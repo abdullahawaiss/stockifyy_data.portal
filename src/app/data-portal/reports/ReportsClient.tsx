@@ -144,7 +144,7 @@ const REPORTS: Report[] = [
   },
 ];
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 3;
 
 const TYPE_CONFIG: Record<ReportType, { color: string; bg: string; icon: string; desc: string }> = {
   Research:    { color: "#2563eb", bg: "rgba(37,99,235,0.10)",  icon: "🔍", desc: "Macro, sector & industry analysis" },
@@ -357,14 +357,39 @@ export default function ReportsClient() {
           </div>
 
           <div className="card" style={{ padding: "14px" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Popular Tags</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {allTags.map(tag => (
-                <button key={tag} onClick={() => setSearch(search === tag ? "" : tag)} style={{
-                  padding: "3px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer",
-                  background: search === tag ? "#C8860A" : "var(--border)", color: search === tag ? "#fff" : "var(--text-muted)", border: "none",
-                }}>{tag}</button>
+            {/* Sectors */}
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Sectors</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 14 }}>
+              {[
+                { name: "Banking",    color: "#2563eb" },
+                { name: "Cement",     color: "#ea580c" },
+                { name: "Technology", color: "#7c3aed" },
+                { name: "Fertilizer", color: "#059669" },
+                { name: "Oil & Gas",  color: "#dc2626" },
+              ].map(({ name, color }) => (
+                <button key={name} onClick={() => setSearch(search === name ? "" : name)} style={{
+                  display: "flex", alignItems: "center", gap: 7, padding: "6px 9px", borderRadius: 8,
+                  border: "none", cursor: "pointer", textAlign: "left",
+                  background: search === name ? color + "14" : "transparent",
+                  borderLeft: `3px solid ${search === name ? color : "transparent"}`,
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: search === name ? 700 : 500, color: search === name ? color : "var(--text-muted)" }}>{name}</span>
+                </button>
               ))}
+            </div>
+            {/* Popular Tags */}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Popular Tags</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {allTags.slice(0, 14).map(tag => (
+                  <button key={tag} onClick={() => setSearch(search === tag ? "" : tag)} style={{
+                    padding: "3px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer",
+                    background: search === tag ? "#C8860A" : "var(--border)", color: search === tag ? "#fff" : "var(--text-muted)", border: "none",
+                    transition: "all 0.12s",
+                  }}>{tag}</button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -433,31 +458,6 @@ export default function ReportsClient() {
             </div>
           )}
 
-          {/* ── PSX Market News ── */}
-          <div style={{ marginTop: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <div style={{ height: 3, width: 24, borderRadius: 2, background: "#0ea5e9" }} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.08em" }}>PSX Market News</span>
-              <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>September 2026</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {PSX_NEWS.map(n => (
-                <div key={n.id} className="card" style={{ padding: "14px 18px", display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <div style={{ minWidth: 42, height: 42, borderRadius: 10, background: n.catBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                    {n.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-                      <span style={{ padding: "2px 8px", borderRadius: 12, background: n.catBg, color: n.catColor, fontSize: 10, fontWeight: 700 }}>{n.category}</span>
-                      <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{n.date}</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--navy)", lineHeight: 1.45, marginBottom: 4 }}>{n.title}</p>
-                    <p style={{ margin: 0, fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5 }}>{n.body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -163,20 +163,24 @@ function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* LEFT — inputs panel */}
-      <div style={{ width: "44%", minWidth: 280, maxWidth: 440, display: "flex", flexDirection: "column", borderRight: "1px solid var(--border)", background: "var(--card-bg)" }}>
-        <div style={{ padding: "14px 20px 10px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>Enter Values</div>
+      <div style={{ width: "42%", minWidth: 260, maxWidth: 420, display: "flex", flexDirection: "column", borderRight: "1px solid var(--border)" }}>
+        {/* Panel header */}
+        <div style={{ background: NAVY, padding: "11px 20px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{ width: 3, height: 14, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
+          <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>Enter Values</span>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px", background: "var(--card-bg)" }}>
           {inputs}
         </div>
       </div>
       {/* RIGHT — results panel */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", background: "var(--light-bg,rgba(0,0,0,0.015))" }}>
-        <div style={{ padding: "14px 24px 10px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Results</div>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {/* Panel header */}
+        <div style={{ background: "var(--light-bg,rgba(0,0,0,0.02))", padding: "11px 24px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0, borderBottom: "1px solid var(--border)" }}>
+          <div style={{ width: 3, height: 14, borderRadius: 2, background: "var(--text-muted)", flexShrink: 0 }} />
+          <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Results</span>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "18px 24px", background: "var(--bg,var(--background))" }}>
           {result ?? <NoResult />}
         </div>
       </div>
@@ -1271,49 +1275,58 @@ export default function ToolsClient() {
       <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg)", boxSizing: "border-box" }}>
 
         {/* ── Top navigation bar ── */}
-        <div style={{ background: NAVY, padding: "0 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, height: 60, borderBottom: `3px solid ${accent}` }}>
+        <div style={{
+          background: `linear-gradient(135deg, ${NAVY} 0%, #0c1e32 100%)`,
+          padding: "0 24px", display: "flex", alignItems: "center", gap: 14,
+          flexShrink: 0, height: 72,
+          borderBottom: `3px solid ${accent}`,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+        }}>
           {/* Back */}
           <button onClick={backToGrid}
-            style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0, transition: "background 0.15s" }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.13)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}>
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "7px 14px", color: "rgba(255,255,255,0.75)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", flexShrink: 0, transition: "all 0.15s", whiteSpace: "nowrap" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}>
             ← All Calculators
           </button>
 
           {/* Divider */}
-          <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
+          <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.10)", flexShrink: 0 }} />
 
-          {/* Icon + name */}
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: accent + "22", border: `1px solid ${accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{current.icon}</div>
+          {/* Icon */}
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: accent + "20", border: `1.5px solid ${accent}45`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{current.icon}</div>
+
+          {/* Name + description */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", whiteSpace: "nowrap" }}>{current.label}</span>
-              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 20, background: accent + "25", color: accent, textTransform: "uppercase", letterSpacing: "0.07em", flexShrink: 0 }}>{CAT_META[current.category]?.label}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{current.label}</span>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 9px", borderRadius: 20, background: accent + "28", color: accent, textTransform: "uppercase", letterSpacing: "0.07em", flexShrink: 0 }}>{CAT_META[current.category]?.label}</span>
             </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{current.desc}</div>
           </div>
 
           {/* Search bar to switch calculator */}
-          <div style={{ position: "relative", flexShrink: 0, width: 270 }}>
-            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(255,255,255,0.35)", pointerEvents: "none" }}>🔍</span>
+          <div style={{ position: "relative", flexShrink: 0, width: 260 }}>
+            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "rgba(255,255,255,0.30)", pointerEvents: "none" }}>🔍</span>
             <input
               value={calcSearch}
               onChange={e => setCalcSearch(e.target.value)}
               onBlur={() => setTimeout(() => setCalcSearch(""), 200)}
               placeholder="Switch calculator…"
-              style={{ width: "100%", boxSizing: "border-box", paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 12, outline: "none" }} />
+              style={{ width: "100%", boxSizing: "border-box", paddingLeft: 32, paddingRight: 12, paddingTop: 9, paddingBottom: 9, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, outline: "none" }} />
             {showDrop && (
-              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 999, background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.25)", overflow: "hidden", maxHeight: 320, overflowY: "auto" }}>
+              <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, zIndex: 999, background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.28)", overflow: "hidden", maxHeight: 320, overflowY: "auto" }}>
                 {sideFiltered.length === 0
                   ? <div style={{ padding: "16px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>No results</div>
                   : sideFiltered.map(c => {
                     const a = CAT_META[c.category]?.color ?? GOLD;
                     return (
                       <button key={c.id} onMouseDown={() => openCalc(c.id)}
-                        style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: c.id === selected ? a + "14" : "transparent", border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+                        style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: c.id === selected ? a + "12" : "transparent", border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
                         onMouseEnter={e => { if (c.id !== selected) e.currentTarget.style.background = "var(--light-bg)"; }}
-                        onMouseLeave={e => { if (c.id !== selected) e.currentTarget.style.background = "transparent"; }}>
-                        <span style={{ fontSize: 15, width: 24, textAlign: "center", flexShrink: 0 }}>{c.icon}</span>
-                        <div style={{ minWidth: 0 }}>
+                        onMouseLeave={e => { if (c.id !== selected) e.currentTarget.style.background = c.id === selected ? a + "12" : "transparent"; }}>
+                        <span style={{ fontSize: 16, width: 26, textAlign: "center", flexShrink: 0 }}>{c.icon}</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: c.id === selected ? a : "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
                           <div style={{ fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.desc}</div>
                         </div>
@@ -1337,38 +1350,70 @@ export default function ToolsClient() {
 
   /* ── GRID VIEW ───────────────────────────────────────────────────────────── */
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "28px 28px 40px", boxSizing: "border-box" }}>
-      <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", boxSizing: "border-box" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, marginBottom: 28, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Stockifyy · Financial Tools</div>
-            <h1 style={{ fontSize: 30, fontWeight: 900, margin: 0, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
-              {CALCS.length} <span style={{ color: GOLD }}>Calculators</span>
-            </h1>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "6px 0 0" }}>Click any calculator to open it — inputs, results, and guide all in one place.</p>
-          </div>
-          {/* Search */}
-          <div style={{ position: "relative", width: 280, flexShrink: 0 }}>
-            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, pointerEvents: "none", color: "var(--text-muted)" }}>🔍</span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calculators…"
-              style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 14, paddingTop: 11, paddingBottom: 11, borderRadius: 12, border: "1.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 13, outline: "none" }} />
+      {/* ── Hero Banner ── */}
+      <div style={{
+        background: `linear-gradient(135deg, ${NAVY} 0%, #0e2140 55%, #112a50 100%)`,
+        padding: "32px 32px 28px",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* decorative accent circles */}
+        <div style={{ position: "absolute", right: -60, top: -60, width: 260, height: 260, borderRadius: "50%", background: GOLD + "08", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", right: 60, bottom: -80, width: 180, height: 180, borderRadius: "50%", background: GOLD + "05", pointerEvents: "none" }} />
+
+        <div style={{ maxWidth: 1300, margin: "0 auto", position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GOLD + "90", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8 }}>Stockifyy · Financial Tools</div>
+              <h1 style={{ fontSize: 34, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.025em", color: "#fff", lineHeight: 1.1 }}>
+                {CALCS.length} <span style={{ color: GOLD }}>Calculators</span>
+              </h1>
+              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.42)", margin: "0 0 22px", lineHeight: 1.6 }}>Pakistan-specific tax, investment, trading &amp; valuation tools — all in one place.</p>
+              {/* Stat pills */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {CATS.filter(k => k !== "all").map(key => {
+                  const m = CAT_META[key];
+                  const count = CALCS.filter(c => c.category === key).length;
+                  return (
+                    <button key={key} onClick={() => { setCat(key); setSearch(""); }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, background: "rgba(255,255,255,0.07)", border: `1px solid rgba(255,255,255,0.10)`, cursor: "pointer", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = m.color + "22"; e.currentTarget.style.borderColor = m.color + "50"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; }}>
+                      <span style={{ fontSize: 12 }}>{m.icon}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: m.color }}>{count}</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Search */}
+            <div style={{ position: "relative", width: 300, flexShrink: 0 }}>
+              <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", fontSize: 14, pointerEvents: "none", color: "rgba(255,255,255,0.30)" }}>🔍</span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calculators…"
+                style={{ width: "100%", boxSizing: "border-box", paddingLeft: 38, paddingRight: 14, paddingTop: 12, paddingBottom: 12, borderRadius: 12, border: "1.5px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 13, outline: "none" }} />
+            </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ maxWidth: 1300, margin: "0 auto", padding: "24px 32px 40px", boxSizing: "border-box" }}>
 
         {/* Category filter pills */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
           {CATS.map(key => {
             const m = CAT_META[key];
             const count = key === "all" ? CALCS.length : CALCS.filter(c => c.category === key).length;
             const active = cat === key;
             return (
               <button key={key} onClick={() => { setCat(key); setSearch(""); }}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 24, border: active ? `2px solid ${m.color}` : "1.5px solid var(--border)", background: active ? m.color + "18" : "var(--card-bg)", color: active ? m.color : "var(--text-muted)", fontWeight: active ? 800 : 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s" }}>
-                <span style={{ fontSize: 14 }}>{m.icon}</span>
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 24, border: active ? `2px solid ${m.color}` : "1.5px solid var(--border)", background: active ? m.color + "14" : "var(--card-bg)", color: active ? m.color : "var(--text-muted)", fontWeight: active ? 800 : 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s" }}>
+                <span style={{ fontSize: 13 }}>{m.icon}</span>
                 <span>{m.label}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 10, background: active ? m.color + "30" : "var(--light-bg)" }}>{count}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 10, background: active ? m.color + "25" : "var(--light-bg,rgba(0,0,0,0.04))", color: active ? m.color : "var(--text-muted)" }}>{count}</span>
               </button>
             );
           })}

@@ -435,7 +435,7 @@ export default function PageClient() {
 
         {/* Results Table */}
         <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column" }}>
-          <div style={{ overflowX: "auto", overflowY: "auto", flex: 1 }}>
+          <div style={{ overflowX: "hidden", overflowY: "auto", flex: 1 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: navy }}>
@@ -445,8 +445,8 @@ export default function PageClient() {
                     ["dps","DPS",true],["divYield","Div Yield",true],
                   ] as [SortKey, string, boolean][]).map(([key, label, right]) => (
                     <th key={key} onClick={() => toggleSort(key)} style={{
-                      padding: "10px 12px", textAlign: right ? "right" : "left", color: "rgba(255,255,255,0.85)",
-                      fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase",
+                      padding: "9px 8px", textAlign: right ? "right" : "left", color: "rgba(255,255,255,0.85)",
+                      fontSize: 9.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
                       cursor: "pointer", whiteSpace: "nowrap", userSelect: "none",
                     }}>
                       {label} {sortKey === key ? (sortAsc ? "▲" : "▼") : ""}
@@ -464,31 +464,31 @@ export default function PageClient() {
                     <tr key={r.symbol} style={{ borderBottom: `1px solid ${border}`, background: idx % 2 === 0 ? "transparent" : (tk.dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)") }}
                       onMouseEnter={e => (e.currentTarget.style.background = tk.dark ? "rgba(255,255,255,0.04)" : "#F8F6F1")}
                       onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : (tk.dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)"))}>
-                      <td style={{ padding: "9px 12px", textAlign: "left" }}>
+                      <td style={{ padding: "7px 8px", textAlign: "left" }}>
                         <Link href={`/data-portal/company/${r.symbol}`} style={{ textDecoration: "none" }}>
-                          <span style={{ background: navy, color: gold, fontWeight: 800, fontSize: 12, padding: "2px 8px", borderRadius: 5 }}>{r.symbol}</span>
+                          <span style={{ background: navy, color: gold, fontWeight: 800, fontSize: 11, padding: "2px 7px", borderRadius: 5 }}>{r.symbol}</span>
                         </Link>
                       </td>
-                      <td style={{ padding: "9px 12px", textAlign: "left", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: text }}>{r.companyName}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "left" }}>
-                        <span style={{ fontSize: 11, color: muted, background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
-                          {r.sectorName.length > 16 ? r.sectorName.slice(0, 16) + "…" : r.sectorName}
+                      <td style={{ padding: "7px 8px", textAlign: "left", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: text, fontSize: 12 }}>{r.companyName}</td>
+                      <td style={{ padding: "7px 8px", textAlign: "left" }}>
+                        <span style={{ fontSize: 10, color: muted, background: tk.dark ? "rgba(255,255,255,0.06)" : "#F1F5F9", padding: "2px 6px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                          {r.sectorName.length > 14 ? r.sectorName.slice(0, 14) + "…" : r.sectorName}
                         </span>
                       </td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmtN(r.close)}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", color: pColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                      <td style={{ padding: "7px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: 12 }}>{fmtN(r.close)}</td>
+                      <td style={{ padding: "7px 8px", textAlign: "right", color: pColor, fontWeight: 700, fontVariantNumeric: "tabular-nums", fontSize: 12 }}>
                         {r.pct >= 0 ? "+" : ""}{fmtN(r.pct)}%
                       </td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtVol(r.volume)}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtN(r.pe, 1)}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtN(r.dps)}</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", color: r.divYield ? "#16a34a" : muted, fontWeight: r.divYield ? 600 : 400 }}>
+                      <td style={{ padding: "7px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{fmtVol(r.volume)}</td>
+                      <td style={{ padding: "7px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{fmtN(r.pe, 1)}</td>
+                      <td style={{ padding: "7px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{fmtN(r.dps)}</td>
+                      <td style={{ padding: "7px 8px", textAlign: "right", color: r.divYield ? "#16a34a" : muted, fontWeight: r.divYield ? 600 : 400, fontSize: 12 }}>
                         {r.divYield ? fmtN(r.divYield) + "%" : "—"}
                       </td>
-                      <td style={{ padding: "9px 12px", textAlign: "center" }}>
-                        {r.shariah && <span style={{ fontSize: 11, background: "#16a34a20", color: "#16a34a", padding: "2px 6px", borderRadius: 8, fontWeight: 700 }}>☪</span>}
+                      <td style={{ padding: "7px 8px", textAlign: "center" }}>
+                        {r.shariah && <span style={{ fontSize: 10, background: "#16a34a20", color: "#16a34a", padding: "2px 5px", borderRadius: 8, fontWeight: 700 }}>☪</span>}
                       </td>
-                      <td style={{ padding: "9px 12px", textAlign: "center" }}>
+                      <td style={{ padding: "7px 8px", textAlign: "center" }}>
                         <button onClick={() => addToWatchlist(r.symbol, r.companyName)} title={inWl ? "In watchlist" : "Add to watchlist"} style={{
                           background: "none", border: "none", cursor: inWl ? "default" : "pointer", fontSize: 16,
                           color: inWl ? gold : muted, transition: "color 0.15s",
