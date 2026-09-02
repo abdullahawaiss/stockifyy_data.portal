@@ -13,11 +13,11 @@ function nv(s: string) { return parseFloat(s) || 0; }
 function Input({ label, value, onChange, prefix, step, placeholder }: { label: string; value: string; onChange: (v: string) => void; prefix?: string; step?: string; placeholder?: string }) {
   return (
     <div>
-      <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>{label}</label>
-      <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-        {prefix && <span style={{ padding: "0 10px", fontSize: 12, color: "var(--text-muted)", background: "var(--light-bg)", borderRight: "1px solid var(--border)", alignSelf: "stretch", display: "flex", alignItems: "center" }}>{prefix}</span>}
+      <label style={{ fontSize: 9.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 3 }}>{label}</label>
+      <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 7, overflow: "hidden" }}>
+        {prefix && <span style={{ padding: "0 8px", fontSize: 11, color: "var(--text-muted)", background: "var(--light-bg)", borderRight: "1px solid var(--border)", alignSelf: "stretch", display: "flex", alignItems: "center", flexShrink: 0 }}>{prefix}</span>}
         <input type="number" value={value} onChange={e => onChange(e.target.value)} step={step ?? "any"} min="0" placeholder={placeholder}
-          style={{ flex: 1, padding: "9px 12px", border: "none", background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 13, outline: "none" }} />
+          style={{ flex: 1, minWidth: 0, padding: "7px 10px", border: "none", background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 12, outline: "none" }} />
       </div>
     </div>
   );
@@ -25,8 +25,8 @@ function Input({ label, value, onChange, prefix, step, placeholder }: { label: s
 function Sel({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: {value: string; label: string}[] }) {
   return (
     <div>
-      <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1.5px solid var(--border)", borderRadius: 8, background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 13, cursor: "pointer" }}>
+      <label style={{ fontSize: 9.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 3 }}>{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--border)", borderRadius: 7, background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 12, cursor: "pointer" }}>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -34,7 +34,7 @@ function Sel({ label, value, onChange, options }: { label: string; value: string
 }
 function CalcBtn({ onClick, label = "Calculate →" }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} style={{ width: "100%", padding: "12px", borderRadius: 9, background: NAVY, color: GOLD, border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", marginTop: 4, letterSpacing: "0.02em" }}
+    <button onClick={onClick} style={{ width: "100%", padding: "10px", borderRadius: 8, background: NAVY, color: GOLD, border: "none", fontSize: 13, fontWeight: 800, cursor: "pointer", marginTop: 4, letterSpacing: "0.02em" }}
       onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
       {label}
     </button>
@@ -44,18 +44,18 @@ function CalcBtn({ onClick, label = "Calculate →" }: { onClick: () => void; la
 /* ─── result display components ───────────────────────────────────────────── */
 function BigResult({ label, value, sub, color = GOLD }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div style={{ borderRadius: 12, padding: "16px 18px", background: color + "12", border: `1.5px solid ${color}35`, marginBottom: 4 }}>
+    <div style={{ borderRadius: 10, padding: "12px 14px", background: color + "12", border: `1.5px solid ${color}35`, marginBottom: 4 }}>
       <div style={{ fontSize: 9, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 900, color, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 900, color, fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
 function Row({ label, value, highlight, color }: { label: string; value: string; highlight?: boolean; color?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
-      <span style={{ fontSize: highlight ? 14 : 13, fontWeight: highlight ? 800 : 600, color: color ?? "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+      <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{label}</span>
+      <span style={{ fontSize: highlight ? 13 : 12, fontWeight: highlight ? 800 : 600, color: color ?? "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );
 }
@@ -161,20 +161,20 @@ function LineAreaSVG({ data, color = GOLD, label = "" }: { data: number[]; color
 /* ─── split layout: inputs left, results right ────────────────────────────── */
 function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.ReactNode | null }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", height: "100%", minHeight: 0 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) 1fr", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* LEFT — inputs */}
-      <div style={{ padding: "20px 22px", borderRight: "1px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ padding: "16px 18px", borderRight: "1px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 0 }}>
         {inputs}
       </div>
       {/* RIGHT — results */}
-      <div style={{ padding: "20px 22px", overflowY: "auto", background: "var(--light-bg,rgba(0,0,0,0.015))" }}>
+      <div style={{ padding: "16px 18px", overflowY: "auto", background: "var(--light-bg,rgba(0,0,0,0.015))" }}>
         {result ?? <NoResult />}
       </div>
     </div>
   );
 }
 function InputGrid({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{children}</div>;
+  return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>{children}</div>;
 }
 function FullCol({ children }: { children: React.ReactNode }) {
   return <div style={{ gridColumn: "1 / -1" }}>{children}</div>;
