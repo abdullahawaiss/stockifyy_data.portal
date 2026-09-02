@@ -296,7 +296,7 @@ export default function PageClient() {
   if (!mounted) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, color: text, fontFamily: "inherit", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: bg, color: text, fontFamily: "inherit", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
       {/* Top bar */}
       <div style={{ padding: "20px 20px 0", maxWidth: 1400, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>

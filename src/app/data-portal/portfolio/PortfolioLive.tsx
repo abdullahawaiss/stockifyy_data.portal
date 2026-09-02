@@ -592,8 +592,8 @@ export default function PortfolioLive() {
   if (!mounted) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, padding: "24px 20px", color: text, fontFamily: "inherit" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: bg, padding: "24px 20px", color: text, fontFamily: "inherit", overflowX: "hidden" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -610,7 +610,7 @@ export default function PortfolioLive() {
         </div>
 
         {/* Main Layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(260px,300px) minmax(0,1fr)", gap: 20, alignItems: "start" }}>
 
           {/* LEFT: Summary Panel */}
           <div>

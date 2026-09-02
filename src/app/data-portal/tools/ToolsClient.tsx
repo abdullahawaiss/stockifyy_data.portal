@@ -1230,133 +1230,175 @@ const CATS = ["all","general","investment","trading","valuation","corporate"];
 /* ─── Main Page ─────────────────────────────────────────────────────────────── */
 export default function ToolsClient() {
   const [cat, setCat] = useState("all");
-  const [active, setActive] = useState<string>("salary");
+  const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [calcSearch, setCalcSearch] = useState("");
 
-  const filtered = useMemo(() => {
+  // Grid search (main page)
+  const gridFiltered = useMemo(() => {
     let list = cat === "all" ? CALCS : CALCS.filter(c => c.category === cat);
     if (search) { const q = search.toLowerCase(); list = list.filter(c => c.label.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)); }
     return list;
   }, [cat, search]);
-  const current  = useMemo(() => CALCS.find(c => c.id === active) ?? CALCS[0], [active]);
 
-  function pickCat(key: string) {
-    setCat(key);
-    const first = key === "all" ? CALCS[0] : CALCS.find(c => c.category === key);
-    if (first) setActive(first.id);
+  // Sidebar search (calculator view)
+  const sideFiltered = useMemo(() => {
+    if (!calcSearch) return CALCS;
+    const q = calcSearch.toLowerCase();
+    return CALCS.filter(c => c.label.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q));
+  }, [calcSearch]);
+
+  const current = useMemo(() => CALCS.find(c => c.id === selected) ?? null, [selected]);
+
+  function openCalc(id: string) { setSelected(id); setCalcSearch(""); }
+  function backToGrid() { setSelected(null); setCalcSearch(""); }
+
+  /* ── CALCULATOR VIEW ─────────────────────────────────────────────────────── */
+  if (selected && current) {
+    const accent = CAT_META[current.category]?.color ?? GOLD;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg)", boxSizing: "border-box" }}>
+
+        {/* ── Top bar ── */}
+        <div style={{ background: NAVY, padding: "10px 20px", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+          {/* Back button */}
+          <button onClick={backToGrid} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.14)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}>
+            ← Back
+          </button>
+          {/* Icon + Title */}
+          <div style={{ width: 36, height: 36, borderRadius: 9, background: accent + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{current.icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#fff" }}>{current.label}</span>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 9px", borderRadius: 8, background: accent + "22", color: accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>{CAT_META[current.category]?.label}</span>
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{current.desc}</div>
+          </div>
+          <div style={{ width: 4, height: 36, borderRadius: 2, background: accent, flexShrink: 0 }} />
+        </div>
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, transparent)`, flexShrink: 0 }} />
+
+        {/* ── Body: sidebar + calculator ── */}
+        <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
+
+          {/* Sidebar: search + calc list */}
+          <div style={{ width: 220, flexShrink: 0, background: "var(--card-bg)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "10px 12px", background: NAVY, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Switch Calculator</div>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "rgba(255,255,255,0.3)", pointerEvents: "none" }}>🔍</span>
+                <input value={calcSearch} onChange={e => setCalcSearch(e.target.value)} placeholder="Search…" autoFocus={false}
+                  style={{ width: "100%", boxSizing: "border-box", paddingLeft: 26, paddingRight: 8, paddingTop: 5, paddingBottom: 5, borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, outline: "none" }} />
+              </div>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {sideFiltered.map(c => {
+                const isActive = c.id === selected;
+                const a = CAT_META[c.category]?.color ?? GOLD;
+                return (
+                  <button key={c.id} onClick={() => openCalc(c.id)}
+                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", padding: 0, border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer", background: isActive ? a + "12" : "transparent", transition: "background 0.12s" }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--light-bg)"; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
+                    <div style={{ width: 3, alignSelf: "stretch", background: isActive ? a : "transparent", flexShrink: 0 }} />
+                    <div style={{ width: 26, height: 26, borderRadius: 6, background: a + (isActive ? "25" : "14"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, margin: "7px 8px", flexShrink: 0 }}>{c.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8, paddingTop: 6, paddingBottom: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: isActive ? 800 : 600, color: isActive ? a : "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
+                      <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.desc}</div>
+                    </div>
+                  </button>
+                );
+              })}
+              {sideFiltered.length === 0 && <div style={{ padding: "20px 14px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>No results</div>}
+            </div>
+          </div>
+
+          {/* Calculator content — fills remaining space, no outer scroll */}
+          <div style={{ flex: 1, minWidth: 0, overflow: "hidden", background: "var(--bg)" }}>
+            {current.component}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const accent = CAT_META[current.category]?.color ?? GOLD;
-
+  /* ── GRID VIEW ───────────────────────────────────────────────────────────── */
   return (
-    <div style={{ padding: "16px 24px 0", maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", boxSizing: "border-box" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "28px 28px 40px", boxSizing: "border-box" }}>
+      <div style={{ maxWidth: 1300, margin: "0 auto" }}>
 
-      {/* ── Top bar ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 1 }}>Financial Calculators</div>
-          <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-            <span style={{ color: "var(--text-primary)" }}>Tools for investors &amp; </span><span style={{ color: "#D4971A" }}>traders</span>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, marginBottom: 28, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Stockifyy · Financial Tools</div>
+            <h1 style={{ fontSize: 30, fontWeight: 900, margin: 0, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+              {CALCS.length} <span style={{ color: GOLD }}>Calculators</span>
+            </h1>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "6px 0 0" }}>Click any calculator to open it — inputs, results, and guide all in one place.</p>
+          </div>
+          {/* Search */}
+          <div style={{ position: "relative", width: 280, flexShrink: 0 }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, pointerEvents: "none", color: "var(--text-muted)" }}>🔍</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calculators…"
+              style={{ width: "100%", boxSizing: "border-box", paddingLeft: 36, paddingRight: 14, paddingTop: 11, paddingBottom: 11, borderRadius: 12, border: "1.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 13, outline: "none" }} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-          {[`${CALCS.length} Calculators`, "PSX Brokerage", "FBR 2026-27"].map(t => (
-            <span key={t} style={{ fontSize: 10.5, fontWeight: 700, padding: "4px 12px", borderRadius: 20, border: "1px solid var(--border)", color: "var(--text-muted)", background: "var(--light-bg)" }}>{t}</span>
-          ))}
+
+        {/* Category filter pills */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
+          {CATS.map(key => {
+            const m = CAT_META[key];
+            const count = key === "all" ? CALCS.length : CALCS.filter(c => c.category === key).length;
+            const active = cat === key;
+            return (
+              <button key={key} onClick={() => { setCat(key); setSearch(""); }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 24, border: active ? `2px solid ${m.color}` : "1.5px solid var(--border)", background: active ? m.color + "18" : "var(--card-bg)", color: active ? m.color : "var(--text-muted)", fontWeight: active ? 800 : 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s" }}>
+                <span style={{ fontSize: 14 }}>{m.icon}</span>
+                <span>{m.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 10, background: active ? m.color + "30" : "var(--light-bg)" }}>{count}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* ── Category tabs ── */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 10, borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", background: "var(--light-bg)", flexShrink: 0 }}>
-        {CATS.map(key => {
-          const m = CAT_META[key];
-          const isCat = cat === key;
-          const count = key === "all" ? CALCS.length : CALCS.filter(c => c.category === key).length;
-          return (
-            <button key={key} onClick={() => pickCat(key)}
-              style={{ flex: 1, padding: "7px 4px", border: "none", borderRight: "1px solid var(--border)", cursor: "pointer",
-                background: isCat ? NAVY : "transparent", color: isCat ? m.color : "var(--text-muted)",
-                fontWeight: isCat ? 800 : 600, fontSize: 11, transition: "all 0.15s",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 13 }}>{m.icon}</span>
-              <span style={{ fontSize: 10, lineHeight: 1 }}>{m.label}</span>
-              <span style={{ fontSize: 9, fontWeight: 700, opacity: 0.8 }}>{count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Two-column split ── */}
-      <div style={{ display: "flex", gap: 12, flex: 1, minHeight: 0, overflow: "hidden", paddingBottom: 16 }}>
-
-        {/* LEFT — calculator list */}
-        <div style={{ width: 240, flexShrink: 0, borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", background: "var(--card-bg)", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "9px 14px", background: NAVY, borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-              {cat === "all" ? "All Calculators" : CAT_META[cat].label} · {filtered.length}
-            </div>
-            <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "rgba(255,255,255,0.3)", pointerEvents: "none" }}>🔍</span>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calculators…"
-                style={{ width: "100%", boxSizing: "border-box", paddingLeft: 26, paddingRight: 8, paddingTop: 5, paddingBottom: 5, borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, outline: "none" }} />
-            </div>
+        {/* Calculator cards grid */}
+        {search && gridFiltered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--text-muted)" }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>No calculators found for &ldquo;{search}&rdquo;</div>
+            <button onClick={() => setSearch("")} style={{ marginTop: 14, padding: "8px 20px", borderRadius: 8, border: "none", background: NAVY, color: GOLD, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Clear Search</button>
           </div>
-          <div style={{ overflowY: "auto", flex: 1 }}>
-            {filtered.map(c => {
-              const isActive = c.id === active;
-              const a = CAT_META[c.category]?.color ?? GOLD;
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 14 }}>
+            {gridFiltered.map(c => {
+              const accent = CAT_META[c.category]?.color ?? GOLD;
               return (
-                <button key={c.id} onClick={() => setActive(c.id)}
-                  style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", padding: 0,
-                    border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer",
-                    background: isActive ? a + "10" : "transparent", transition: "background 0.12s" }}>
-                  <div style={{ width: 3, alignSelf: "stretch", background: isActive ? a : "transparent", flexShrink: 0 }} />
-                  <div style={{ width: 30, height: 30, borderRadius: 7, background: a + (isActive ? "22" : "12"),
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                    margin: "8px 9px", flexShrink: 0 }}>
-                    {c.icon}
+                <button key={c.id} onClick={() => openCalc(c.id)}
+                  style={{ textAlign: "left", background: "var(--card-bg)", border: "1.5px solid var(--border)", borderRadius: 14, padding: "20px", cursor: "pointer", transition: "all 0.18s", display: "flex", flexDirection: "column", gap: 10 }}
+                  onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = accent; el.style.boxShadow = `0 8px 28px ${accent}22`; el.style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = "var(--border)"; el.style.boxShadow = "none"; el.style.transform = "none"; }}>
+                  {/* Top: icon + category */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 12, background: accent + "18", border: `1.5px solid ${accent}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{c.icon}</div>
+                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 9px", borderRadius: 20, background: accent + "18", color: accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>{CAT_META[c.category]?.label}</span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: isActive ? 800 : 600, color: isActive ? a : "var(--text-primary)", lineHeight: 1.2 }}>{c.label}</div>
-                    <div style={{ fontSize: 9.5, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.desc}</div>
+                  {/* Name + description */}
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4, lineHeight: 1.3 }}>{c.label}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{c.desc}</div>
                   </div>
-                  {isActive && <span style={{ fontSize: 12, color: a, marginRight: 8, flexShrink: 0 }}>›</span>}
+                  {/* Open button */}
+                  <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Open calculator</span>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: accent + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: accent, fontWeight: 900 }}>→</span>
+                  </div>
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* RIGHT — calculator panel */}
-        <div style={{ flex: 1, minWidth: 0, borderRadius: 12, border: `1.5px solid ${accent}44`, background: "var(--card-bg)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          {/* Header */}
-          <div style={{ background: NAVY, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 9, background: accent + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-              {current.icon}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>{current.label}</span>
-                <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 8, background: accent + "22", color: accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {CAT_META[current.category]?.label}
-                </span>
-              </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>{current.desc}</div>
-            </div>
-            <div style={{ display: "flex", gap: 8, fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
-              <span>INPUTS</span>
-              <span style={{ color: "rgba(255,255,255,0.15)" }}>|</span>
-              <span>RESULTS</span>
-            </div>
-            <div style={{ width: 4, height: 38, borderRadius: 2, background: accent, flexShrink: 0 }} />
-          </div>
-          <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, transparent)`, flexShrink: 0 }} />
-          {/* Calculator — fills remaining height, no outer scroll */}
-          <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-            {current.component}
-          </div>
-        </div>
-
+        )}
       </div>
     </div>
   );
