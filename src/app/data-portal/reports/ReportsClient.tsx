@@ -432,8 +432,61 @@ export default function ReportsClient() {
               {search && <button onClick={() => setSearch("")} style={{ display: "block", margin: "12px auto 0", padding: "7px 16px", border: "none", background: "#C8860A", color: "#fff", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Clear Search</button>}
             </div>
           )}
+
+          {/* ── PSX Market News ── */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ height: 3, width: 24, borderRadius: 2, background: "#0ea5e9" }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.08em" }}>PSX Market News</span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>September 2026</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {PSX_NEWS.map(n => (
+                <div key={n.id} className="card" style={{ padding: "14px 18px", display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div style={{ minWidth: 42, height: 42, borderRadius: 10, background: n.catBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                    {n.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                      <span style={{ padding: "2px 8px", borderRadius: 12, background: n.catBg, color: n.catColor, fontSize: 10, fontWeight: 700 }}>{n.category}</span>
+                      <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{n.date}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--navy)", lineHeight: 1.45, marginBottom: 4 }}>{n.title}</p>
+                    <p style={{ margin: 0, fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5 }}>{n.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+const PSX_NEWS = [
+  { id: 1, icon: "📈", category: "Market Update", catBg: "rgba(34,197,94,0.10)", catColor: "#16a34a", date: "2 Sep 2026",
+    title: "KSE-100 surges past 115,000 — new all-time high on SBP rate-cut optimism",
+    body: "The benchmark KSE-100 index touched 115,420 intraday, its highest ever level, as investors priced in an expected 50bps rate cut at the September 2026 MPC meeting. Banking stocks led the rally with HBL, MCB and MEBL all gaining over 3%." },
+  { id: 2, icon: "🏦", category: "Monetary Policy", catBg: "rgba(99,102,241,0.10)", catColor: "#6366f1", date: "29 Aug 2026",
+    title: "SBP holds policy rate at 11.5% in August MPC — next meeting 22 September",
+    body: "The State Bank of Pakistan maintained its policy rate at 11.5% in the August MPC meeting, citing easing but still-elevated core inflation. The next Monetary Policy Committee meeting is scheduled for 22 September 2026." },
+  { id: 3, icon: "⚡", category: "Sector News", catBg: "rgba(234,179,8,0.10)", catColor: "#ca8a04", date: "28 Aug 2026",
+    title: "Power sector circular debt drops to PKR 2.1 trillion — NEPRA",
+    body: "NEPRA confirmed that the power sector circular debt has been reduced to PKR 2.1 trillion from a peak of PKR 2.9 trillion, following quarterly capacity payment renegotiations with IPPs. Analysts expect improved cash flows for HUBC and KAPCO." },
+  { id: 4, icon: "🌾", category: "Fertilizer", catBg: "rgba(16,185,129,0.10)", catColor: "#059669", date: "26 Aug 2026",
+    title: "Urea prices up 8% in Punjab ahead of Kharif season — FFC, EFERT to benefit",
+    body: "Ex-factory urea prices increased by PKR 150/bag in Punjab ahead of the Kharif cropping season. FFC and Engro Fertilizers are expected to report stronger Q3 FY2026 margins as domestic urea demand peaks through September." },
+  { id: 5, icon: "🏗️", category: "Cement", catBg: "rgba(249,115,22,0.10)", catColor: "#ea580c", date: "25 Aug 2026",
+    title: "Cement despatches up 11% YoY in July 2026 — APCMA data",
+    body: "All Pakistan Cement Manufacturers Association (APCMA) reported total cement despatches of 4.8 million tonnes in July 2026, up 11% year-on-year, driven by a surge in infrastructure spending. Lucky Cement and DGKC are top sector picks." },
+  { id: 6, icon: "💵", category: "Currency", catBg: "rgba(59,130,246,0.10)", catColor: "#2563eb", date: "22 Aug 2026",
+    title: "PKR stabilises at 278/USD as remittances hit record USD 3.5 bn in July",
+    body: "The Pakistani Rupee held steady against the US Dollar at PKR 278, supported by record monthly remittances of USD 3.5 billion in July 2026 — the highest ever — and a narrowing current account deficit. SBP FX reserves rose to USD 10.2 billion." },
+  { id: 7, icon: "🛢️", category: "Oil & Gas", catBg: "rgba(239,68,68,0.10)", catColor: "#dc2626", date: "20 Aug 2026",
+    title: "OGDC & PPL announce major gas discovery in Khyber Pakhtunkhwa block",
+    body: "OGDC and PPL, through their joint venture in the KP block, announced a significant natural gas discovery with estimated reserves of 50 BCF. The discovery is expected to add meaningfully to PPL's production from FY2027 onwards." },
+  { id: 8, icon: "📦", category: "PSX Corporate", catBg: "rgba(168,85,247,0.10)", catColor: "#9333ea", date: "18 Aug 2026",
+    title: "PSX launches new SME board — 12 companies to list in Q4 2026",
+    body: "The Pakistan Stock Exchange officially launched its revamped SME board, with 12 companies expected to complete their initial public offerings by Q4 2026. The initiative is part of PSX's broader strategy to increase market capitalisation to USD 50 billion by 2028." },
+];
