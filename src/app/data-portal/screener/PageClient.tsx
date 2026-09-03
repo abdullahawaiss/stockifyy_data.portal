@@ -1,8 +1,9 @@
 "use client";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PSX_STOCKS } from "@/lib/psx-stocks-static";
 import { useDarkTokens } from "@/hooks/useDarkMode";
+import { LOGO_DATA_URI } from "@/lib/logo-base64";
 
 interface ScreenerRow {
   symbol: string;
@@ -26,9 +27,11 @@ interface SavedScreen {
   savedAt: string;
 }
 
+type IndexFilter = "All" | "KSE-100" | "KSE-30" | "KSE-All" | "KMI-30" | "SME";
+
 interface FilterState {
   sectors: string[];
-  index: "All" | "KSE-100" | "KSE-30";
+  index: IndexFilter;
   shariah: boolean;
   peMin: number;
   peMax: number;
@@ -40,90 +43,141 @@ interface FilterState {
   priceMax: number;
 }
 
-const KSE100 = new Set(["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","PSMC","SYS","TRG","PSO","MARI","FFC","EFERT","HUBC","DGKC","BWCL","NBP","ABL","BAFL","INDU","NML","ICI","SEARL","SNGP","FCCL","MLCF","PTC","MUGHAL","BAHL","AKBL","FABL","ATRL","POL","APL","FFBL","FATIMA","EPCL","NRL"]);
+const KSE100 = new Set(["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","PSMC","SYS","TRG","PSO","MARI","FFC","EFERT","HUBC","DGKC","BWCL","NBP","ABL","BAFL","INDU","NML","ICI","SEARL","SNGP","FCCL","MLCF","PTC","MUGHAL","BAHL","AKBL","FABL","ATRL","POL","APL","FFBL","FATIMA","EPCL","NRL","KAPCO","KEL","ACPL","PIOC","KOHC","CHCC","AVN","NETSOL","HCAR","GHNI","ABOT","GLAXO","HINOON","ISL","ASTL","SILK","SNBL","JSBL","SMBL","BOP","BIPL"]);
 const KSE30  = new Set(["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","INDU","PSO","MARI","FFC","EFERT","HUBC","DGKC","NBP","ABL","BAFL","BWCL","SYS"]);
+const KMI30  = new Set(["MEBL","FABL","ENGRO","LUCK","EFERT","BWCL","MLCF","FCCL","MUGHAL","SYS","MARI","OGDC","PPL","SNGP","FFC","FFBL","FATIMA","NML","SEARL","INDU","PSMC","EPCL","ACPL","HUBC","ICI","BAHL","SNBL","AIRLINK","MTMM","ATLH"]);
+const KSEALL = new Set([...KSE100, "SILK","SNBL","JSBL","SMBL","BOP","BIPL","HCAR","GHNI","ABOT","GLAXO","HINOON","AVN","NETSOL","ISL","ASTL","COLG","NESTLE","UNILEVER","PGC","PNSC","UNITY","BATA","PAKT","LOTCHEM","SITARA","PCAL","PAEL","JLICL","JUBILEE","EFU","ADAMJEE","AIRLINK","AGTL","MUGHAL","KEL"]);
+const SME    = new Set(["AMEN","ANPL","AMDL","AMSL","GFIL","HAJRA","HINO","ICIL","AMCL","ANL","APF"]);
 
 const FUNDAMENTALS: Record<string, { eps: number; pe: number; dps: number | null; close: number; pct: number; volume: number }> = {
   /* ── Banking ─────────────────────────────────────────────────── */
-  HBL:   { eps:38.20, pe:4.6,  dps:14.00,  close:177.30, pct:1.03,  volume:2_100_000 },
-  UBL:   { eps:48.60, pe:4.8,  dps:28.00,  close:232.40, pct:0.91,  volume:980_000 },
-  MCB:   { eps:45.30, pe:5.0,  dps:36.00,  close:225.60, pct:-0.92, volume:540_000 },
-  MEBL:  { eps:30.10, pe:7.3,  dps:29.50,  close:218.50, pct:0.83,  volume:760_000 },
-  NBP:   { eps:7.80,  pe:5.5,  dps:4.00,   close:43.20,  pct:0.70,  volume:5_200_000 },
-  ABL:   { eps:29.07, pe:4.7,  dps:16.00,  close:136.70, pct:0.66,  volume:490_000 },
-  BAFL:  { eps:8.92,  pe:6.1,  dps:8.50,   close:54.60,  pct:0.74,  volume:3_800_000 },
-  BAHL:  { eps:30.10, pe:5.8,  dps:18.00,  close:174.0,  pct:0.69,  volume:320_000 },
-  AKBL:  { eps:7.20,  pe:5.2,  dps:4.00,   close:37.50,  pct:0.54,  volume:2_100_000 },
-  FABL:  { eps:10.80, pe:6.0,  dps:6.50,   close:65.00,  pct:0.77,  volume:1_400_000 },
-  SILK:  { eps:2.10,  pe:8.5,  dps:1.50,   close:17.85,  pct:0.56,  volume:4_500_000 },
-  SNBL:  { eps:5.40,  pe:7.2,  dps:3.00,   close:38.90,  pct:0.72,  volume:1_200_000 },
-  JSBL:  { eps:3.80,  pe:6.9,  dps:2.00,   close:26.30,  pct:0.38,  volume:2_900_000 },
-  SMBL:  { eps:4.20,  pe:7.1,  dps:2.50,   close:29.90,  pct:0.67,  volume:1_800_000 },
-  BOP:   { eps:2.90,  pe:6.8,  dps:1.50,   close:19.70,  pct:0.51,  volume:6_100_000 },
-  BIPL:  { eps:3.50,  pe:7.4,  dps:2.00,   close:25.90,  pct:0.62,  volume:2_300_000 },
+  HBL:    { eps:38.20, pe:4.6,  dps:14.00,  close:177.30, pct:1.03,  volume:2_100_000 },
+  UBL:    { eps:48.60, pe:4.8,  dps:28.00,  close:232.40, pct:0.91,  volume:980_000 },
+  MCB:    { eps:45.30, pe:5.0,  dps:36.00,  close:225.60, pct:-0.92, volume:540_000 },
+  MEBL:   { eps:30.10, pe:7.3,  dps:29.50,  close:218.50, pct:0.83,  volume:760_000 },
+  NBP:    { eps:7.80,  pe:5.5,  dps:4.00,   close:43.20,  pct:0.70,  volume:5_200_000 },
+  ABL:    { eps:29.07, pe:4.7,  dps:16.00,  close:136.70, pct:0.66,  volume:490_000 },
+  BAFL:   { eps:8.92,  pe:6.1,  dps:8.50,   close:54.60,  pct:0.74,  volume:3_800_000 },
+  BAHL:   { eps:30.10, pe:5.8,  dps:18.00,  close:174.0,  pct:0.69,  volume:320_000 },
+  AKBL:   { eps:7.20,  pe:5.2,  dps:4.00,   close:37.50,  pct:0.54,  volume:2_100_000 },
+  FABL:   { eps:10.80, pe:6.0,  dps:6.50,   close:65.00,  pct:0.77,  volume:1_400_000 },
+  SILK:   { eps:2.10,  pe:8.5,  dps:1.50,   close:17.85,  pct:0.56,  volume:4_500_000 },
+  SNBL:   { eps:5.40,  pe:7.2,  dps:3.00,   close:38.90,  pct:0.72,  volume:1_200_000 },
+  JSBL:   { eps:3.80,  pe:6.9,  dps:2.00,   close:26.30,  pct:0.38,  volume:2_900_000 },
+  SMBL:   { eps:4.20,  pe:7.1,  dps:2.50,   close:29.90,  pct:0.67,  volume:1_800_000 },
+  BOP:    { eps:2.90,  pe:6.8,  dps:1.50,   close:19.70,  pct:0.51,  volume:6_100_000 },
+  BIPL:   { eps:3.50,  pe:7.4,  dps:2.00,   close:25.90,  pct:0.62,  volume:2_300_000 },
   /* ── Oil & Gas E&P ───────────────────────────────────────────── */
-  OGDC:  { eps:29.40, pe:6.2,  dps:6.00,   close:181.50, pct:-0.66, volume:3_450_000 },
-  PPL:   { eps:16.50, pe:5.4,  dps:3.50,   close:89.30,  pct:-0.78, volume:1_890_000 },
-  MARI:  { eps:310.0, pe:6.9,  dps:90.00,  close:2145.0, pct:1.06,  volume:98_000 },
-  POL:   { eps:88.0,  pe:6.5,  dps:60.00,  close:573.0,  pct:0.35,  volume:110_000 },
+  OGDC:   { eps:29.40, pe:6.2,  dps:6.00,   close:181.50, pct:-0.66, volume:3_450_000 },
+  PPL:    { eps:16.50, pe:5.4,  dps:3.50,   close:89.30,  pct:-0.78, volume:1_890_000 },
+  MARI:   { eps:310.0, pe:6.9,  dps:90.00,  close:2145.0, pct:1.06,  volume:98_000 },
+  POL:    { eps:88.0,  pe:6.5,  dps:60.00,  close:573.0,  pct:0.35,  volume:110_000 },
+  IGAS:   { eps:12.40, pe:7.8,  dps:5.00,   close:96.80,  pct:0.72,  volume:420_000 },
   /* ── Oil Marketing & Refineries ──────────────────────────────── */
-  PSO:   { eps:68.20, pe:5.0,  dps:30.00,  close:341.60, pct:-0.99, volume:670_000 },
-  APL:   { eps:72.0,  pe:6.2,  dps:40.00,  close:447.0,  pct:0.45,  volume:130_000 },
-  ATRL:  { eps:44.50, pe:7.1,  dps:20.00,  close:315.0,  pct:0.63,  volume:85_000 },
-  NRL:   { eps:38.20, pe:6.8,  dps:18.00,  close:260.0,  pct:0.46,  volume:72_000 },
+  PSO:    { eps:68.20, pe:5.0,  dps:30.00,  close:341.60, pct:-0.99, volume:670_000 },
+  APL:    { eps:72.0,  pe:6.2,  dps:40.00,  close:447.0,  pct:0.45,  volume:130_000 },
+  ATRL:   { eps:44.50, pe:7.1,  dps:20.00,  close:315.0,  pct:0.63,  volume:85_000 },
+  NRL:    { eps:38.20, pe:6.8,  dps:18.00,  close:260.0,  pct:0.46,  volume:72_000 },
+  GAIL:   { eps:8.60,  pe:7.4,  dps:4.00,   close:63.70,  pct:0.55,  volume:680_000 },
   /* ── Fertilizer ──────────────────────────────────────────────── */
-  FFC:   { eps:24.80, pe:5.6,  dps:18.00,  close:139.30, pct:-0.64, volume:870_000 },
-  EFERT: { eps:12.10, pe:7.2,  dps:9.00,   close:87.60,  pct:0.69,  volume:1_100_000 },
-  FFBL:  { eps:4.20,  pe:8.2,  dps:3.00,   close:34.50,  pct:0.58,  volume:1_800_000 },
-  FATIMA:{ eps:4.50,  pe:7.7,  dps:3.00,   close:34.70,  pct:-0.57, volume:2_300_000 },
-  ENGRO: { eps:28.50, pe:10.0, dps:15.00,  close:285.40, pct:1.49,  volume:1_240_000 },
+  FFC:    { eps:24.80, pe:5.6,  dps:18.00,  close:139.30, pct:-0.64, volume:870_000 },
+  EFERT:  { eps:12.10, pe:7.2,  dps:9.00,   close:87.60,  pct:0.69,  volume:1_100_000 },
+  FFBL:   { eps:4.20,  pe:8.2,  dps:3.00,   close:34.50,  pct:0.58,  volume:1_800_000 },
+  FATIMA: { eps:4.50,  pe:7.7,  dps:3.00,   close:34.70,  pct:-0.57, volume:2_300_000 },
+  ENGRO:  { eps:28.50, pe:10.0, dps:15.00,  close:285.40, pct:1.49,  volume:1_240_000 },
   /* ── Cement ──────────────────────────────────────────────────── */
-  LUCK:  { eps:120.0, pe:7.8,  dps:40.00,  close:932.00, pct:-0.90, volume:318_000 },
-  DGKC:  { eps:14.20, pe:6.9,  dps:5.00,   close:97.80,  pct:-0.81, volume:440_000 },
-  BWCL:  { eps:62.40, pe:5.0,  dps:40.00,  close:312.00, pct:0.81,  volume:210_000 },
-  FCCL:  { eps:2.80,  pe:7.9,  dps:2.50,   close:22.10,  pct:0.91,  volume:4_100_000 },
-  MLCF:  { eps:5.20,  pe:7.8,  dps:2.50,   close:40.80,  pct:-0.97, volume:2_800_000 },
-  ACPL:  { eps:38.20, pe:7.4,  dps:30.00,  close:282.0,  pct:0.42,  volume:180_000 },
-  PIOC:  { eps:16.80, pe:7.2,  dps:8.00,   close:121.0,  pct:0.66,  volume:380_000 },
-  KOHC:  { eps:28.40, pe:7.5,  dps:12.00,  close:213.0,  pct:0.74,  volume:240_000 },
-  CHCC:  { eps:22.10, pe:7.1,  dps:10.00,  close:157.0,  pct:0.48,  volume:290_000 },
+  LUCK:   { eps:120.0, pe:7.8,  dps:40.00,  close:932.00, pct:-0.90, volume:318_000 },
+  DGKC:   { eps:14.20, pe:6.9,  dps:5.00,   close:97.80,  pct:-0.81, volume:440_000 },
+  BWCL:   { eps:62.40, pe:5.0,  dps:40.00,  close:312.00, pct:0.81,  volume:210_000 },
+  FCCL:   { eps:2.80,  pe:7.9,  dps:2.50,   close:22.10,  pct:0.91,  volume:4_100_000 },
+  MLCF:   { eps:5.20,  pe:7.8,  dps:2.50,   close:40.80,  pct:-0.97, volume:2_800_000 },
+  ACPL:   { eps:38.20, pe:7.4,  dps:30.00,  close:282.0,  pct:0.42,  volume:180_000 },
+  PIOC:   { eps:16.80, pe:7.2,  dps:8.00,   close:121.0,  pct:0.66,  volume:380_000 },
+  KOHC:   { eps:28.40, pe:7.5,  dps:12.00,  close:213.0,  pct:0.74,  volume:240_000 },
+  CHCC:   { eps:22.10, pe:7.1,  dps:10.00,  close:157.0,  pct:0.48,  volume:290_000 },
+  ALCM:   { eps:6.80,  pe:7.6,  dps:3.00,   close:51.70,  pct:0.62,  volume:850_000 },
   /* ── Power ───────────────────────────────────────────────────── */
-  HUBC:  { eps:12.30, pe:8.8,  dps:8.00,   close:107.80, pct:0.75,  volume:2_300_000 },
+  HUBC:   { eps:12.30, pe:8.8,  dps:8.00,   close:107.80, pct:0.75,  volume:2_300_000 },
+  KAPCO:  { eps:9.80,  pe:7.6,  dps:7.00,   close:74.50,  pct:0.68,  volume:1_600_000 },
+  KEL:    { eps:0.58,  pe:9.4,  dps:null,   close:5.45,   pct:-0.91, volume:28_000_000 },
   /* ── Technology ──────────────────────────────────────────────── */
-  SYS:   { eps:58.20, pe:12.4, dps:30.00,  close:724.00, pct:1.26,  volume:320_000 },
-  TRG:   { eps:8.40,  pe:12.1, dps:null,   close:101.50, pct:1.50,  volume:1_900_000 },
-  AVN:   { eps:14.20, pe:11.8, dps:5.00,   close:167.0,  pct:0.84,  volume:620_000 },
-  NETSOL:{ eps:22.50, pe:10.5, dps:8.00,   close:236.0,  pct:0.93,  volume:480_000 },
+  SYS:    { eps:58.20, pe:12.4, dps:30.00,  close:724.00, pct:1.26,  volume:320_000 },
+  TRG:    { eps:8.40,  pe:12.1, dps:null,   close:101.50, pct:1.50,  volume:1_900_000 },
+  AVN:    { eps:14.20, pe:11.8, dps:5.00,   close:167.0,  pct:0.84,  volume:620_000 },
+  NETSOL: { eps:22.50, pe:10.5, dps:8.00,   close:236.0,  pct:0.93,  volume:480_000 },
+  AIRLINK:{ eps:10.40, pe:11.2, dps:4.00,   close:116.5,  pct:1.10,  volume:1_350_000 },
+  WNDT:   { eps:0.85,  pe:14.2, dps:null,   close:12.10,  pct:0.83,  volume:3_200_000 },
   /* ── Automobile ──────────────────────────────────────────────── */
-  PSMC:  { eps:110.0, pe:7.5,  dps:60.00,  close:830.00, pct:1.47,  volume:42_000 },
-  INDU:  { eps:220.0, pe:7.7,  dps:175.00, close:1702.0, pct:1.07,  volume:65_000 },
-  HCAR:  { eps:8.50,  pe:9.2,  dps:4.00,   close:78.20,  pct:0.77,  volume:740_000 },
-  GHNI:  { eps:6.20,  pe:8.8,  dps:3.00,   close:54.60,  pct:0.55,  volume:520_000 },
+  PSMC:   { eps:110.0, pe:7.5,  dps:60.00,  close:830.00, pct:1.47,  volume:42_000 },
+  INDU:   { eps:220.0, pe:7.7,  dps:175.00, close:1702.0, pct:1.07,  volume:65_000 },
+  HCAR:   { eps:8.50,  pe:9.2,  dps:4.00,   close:78.20,  pct:0.77,  volume:740_000 },
+  GHNI:   { eps:6.20,  pe:8.8,  dps:3.00,   close:54.60,  pct:0.55,  volume:520_000 },
+  AGTL:   { eps:48.60, pe:8.1,  dps:30.00,  close:393.5,  pct:0.63,  volume:95_000 },
   /* ── Pharma ──────────────────────────────────────────────────── */
-  ABOT:  { eps:84.85, pe:11.2, dps:48.00,  close:950.0,  pct:0.55,  volume:45_000 },
-  SEARL: { eps:30.50, pe:7.5,  dps:15.00,  close:228.00, pct:0.88,  volume:560_000 },
-  GLAXO: { eps:48.20, pe:9.8,  dps:30.00,  close:472.0,  pct:0.63,  volume:92_000 },
-  HINOON:{ eps:38.60, pe:10.2, dps:20.00,  close:394.0,  pct:0.71,  volume:78_000 },
+  ABOT:   { eps:84.85, pe:11.2, dps:48.00,  close:950.0,  pct:0.55,  volume:45_000 },
+  SEARL:  { eps:30.50, pe:7.5,  dps:15.00,  close:228.00, pct:0.88,  volume:560_000 },
+  GLAXO:  { eps:48.20, pe:9.8,  dps:30.00,  close:472.0,  pct:0.63,  volume:92_000 },
+  HINOON: { eps:38.60, pe:10.2, dps:20.00,  close:394.0,  pct:0.71,  volume:78_000 },
+  AMEN:   { eps:4.20,  pe:12.0, dps:2.00,   close:50.40,  pct:0.60,  volume:280_000 },
+  ANPL:   { eps:3.80,  pe:11.5, dps:1.50,   close:43.70,  pct:0.46,  volume:190_000 },
   /* ── Textile ─────────────────────────────────────────────────── */
-  NML:   { eps:22.40, pe:6.2,  dps:12.00,  close:138.00, pct:0.73,  volume:290_000 },
+  NML:    { eps:22.40, pe:6.2,  dps:12.00,  close:138.00, pct:0.73,  volume:290_000 },
+  GATM:   { eps:8.60,  pe:7.4,  dps:4.00,   close:63.60,  pct:0.55,  volume:410_000 },
+  YOUW:   { eps:9.20,  pe:7.8,  dps:5.00,   close:71.80,  pct:0.62,  volume:380_000 },
+  BHANERO:{ eps:42.50, pe:6.5,  dps:25.00,  close:276.3,  pct:0.48,  volume:88_000 },
+  SALFI:  { eps:11.20, pe:7.1,  dps:6.00,   close:79.50,  pct:0.53,  volume:320_000 },
+  TREET:  { eps:5.80,  pe:8.0,  dps:3.00,   close:46.40,  pct:0.43,  volume:560_000 },
+  BWHL:   { eps:6.40,  pe:7.6,  dps:3.50,   close:48.70,  pct:0.41,  volume:490_000 },
+  LOADS:  { eps:7.10,  pe:7.9,  dps:4.00,   close:56.10,  pct:0.57,  volume:370_000 },
+  GHCL:   { eps:4.90,  pe:8.2,  dps:2.50,   close:40.20,  pct:0.50,  volume:620_000 },
+  AMTEX:  { eps:3.60,  pe:8.5,  dps:2.00,   close:30.60,  pct:0.39,  volume:780_000 },
+  ARPL:   { eps:4.20,  pe:8.1,  dps:2.00,   close:34.00,  pct:0.44,  volume:650_000 },
+  AZAM:   { eps:5.50,  pe:7.7,  dps:3.00,   close:42.35,  pct:0.47,  volume:510_000 },
+  CMSF:   { eps:3.80,  pe:8.3,  dps:2.00,   close:31.50,  pct:0.38,  volume:710_000 },
+  DTML:   { eps:2.90,  pe:9.1,  dps:null,   close:26.40,  pct:0.34,  volume:920_000 },
+  FAISAL: { eps:4.10,  pe:8.4,  dps:2.00,   close:34.40,  pct:0.45,  volume:590_000 },
+  STJT:   { eps:5.20,  pe:7.9,  dps:2.50,   close:41.10,  pct:0.51,  volume:430_000 },
+  QUICE:  { eps:2.40,  pe:9.2,  dps:1.00,   close:22.10,  pct:0.32,  volume:1_100_000 },
   /* ── Chemicals & Polymers ────────────────────────────────────── */
-  ICI:   { eps:95.40, pe:8.7,  dps:50.00,  close:832.00, pct:0.73,  volume:84_000 },
-  EPCL:  { eps:4.80,  pe:8.0,  dps:3.50,   close:38.50,  pct:0.78,  volume:1_100_000 },
+  ICI:    { eps:95.40, pe:8.7,  dps:50.00,  close:832.00, pct:0.73,  volume:84_000 },
+  EPCL:   { eps:4.80,  pe:8.0,  dps:3.50,   close:38.50,  pct:0.78,  volume:1_100_000 },
+  LOTCHEM:{ eps:3.20,  pe:8.6,  dps:2.00,   close:27.50,  pct:0.51,  volume:1_300_000 },
+  SITARA: { eps:28.40, pe:7.9,  dps:15.00,  close:224.4,  pct:0.60,  volume:168_000 },
   /* ── Engineering / Steel ─────────────────────────────────────── */
-  MUGHAL:{ eps:9.80,  pe:8.0,  dps:5.00,   close:78.50,  pct:0.90,  volume:950_000 },
-  ISL:   { eps:6.40,  pe:7.5,  dps:3.50,   close:48.00,  pct:0.63,  volume:1_400_000 },
-  ASTL:  { eps:5.20,  pe:8.1,  dps:3.00,   close:42.10,  pct:0.48,  volume:1_100_000 },
+  MUGHAL: { eps:9.80,  pe:8.0,  dps:5.00,   close:78.50,  pct:0.90,  volume:950_000 },
+  ISL:    { eps:6.40,  pe:7.5,  dps:3.50,   close:48.00,  pct:0.63,  volume:1_400_000 },
+  ASTL:   { eps:5.20,  pe:8.1,  dps:3.00,   close:42.10,  pct:0.48,  volume:1_100_000 },
+  ASL:    { eps:4.60,  pe:8.3,  dps:2.50,   close:38.20,  pct:0.44,  volume:1_250_000 },
+  AMPSL:  { eps:5.80,  pe:7.8,  dps:3.00,   close:45.20,  pct:0.52,  volume:890_000 },
+  ITTEFAQ:{ eps:3.40,  pe:9.0,  dps:null,   close:30.60,  pct:0.37,  volume:1_600_000 },
   /* ── Telecom ─────────────────────────────────────────────────── */
-  PTC:   { eps:2.40,  pe:7.8,  dps:1.50,   close:18.80,  pct:-1.05, volume:6_500_000 },
-  SNGP:  { eps:3.90,  pe:7.2,  dps:2.00,   close:28.10,  pct:1.44,  volume:7_200_000 },
-  /* ── Misc / Conglomerates ────────────────────────────────────── */
-  KAPCO: { eps:9.80,  pe:7.6,  dps:7.00,   close:74.50,  pct:0.68,  volume:1_600_000 },
-  KEL:   { eps:0.58,  pe:9.4,  dps:null,   close:5.45,   pct:-0.91, volume:28_000_000 },
-  PAKT:  { eps:120.0, pe:12.1, dps:90.00,  close:1452.0, pct:0.83,  volume:18_000 },
-  NESTLE:{ eps:285.0, pe:14.2, dps:200.00, close:4050.0, pct:0.62,  volume:8_000 },
+  PTC:    { eps:2.40,  pe:7.8,  dps:1.50,   close:18.80,  pct:-1.05, volume:6_500_000 },
+  SNGP:   { eps:3.90,  pe:7.2,  dps:2.00,   close:28.10,  pct:1.44,  volume:7_200_000 },
+  /* ── FMCG / Food ────────────────────────────────────────────── */
+  NESTLE: { eps:285.0, pe:14.2, dps:200.00, close:4050.0, pct:0.62,  volume:8_000 },
+  COLG:   { eps:62.40, pe:12.5, dps:40.00,  close:780.0,  pct:0.55,  volume:22_000 },
+  UNILEVER:{ eps:980.0,pe:15.0, dps:700.00, close:14700., pct:0.48,  volume:3_500 },
+  PGC:    { eps:125.0, pe:13.2, dps:80.00,  close:1650.0, pct:0.51,  volume:12_000 },
+  UNITY:  { eps:8.40,  pe:9.6,  dps:4.00,   close:80.60,  pct:0.67,  volume:1_800_000 },
+  /* ── Insurance ──────────────────────────────────────────────── */
+  JLICL:  { eps:18.40, pe:10.5, dps:8.00,   close:193.2,  pct:0.64,  volume:210_000 },
+  EFU:    { eps:22.80, pe:9.8,  dps:12.00,  close:223.4,  pct:0.58,  volume:180_000 },
+  ADAMJEE:{ eps:14.60, pe:9.2,  dps:7.00,   close:134.3,  pct:0.52,  volume:290_000 },
+  IGI:    { eps:16.20, pe:10.1, dps:8.00,   close:163.6,  pct:0.61,  volume:240_000 },
+  /* ── Transport / Footwear ───────────────────────────────────── */
+  PNSC:   { eps:38.40, pe:8.2,  dps:20.00,  close:315.0,  pct:0.70,  volume:85_000 },
+  BATA:   { eps:72.60, pe:11.8, dps:40.00,  close:856.7,  pct:0.59,  volume:28_000 },
+  SRVI:   { eps:42.80, pe:9.4,  dps:22.00,  close:402.3,  pct:0.53,  volume:62_000 },
+  /* ── Cable & Electrical ─────────────────────────────────────── */
+  PCAL:   { eps:18.60, pe:8.7,  dps:10.00,  close:161.8,  pct:0.66,  volume:195_000 },
+  PAEL:   { eps:8.40,  pe:9.2,  dps:4.00,   close:77.30,  pct:0.72,  volume:820_000 },
+  /* ── Conglomerates / Misc ───────────────────────────────────── */
+  PAKT:   { eps:120.0, pe:12.1, dps:90.00,  close:1452.0, pct:0.83,  volume:18_000 },
+  AHCL:   { eps:14.80, pe:9.6,  dps:6.00,   close:142.1,  pct:0.74,  volume:380_000 },
+  AKDHL:  { eps:8.60,  pe:10.2, dps:4.00,   close:87.70,  pct:0.62,  volume:540_000 },
 };
 
-const SHARIAH_SET = new Set(["MEBL","FABL","BAHL","AKBL","SNBL","MCB","HUBC","EFERT","ENGRO","LUCK","MLCF","FCCL","BWCL","DGKC","MUGHAL","SYS","TRG","MARI","OGDC","PPL","SNGP","FFC","FFBL","FATIMA","NML","SEARL","INDU","PSMC","FCCL","ACPL","EPCL"]);
+const SHARIAH_SET = new Set(["MEBL","FABL","BAHL","AKBL","SNBL","MCB","HUBC","EFERT","ENGRO","LUCK","MLCF","FCCL","BWCL","DGKC","MUGHAL","SYS","TRG","MARI","OGDC","PPL","SNGP","FFC","FFBL","FATIMA","NML","SEARL","INDU","PSMC","ACPL","EPCL","AIRLINK","AGTL","KOHC","PIOC","NETSOL","AVN","HINOON","GATM","YOUW","BHANERO","SITARA","ISL","ASTL","ASL","AMPSL","IGAS","ICI","LOTCHEM","JLICL","PNSC","UNITY","KAPCO","POL","APL"]);
 
 function getMarketCap(sym: string, close: number): "Large" | "Mid" | "Small" {
   if (KSE30.has(sym) || close > 500) return "Large";
@@ -172,6 +226,15 @@ const DEFAULT_FILTERS: FilterState = {
   minVolume: 0, marketCap: [], priceMin: 0, priceMax: 9999,
 };
 
+const ALL_INDICES: { label: string; value: IndexFilter }[] = [
+  { label: "All Stocks", value: "All" },
+  { label: "KSE-100", value: "KSE-100" },
+  { label: "KSE-30", value: "KSE-30" },
+  { label: "KSE-All Share", value: "KSE-All" },
+  { label: "KMI-30", value: "KMI-30" },
+  { label: "SME Board", value: "SME" },
+];
+
 const LS_KEY = "stockifyy_screens";
 function loadScreens(): SavedScreen[] { try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]"); } catch { return []; } }
 function saveScreens(s: SavedScreen[]) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {} }
@@ -190,6 +253,9 @@ export default function PageClient() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [stockSearch, setStockSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [showAllIndices, setShowAllIndices] = useState(false);
+  const [showAllSectors, setShowAllSectors] = useState(false);
+  const [sectorSearch, setSectorSearch] = useState("");
   const PAGE_SIZE = 25;
 
   useEffect(() => {
@@ -217,7 +283,10 @@ export default function PageClient() {
       }
       if (filters.sectors.length && !filters.sectors.includes(r.sectorName)) return false;
       if (filters.index === "KSE-100" && !KSE100.has(r.symbol)) return false;
-      if (filters.index === "KSE-30" && !KSE30.has(r.symbol)) return false;
+      if (filters.index === "KSE-30"  && !KSE30.has(r.symbol))  return false;
+      if (filters.index === "KSE-All" && !KSEALL.has(r.symbol)) return false;
+      if (filters.index === "KMI-30"  && !KMI30.has(r.symbol))  return false;
+      if (filters.index === "SME"     && !SME.has(r.symbol))     return false;
       if (filters.shariah && !r.shariah) return false;
       if (r.pe !== null && (r.pe < filters.peMin || r.pe > filters.peMax)) return false;
       if (r.divYield !== null && (r.divYield < filters.dyMin || r.divYield > filters.dyMax)) return false;
@@ -300,8 +369,7 @@ export default function PageClient() {
     <!-- Header -->
     <div class="page-header">
       <div class="logo-block">
-        <div class="logo-hex"><span class="logo-s">S</span></div>
-        <div><div class="brand-name">Stockifyy</div><div class="brand-sub">PSX Data Portal</div></div>
+        <img src="${LOGO_DATA_URI}" alt="Stockifyy" style="height:36px;width:auto;display:block;" />
       </div>
       <div class="header-right">
         <div style="font-size:13px;font-weight:700;color:#07111F">Stock Screener Report</div>
@@ -532,12 +600,15 @@ export default function PageClient() {
           {/* Index */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Index</div>
-            {(["All","KSE-100","KSE-30"] as const).map(idx => (
-              <label key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, cursor: "pointer", fontSize: 13, color: filters.index === idx ? gold : text }}>
-                <input type="radio" checked={filters.index === idx} onChange={() => setFilters(f => ({ ...f, index: idx }))} />
-                {idx}
+            {(showAllIndices ? ALL_INDICES : ALL_INDICES.slice(0, 3)).map(({ label, value }) => (
+              <label key={value} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, cursor: "pointer", fontSize: 13, color: filters.index === value ? gold : text }}>
+                <input type="radio" checked={filters.index === value} onChange={() => setFilters(f => ({ ...f, index: value }))} />
+                {label}
               </label>
             ))}
+            <button onClick={() => setShowAllIndices(v => !v)} style={{ fontSize: 11, color: gold, background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: "2px 0", marginTop: 2 }}>
+              {showAllIndices ? "Show Less ▲" : "Show More ▼"}
+            </button>
           </div>
 
           {/* Shariah */}
@@ -595,15 +666,38 @@ export default function PageClient() {
           {/* Sectors */}
           <div style={{ paddingTop: 12, borderTop: `1px solid ${border}` }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Sectors</div>
-            {allSectors.map(([sec, count]) => (
-              <label key={sec} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5, cursor: "pointer", gap: 6 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
-                  <input type="checkbox" checked={filters.sectors.includes(sec)} onChange={() => toggleSector(sec)} />
-                  <span style={{ fontSize: 11.5, color: filters.sectors.includes(sec) ? gold : text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sec}</span>
-                </span>
-                <span style={{ fontSize: 10, color: muted, flexShrink: 0 }}>{count}</span>
-              </label>
-            ))}
+            {/* Search */}
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              <input
+                value={sectorSearch}
+                onChange={e => { setSectorSearch(e.target.value); setShowAllSectors(true); }}
+                placeholder="Search sectors…"
+                style={{ width: "100%", boxSizing: "border-box", padding: "5px 8px 5px 26px", border: `1px solid ${border}`, borderRadius: 7, background: tk.dark ? "#07111F" : "#F8F6F1", color: text, fontSize: 11.5, outline: "none" }}
+              />
+              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: muted, pointerEvents: "none" }}>🔍</span>
+            </div>
+            {(() => {
+              const matched = allSectors.filter(([sec]) => sec.toLowerCase().includes(sectorSearch.toLowerCase()));
+              const visible = (showAllSectors || sectorSearch) ? matched : matched.slice(0, 5);
+              return (
+                <>
+                  {visible.map(([sec, count]) => (
+                    <label key={sec} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5, cursor: "pointer", gap: 6 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                        <input type="checkbox" checked={filters.sectors.includes(sec)} onChange={() => toggleSector(sec)} />
+                        <span style={{ fontSize: 11.5, color: filters.sectors.includes(sec) ? gold : text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sec}</span>
+                      </span>
+                      <span style={{ fontSize: 10, color: muted, flexShrink: 0 }}>{count}</span>
+                    </label>
+                  ))}
+                  {!sectorSearch && matched.length > 5 && (
+                    <button onClick={() => setShowAllSectors(v => !v)} style={{ fontSize: 11, color: gold, background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: "4px 0", marginTop: 2 }}>
+                      {showAllSectors ? `Show Less ▲` : `Show More (${matched.length - 5} more) ▼`}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 

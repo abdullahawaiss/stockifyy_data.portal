@@ -27,19 +27,24 @@ function makeSparkline(symbol: string, positive: boolean): number[] {
 
 interface Company { id: number; symbol: string; name: string; sectorName: string; shariahStatus: string; listingDate: string; website: string; }
 
-interface CardData { price: number; changePct: number; change: number; positive: boolean; vol: number; pe: number; sparkline: number[]; }
+interface LiveQ { sym: string; price: number; chg: number; vol: number; open: number; high: number; low: number; prev: number; }
 
-// Build card data once per symbol — O(1) lookup afterward
-function buildCardData(symbol: string, globalIdx: number): CardData {
+interface CardData { price: number; changePct: number; change: number; positive: boolean; vol: number; pe: number; sparkline: number[]; open: number; high: number; low: number; prev: number; live: boolean; }
+
+function buildCardData(symbol: string, globalIdx: number, lq?: LiveQ): CardData {
   const r = seedRand(globalIdx * 13 + symbol.charCodeAt(0));
+  if (lq && lq.price > 0) {
+    const positive = lq.chg >= 0;
+    const pe = parseFloat((5 + r() * 25).toFixed(1));
+    return { price: lq.price, changePct: lq.chg, change: parseFloat((lq.price * lq.chg / 100).toFixed(2)), positive, vol: lq.vol * 1000, pe, sparkline: makeSparkline(symbol, positive), open: lq.open, high: lq.high, low: lq.low, prev: lq.prev, live: true };
+  }
   const price = Math.round((50 + r() * 950) * 100) / 100;
   const changePct = parseFloat(((r() - 0.48) * 8).toFixed(2));
   const positive = changePct >= 0;
   const change = parseFloat((price * changePct / 100).toFixed(2));
   const vol = Math.round(r() * 5000000);
   const pe = parseFloat((5 + r() * 25).toFixed(1));
-  const sparkline = makeSparkline(symbol, positive);
-  return { price, changePct, change, positive, vol, pe, sparkline };
+  return { price, changePct, change, positive, vol, pe, sparkline: makeSparkline(symbol, positive), open: price, high: price * 1.02, low: price * 0.98, prev: price - change, live: false };
 }
 
 // ── Tiny SVG components — memoised so they never re-render unless props change ──
@@ -79,6 +84,7 @@ export default function CompaniesPage() {
   useDarkTokens();
   const [data, setData] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [liveMap, setLiveMap] = useState<Map<string, LiveQ>>(new Map());
   const [search, setSearch] = useState("");
   const [sector, setSector] = useState("All");
   const [view, setView] = useState<View>("list");
@@ -88,11 +94,17 @@ export default function CompaniesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const json = await cachedFetch<{ data: Company[] }>(`/api/portal/companies?limit=900`);
+      const [json, qJson] = await Promise.all([
+        cachedFetch<{ data: Company[] }>(`/api/portal/companies?limit=900`),
+        fetch(`/api/live/quotes`).then(r => r.json()).catch(() => ({ quotes: [] })),
+      ]);
       let rows: Company[] = json.data ?? [];
       if (rows.length === 0) {
         rows = PSX_STOCKS.map((s, i) => ({ id: i + 1, symbol: s.symbol, name: s.name, sectorName: s.sector, shariahStatus: "—", listingDate: "—", website: "—" }));
       }
+      const qm = new Map<string, LiveQ>();
+      (qJson.quotes ?? []).forEach((q: LiveQ) => qm.set(q.sym, q));
+      setLiveMap(qm);
       setData(rows);
     } catch {
       setData(PSX_STOCKS.map((s, i) => ({ id: i + 1, symbol: s.symbol, name: s.name, sectorName: s.sector, shariahStatus: "—", listingDate: "—", website: "—" })));
@@ -101,12 +113,12 @@ export default function CompaniesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Pre-compute ALL card data once — O(n) total, O(1) per lookup ──
+  // ── Pre-compute ALL card data once — real prices when available ──
   const cardMap = useMemo<Map<string, CardData>>(() => {
     const m = new Map<string, CardData>();
-    data.forEach((co, i) => m.set(co.symbol, buildCardData(co.symbol, i)));
+    data.forEach((co, i) => m.set(co.symbol, buildCardData(co.symbol, i, liveMap.get(co.symbol))));
     return m;
-  }, [data]);
+  }, [data, liveMap]);
 
   const sectors = useMemo(() => ["All", ...Array.from(new Set(data.map(d => d.sectorName).filter(Boolean))).sort()], [data]);
 
@@ -252,20 +264,34 @@ const GridCard = memo(function GridCard({ co, d }: { co: Company; d: CardData })
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: sColor, opacity: 0.85 }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, marginTop: 4 }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>{co.symbol}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>{co.symbol}</span>
+              {d.live && <span style={{ fontSize: 7, fontWeight: 800, background: "#16a34a", color: "#fff", padding: "1px 4px", borderRadius: 3 }}>LIVE</span>}
+            </div>
             <div style={{ fontSize: 9.5, color: "var(--text-muted)", marginTop: 1, maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.name}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{d.price.toFixed(2)}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>₨{d.price.toFixed(2)}</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: d.positive ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>{d.positive ? "+" : ""}{d.changePct.toFixed(2)}%</div>
           </div>
         </div>
         <SparkSVG pts={d.sparkline} positive={d.positive} width={167} height={30} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <div style={{ fontSize: 9.5, color: "var(--text-muted)" }}>Vol: {d.vol > 1e6 ? `${(d.vol / 1e6).toFixed(1)}M` : `${(d.vol / 1000).toFixed(0)}K`}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>{co.sectorName?.slice(0, 8)?.toUpperCase()}</span>
-            <HeatCell change={d.changePct} size={8} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 3, marginTop: 6, fontSize: 9 }}>
+          <div style={{ textAlign: "center", padding: "3px 2px", background: "var(--light-bg,rgba(0,0,0,0.03))", borderRadius: 4 }}>
+            <div style={{ color: "var(--text-muted)", fontWeight: 600 }}>Open</div>
+            <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>₨{d.open.toFixed(0)}</div>
+          </div>
+          <div style={{ textAlign: "center", padding: "3px 2px", background: "rgba(22,163,74,0.07)", borderRadius: 4 }}>
+            <div style={{ color: "var(--text-muted)", fontWeight: 600 }}>High</div>
+            <div style={{ fontWeight: 700, color: "#16a34a" }}>₨{d.high.toFixed(0)}</div>
+          </div>
+          <div style={{ textAlign: "center", padding: "3px 2px", background: "rgba(220,38,38,0.07)", borderRadius: 4 }}>
+            <div style={{ color: "var(--text-muted)", fontWeight: 600 }}>Low</div>
+            <div style={{ fontWeight: 700, color: "#dc2626" }}>₨{d.low.toFixed(0)}</div>
+          </div>
+          <div style={{ textAlign: "center", padding: "3px 2px", background: "var(--light-bg,rgba(0,0,0,0.03))", borderRadius: 4 }}>
+            <div style={{ color: "var(--text-muted)", fontWeight: 600 }}>Vol</div>
+            <div style={{ fontWeight: 700, color: "var(--text-muted)" }}>{d.vol >= 1e6 ? `${(d.vol/1e6).toFixed(1)}M` : `${(d.vol/1e3).toFixed(0)}K`}</div>
           </div>
         </div>
       </div>
@@ -320,28 +346,40 @@ function HeatmapView({ sectorMap, cardMap, onFilter }: { sectorMap: Record<strin
 function ListView({ paginated, cardMap }: { paginated: Company[]; cardMap: Map<string, CardData> }) {
   return (
     <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "88px 1fr 130px 90px 80px 70px 80px", padding: "8px 16px", borderBottom: "1px solid var(--border)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-        <span>Symbol</span><span>Company</span><span>Sector</span><span style={{ textAlign: "right" }}>Price</span><span style={{ textAlign: "right" }}>Change</span><span style={{ textAlign: "right" }}>P/E</span><span>Chart</span>
+      <div style={{ display: "grid", gridTemplateColumns: "96px 1fr 120px 90px 85px 85px 75px 75px 80px", padding: "8px 16px", borderBottom: "1px solid var(--border)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
+        <span>Symbol</span><span>Company</span><span>Sector</span>
+        <span style={{ textAlign: "right" }}>Price</span>
+        <span style={{ textAlign: "right" }}>Change %</span>
+        <span style={{ textAlign: "right" }}>Volume</span>
+        <span style={{ textAlign: "right" }}>High</span>
+        <span style={{ textAlign: "right" }}>Low</span>
+        <span style={{ textAlign: "center" }}>Chart</span>
       </div>
       {paginated.map(co => {
         const d = cardMap.get(co.symbol)!;
         const sColor = SECTOR_COLORS[co.sectorName?.toUpperCase()] ?? "#64748b";
+        const volStr = d.vol >= 1e6 ? `${(d.vol/1e6).toFixed(2)}M` : d.vol >= 1e3 ? `${(d.vol/1e3).toFixed(0)}K` : String(d.vol);
         return (
           <Link key={co.symbol} href={`/data-portal/company/${co.symbol}`} style={{ textDecoration: "none" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "88px 1fr 130px 90px 80px 70px 80px", padding: "9px 16px", borderBottom: "1px solid var(--border)", alignItems: "center", cursor: "pointer", transition: "background 120ms" }}
+            <div style={{ display: "grid", gridTemplateColumns: "96px 1fr 120px 90px 85px 85px 75px 75px 80px", padding: "9px 16px", borderBottom: "1px solid var(--border)", alignItems: "center", cursor: "pointer", transition: "background 120ms" }}
               onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--light-bg)"}
               onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
             >
-              <span style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>{co.symbol}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>{co.symbol}</span>
+                {d.live && <span style={{ fontSize: 7, fontWeight: 800, background: "#16a34a", color: "#fff", padding: "1px 4px", borderRadius: 3 }}>LIVE</span>}
+              </span>
               <span style={{ fontSize: 12, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.name}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: sColor, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.sectorName?.slice(0, 14)}</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.sectorName?.slice(0, 12)}</span>
               </span>
-              <span style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{d.price.toFixed(2)}</span>
+              <span style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>₨{d.price.toFixed(2)}</span>
               <span style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: d.positive ? "#16a34a" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>{d.positive ? "+" : ""}{d.changePct.toFixed(2)}%</span>
-              <span style={{ textAlign: "right", fontSize: 11.5, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{d.pe.toFixed(1)}x</span>
-              <span><SparkSVG pts={d.sparkline} positive={d.positive} width={70} height={22} /></span>
+              <span style={{ textAlign: "right", fontSize: 11, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{volStr}</span>
+              <span style={{ textAlign: "right", fontSize: 11.5, color: "#16a34a", fontVariantNumeric: "tabular-nums" }}>₨{d.high.toFixed(2)}</span>
+              <span style={{ textAlign: "right", fontSize: 11.5, color: "#dc2626", fontVariantNumeric: "tabular-nums" }}>₨{d.low.toFixed(2)}</span>
+              <span style={{ display: "flex", justifyContent: "center" }}><SparkSVG pts={d.sparkline} positive={d.positive} width={72} height={22} /></span>
             </div>
           </Link>
         );

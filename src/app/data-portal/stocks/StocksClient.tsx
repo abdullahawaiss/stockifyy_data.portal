@@ -96,6 +96,7 @@ const SECTOR_ICONS: Record<string,string> = {
   "media":"📺","mutual fund":"📈","miscellaneous":"📦",
 };
 function getSectorIcon(name: string): string {
+  if (!name) return "🏢";
   const lower = name.toLowerCase();
   for (const [key, emoji] of Object.entries(SECTOR_ICONS)) {
     if (lower.includes(key)) return emoji;

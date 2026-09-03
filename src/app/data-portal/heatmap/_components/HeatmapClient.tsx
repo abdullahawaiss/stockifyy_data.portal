@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { filterStocks, getColor, getTextColor, STOCKS as DEMO_STOCKS } from "../_data/stocks";
 import type { StockData, IndexFilter } from "../_data/stocks";
+import { useLiveQuotes } from "@/hooks/useLiveQuotes";
 
 // ── Squarified Treemap ──────────────────────────────────────────────────────
 interface TileRect { x: number; y: number; w: number; h: number; stock: StockData; }
@@ -684,32 +685,26 @@ export default function HeatmapClient() {
   const [idx,     setIdx]     = useState<IndexFilter>("all");
   const [view,    setView]    = useState<"sector" | "combined">("sector");
   const [tooltip, setTooltip] = useState<{ stock: StockData; x: number; y: number } | null>(null);
-  const [lastRef, setLastRef] = useState<Date | null>(null);
-  const [allStocks, setAllStocks] = useState<StockData[]>(DEMO_STOCKS);
-  const [dataSource, setDataSource] = useState<"live" | "demo">("demo");
+
+  // Live data via SSE with polling fallback
+  const { quotes, connected, lastTs } = useLiveQuotes();
+
+  const allStocks = useMemo<StockData[]>(() => {
+    if (!quotes.length) return DEMO_STOCKS;
+    return quotes.map(q => ({
+      sym: q.sym, name: q.name, sector: q.sector,
+      price: q.price, chg: q.chg, vol: q.vol, cap: q.cap,
+      shariah: q.shariah, kse100: q.kse100, kse30: q.kse30,
+      kmi30: q.kmi30, kmiAll: q.kmi30,
+    }));
+  }, [quotes]);
+
+  const lastRef = lastTs ? new Date(lastTs) : null;
 
   const filtered = useMemo(() => filterStocks(allStocks, idx), [allStocks, idx]);
 
   const onHover  = useCallback((s: StockData, e: React.MouseEvent) => setTooltip({ stock: s, x: e.clientX, y: e.clientY }), []);
   const onLeave  = useCallback(() => setTooltip(null), []);
-
-  const fetchStocks = useCallback(async () => {
-    try {
-      const res = await fetch("/api/portal/heatmap");
-      const json = await res.json();
-      if (json.stocks?.length) {
-        setAllStocks(json.stocks);
-        setDataSource(json.source === "live" ? "live" : "demo");
-      }
-    } catch { /* keep existing data */ }
-    setLastRef(new Date());
-  }, []);
-
-  useEffect(() => {
-    fetchStocks();
-    const id = setInterval(fetchStocks, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [fetchStocks]);
 
   const gainers      = filtered.filter(s => s.chg > 0).length;
   const losers       = filtered.filter(s => s.chg < 0).length;
@@ -779,7 +774,7 @@ export default function HeatmapClient() {
           <span style={{ fontSize: 11.5, fontWeight: 700, color: "#dc2626" }}>▼ {losers}</span>
           <span style={{ fontSize: 11.5, fontWeight: 700, color: "#d97706", display: "flex", alignItems: "center", gap: 3 }}><img src="/mosque icon.png" alt="Shariah" style={{ width: 18, height: 18, objectFit: "contain", filter: "brightness(0) saturate(100%) invert(76%) sepia(55%) saturate(573%) hue-rotate(3deg) brightness(91%)" }} />{shariahCount}</span>
           <span className="hm-subtitle" style={{ fontSize: 11, fontWeight: 600 }}>{filtered.length} stocks</span>
-          {dataSource === "live" && (
+          {connected && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", background: "#14532d", color: "#4ade80", borderRadius: 5, whiteSpace: "nowrap" }}>● LIVE</span>
           )}
           <span style={{

@@ -44,29 +44,169 @@ function CalcBtn({ onClick, label = "Calculate →" }: { onClick: () => void; la
 /* ─── result display components ───────────────────────────────────────────── */
 function BigResult({ label, value, sub, color = GOLD }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div style={{ borderRadius: 10, padding: "12px 14px", background: color + "12", border: `1.5px solid ${color}35`, marginBottom: 4 }}>
-      <div style={{ fontSize: 9, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, color, fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 3 }}>{sub}</div>}
+    <div style={{ borderRadius: 12, padding: "16px 20px", background: color + "10", border: `1.5px solid ${color}40`, marginBottom: 10, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: 4, bottom: 0, background: color, borderRadius: "12px 0 0 12px" }} />
+      <div style={{ fontSize: 9, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.01em" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
 function Row({ label, value, highlight, color }: { label: string; value: string; highlight?: boolean; color?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-      <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{label}</span>
-      <span style={{ fontSize: highlight ? 13 : 12, fontWeight: highlight ? 800 : 600, color: color ?? "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", borderRadius: 7, marginBottom: 2, background: highlight ? "var(--light-bg,rgba(0,0,0,0.03))" : "transparent" }}>
+      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: highlight ? 600 : 400 }}>{label}</span>
+      <span style={{ fontSize: highlight ? 13.5 : 12.5, fontWeight: highlight ? 800 : 600, color: color ?? "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );
 }
 function Sec({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", padding: "10px 0 4px", borderTop: "1px solid var(--border)", marginTop: 6 }}>{children}</div>;
+  return <div style={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--text-muted)", padding: "12px 0 5px", display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+    <span>{children}</span>
+    <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+  </div>;
 }
-function NoResult({ icon = "🧮", text = "Fill in the values and press Calculate" }: { icon?: string; text?: string }) {
+function NoResult({ icon = "🧮", text = "Fill in the values above and press Calculate" }: { icon?: string; text?: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)", gap: 12, textAlign: "center", padding: "40px 20px" }}>
-      <div style={{ fontSize: 52, opacity: 0.35 }}>{icon}</div>
-      <div style={{ fontSize: 12, fontWeight: 600, maxWidth: 200, lineHeight: 1.6 }}>{text}</div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, color: "var(--text-muted)", gap: 12, textAlign: "center", padding: "40px 20px" }}>
+      <div style={{ fontSize: 52, opacity: 0.3 }}>{icon}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, maxWidth: 220, lineHeight: 1.6 }}>{text}</div>
+    </div>
+  );
+}
+
+/* ─── stock search (live price auto-fill) ─────────────────────────────────── */
+interface QuoteTip { sym: string; name: string; price: number; chg: number; open: number; high: number; low: number; prev: number; vol: number }
+function StockSearch({ onSelect, label = "Search PSX Stock" }: { onSelect: (q: QuoteTip) => void; label?: string }) {
+  const [val, setVal] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<QuoteTip | null>(null);
+  const [err, setErr] = useState("");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function search(sym: string) {
+    if (!sym.trim()) { setResult(null); setErr(""); return; }
+    setLoading(true); setErr(""); setResult(null);
+    fetch(`/api/live/quotes?sym=${sym.trim().toUpperCase()}`)
+      .then(r => r.json())
+      .then(d => {
+        const q = d.quotes?.[0];
+        if (!q) { setErr("Symbol not found"); setLoading(false); return; }
+        setResult({ sym: q.sym, name: q.name, price: q.price, chg: q.chg, open: q.open, high: q.high, low: q.low, prev: q.prev, vol: q.vol });
+        setLoading(false);
+      })
+      .catch(() => { setErr("Network error"); setLoading(false); });
+  }
+
+  function handleChange(v: string) {
+    setVal(v);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => search(v), 600);
+  }
+
+  const sign = result && result.chg >= 0 ? "+" : "";
+  const chgColor = result && result.chg >= 0 ? "#16a34a" : "#dc2626";
+
+  return (
+    <div style={{ background: "var(--light-bg,rgba(0,0,0,0.03))", border: "1.5px solid var(--border)", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          value={val}
+          onChange={e => handleChange(e.target.value.toUpperCase())}
+          placeholder="e.g. HBL, OGDC, LUCK…"
+          style={{ flex: 1, padding: "7px 10px", border: "1.5px solid var(--border)", borderRadius: 7, background: "var(--card-bg)", color: "var(--text-primary)", fontSize: 12, outline: "none", fontWeight: 700, textTransform: "uppercase" }}
+        />
+        <button onClick={() => search(val)} disabled={loading}
+          style={{ padding: "7px 14px", borderRadius: 7, background: NAVY, color: GOLD, border: "none", fontSize: 11, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>
+          {loading ? "…" : "Fetch"}
+        </button>
+      </div>
+      {err && <div style={{ fontSize: 10, color: "#dc2626", marginTop: 6 }}>{err}</div>}
+      {result && (
+        <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "var(--card-bg)", border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-primary)" }}>{result.sym}</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{result.name}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>₨{fmt(result.price)}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: chgColor }}>{sign}{fmt(result.chg)}%</div>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, marginBottom: 10, fontSize: 10 }}>
+            {[["Open", result.open],["High", result.high],["Low", result.low],["Prev", result.prev],["Vol", result.vol + "K"]].map(([l,v]) => (
+              <div key={String(l)} style={{ textAlign: "center", padding: "4px 2px", background: "var(--light-bg,rgba(0,0,0,0.03))", borderRadius: 5 }}>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, marginBottom: 1 }}>{l}</div>
+                <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>₨{typeof v === "number" ? fmt(v) : v}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => onSelect(result)}
+            style={{ width: "100%", padding: "7px", borderRadius: 7, background: GOLD, color: NAVY, border: "none", fontSize: 11.5, fontWeight: 900, cursor: "pointer" }}>
+            ✓ Use ₨{fmt(result.price)} as Price
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── donut chart ──────────────────────────────────────────────────────────── */
+function DonutSVG({ segments, size = 120 }: { segments: { label: string; value: number; color: string }[]; size?: number }) {
+  const total = segments.reduce((a, s) => a + s.value, 0);
+  if (total <= 0) return null;
+  const r = size / 2 - 10, cx = size / 2, cy = size / 2;
+  let cursor = -Math.PI / 2;
+  const paths = segments.map(s => {
+    const angle = (s.value / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cursor), y1 = cy + r * Math.sin(cursor);
+    cursor += angle;
+    const x2 = cx + r * Math.cos(cursor), y2 = cy + r * Math.sin(cursor);
+    const large = angle > Math.PI ? 1 : 0;
+    return { d: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`, color: s.color, label: s.label, value: s.value };
+  });
+  return (
+    <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 12 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+        {paths.map((p, i) => <path key={i} d={p.d} fill={p.color} opacity={0.85} />)}
+        <circle cx={cx} cy={cy} r={r * 0.52} fill="var(--card-bg)" />
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        {segments.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10 }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+            <span style={{ color: "var(--text-muted)" }}>{s.label}</span>
+            <span style={{ fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>₨{fmtM(s.value)}</span>
+            <span style={{ color: "var(--text-muted)" }}>({fmt((s.value/total)*100,1)}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── waterfall (horizontal stacked bar) ──────────────────────────────────── */
+function WaterfallBar({ segments }: { segments: { label: string; value: number; color: string }[] }) {
+  const total = segments.reduce((a, s) => a + Math.abs(s.value), 0);
+  if (total <= 0) return null;
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ height: 22, display: "flex", borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)" }}>
+        {segments.map((s, i) => (
+          <div key={i} style={{ width: `${(Math.abs(s.value)/total)*100}%`, background: s.color, transition: "width 0.4s", minWidth: s.value > 0 ? 2 : 0 }} title={`${s.label}: ₨${fmtM(s.value)}`} />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+        {segments.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9.5 }}>
+            <div style={{ width: 7, height: 7, borderRadius: 1, background: s.color, flexShrink: 0 }} />
+            <span style={{ color: "var(--text-muted)" }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -158,45 +298,60 @@ function LineAreaSVG({ data, color = GOLD, label = "" }: { data: number[]; color
   );
 }
 
-/* ─── split layout: inputs left, results right ────────────────────────────── */
+/* ─── premium stacked layout ───────────────────────────────────────────────── */
 function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.ReactNode | null }) {
   const [history, setHistory] = useState<{ time: string; snapshot: React.ReactNode }[]>([]);
   const [tab, setTab] = useState<"result" | "history">("result");
+  const [inputsOpen, setInputsOpen] = useState(true);
   const resultRef = useRef<React.ReactNode | null>(null);
 
   useEffect(() => { resultRef.current = result; });
+  // Auto-collapse inputs when result arrives so results get more space
+  useEffect(() => { if (result) { setInputsOpen(false); setTab("result"); } }, [result]);
 
   function handleInputClick(e: React.MouseEvent) {
     const btn = (e.target as HTMLElement).closest("button");
-    if (btn && (btn.textContent?.includes("→") || btn.textContent?.includes("Test"))) {
+    if (btn && (btn.textContent?.includes("→") || btn.textContent?.includes("Test") || btn.textContent?.includes("Calculate"))) {
       setTimeout(() => {
         const snap = resultRef.current;
         if (snap !== null) {
           const t = new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
           setHistory(h => [{ time: t, snapshot: snap }, ...h].slice(0, 6));
-          setTab("result");
         }
       }, 80);
     }
   }
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: 0, overflow: "hidden" }}>
-      {/* LEFT — inputs panel */}
-      <div style={{ width: "42%", minWidth: 260, maxWidth: 420, display: "flex", flexDirection: "column", borderRight: "1px solid var(--border)" }}>
-        {/* Panel header */}
-        <div style={{ background: NAVY, padding: "11px 20px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <div style={{ width: 3, height: 14, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
-          <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>Enter Values</span>
-        </div>
-        <div onClick={handleInputClick} style={{ flex: 1, overflowY: "auto", padding: "18px 20px", background: "var(--card-bg)" }}>
-          {inputs}
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
+
+      {/* ── INPUTS PANEL (collapsible) ─────────────────────────── */}
+      <div style={{ flexShrink: 0, borderBottom: "1px solid var(--border)", background: "var(--card-bg)" }}>
+        {/* Header bar */}
+        <button onClick={() => setInputsOpen(v => !v)}
+          style={{ width: "100%", padding: "10px 20px", background: NAVY, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 3, height: 14, borderRadius: 2, background: GOLD }} />
+            <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>Enter Values</span>
+          </div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", transform: inputsOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 200ms" }}>▲</span>
+        </button>
+        {inputsOpen && (
+          <div onClick={handleInputClick} style={{ padding: "16px 20px 14px", background: "var(--card-bg)" }}>
+            {inputs}
+          </div>
+        )}
+        {!inputsOpen && (
+          <div onClick={() => setInputsOpen(true)} style={{ padding: "6px 20px", background: "var(--light-bg,rgba(0,0,0,0.03))", fontSize: 10, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: GOLD }}>✎</span> Click to edit inputs
+          </div>
+        )}
       </div>
-      {/* RIGHT — results panel */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        {/* Panel header with tabs */}
-        <div style={{ background: "var(--light-bg,rgba(0,0,0,0.02))", padding: "0 20px", display: "flex", alignItems: "stretch", flexShrink: 0, borderBottom: "1px solid var(--border)", height: 40 }}>
+
+      {/* ── RESULTS PANEL ─────────────────────────────────────── */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {/* Tab bar */}
+        <div style={{ background: "var(--light-bg,rgba(0,0,0,0.02))", padding: "0 20px", display: "flex", alignItems: "stretch", flexShrink: 0, borderBottom: "1px solid var(--border)", height: 38 }}>
           {(["result", "history"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               height: "100%", padding: "0 14px", border: "none", background: "transparent",
@@ -204,14 +359,16 @@ function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.
               color: tab === t ? "var(--text-primary)" : "var(--text-muted)",
               borderBottom: tab === t ? `2px solid ${GOLD}` : "2px solid transparent",
             }}>
-              {t === "result" ? "Result" : `History${history.length > 0 ? ` (${history.length})` : ""}`}
+              {t === "result" ? "Results" : `History${history.length > 0 ? ` (${history.length})` : ""}`}
             </button>
           ))}
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 24px", background: "var(--bg,var(--background))" }}>
+
+        {/* Content area — scrollable */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 24px", background: "var(--bg,var(--background))" }}>
           {tab === "result" ? (result ?? <NoResult />) : (
             history.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)", gap: 10, textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 180, color: "var(--text-muted)", gap: 10, textAlign: "center", padding: "40px 20px" }}>
                 <div style={{ fontSize: 40, opacity: 0.25 }}>🕐</div>
                 <div style={{ fontSize: 12, fontWeight: 600 }}>Calculation history will appear here</div>
                 <div style={{ fontSize: 11, opacity: 0.6 }}>Run a calculation to start tracking</div>
@@ -222,7 +379,7 @@ function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.
                   <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
                     <div style={{ padding: "6px 14px", background: "var(--light-bg,rgba(0,0,0,0.03))", fontSize: 10, color: "var(--text-muted)", fontWeight: 700, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ width: 6, height: 6, borderRadius: "50%", background: i === 0 ? GOLD : "var(--border)", display: "inline-block" }} />
-                      {i === 0 ? "Latest" : `Earlier`} · {h.time}
+                      {i === 0 ? "Latest" : "Earlier"} · {h.time}
                     </div>
                     <div style={{ padding: "12px 14px" }}>{h.snapshot}</div>
                   </div>
@@ -679,31 +836,51 @@ function ROICalc() {
   const [qty, setQty] = useState("1000");
   const [divs, setDivs] = useState("5000");
   const [days, setDays] = useState("365");
-  type R = { invested: number; proceeds: number; pct: number; annualized: number; pnl: number };
+  type R = { invested: number; proceeds: number; capitalGain: number; divIncome: number; pct: number; annualized: number; pnl: number };
   const [res, setRes] = useState<R | null>(null);
   function calc() {
-    const inv=nv(buyP)*nv(qty),proc=nv(sellP)*nv(qty)+nv(divs);
+    const inv=nv(buyP)*nv(qty),capGain=nv(sellP)*nv(qty),divInc=nv(divs),proc=capGain+divInc;
     const pnl=proc-inv,pct=inv>0?(pnl/inv)*100:0;
     const ann=inv>0&&nv(days)>0?(Math.pow(proc/inv,365/nv(days))-1)*100:0;
-    setRes({invested:inv,proceeds:proc,pct,annualized:ann,pnl});
+    setRes({invested:inv,proceeds:proc,capitalGain:capGain,divIncome:divInc,pct,annualized:ann,pnl});
   }
   return (
     <SplitCalc
       inputs={
-        <InputGrid>
-          <Input label="Buy Price (PKR)" value={buyP} onChange={setBuyP} prefix="₨" />
-          <Input label="Sell Price (PKR)" value={sellP} onChange={setSellP} prefix="₨" />
-          <Input label="Quantity (Shares)" value={qty} onChange={setQty} />
-          <Input label="Dividends Received (PKR)" value={divs} onChange={setDivs} prefix="₨" />
-          <FullCol><Input label="Holding Period (Days)" value={days} onChange={setDays} /></FullCol>
-          <FullCol><CalcBtn onClick={calc} /></FullCol>
-        </InputGrid>
+        <div>
+          <StockSearch label="Search PSX Stock — auto-fill buy price" onSelect={q => { setBuyP(String(q.price)); setSellP(String(q.price)); }} />
+          <InputGrid>
+            <Input label="Buy Price (PKR)" value={buyP} onChange={setBuyP} prefix="₨" />
+            <Input label="Target / Sell Price (PKR)" value={sellP} onChange={setSellP} prefix="₨" />
+            <Input label="Quantity (Shares)" value={qty} onChange={setQty} />
+            <Input label="Dividends Received (PKR)" value={divs} onChange={setDivs} prefix="₨" />
+            <FullCol><Input label="Holding Period (Days)" value={days} onChange={setDays} /></FullCol>
+            <FullCol><CalcBtn onClick={calc} /></FullCol>
+          </InputGrid>
+        </div>
       }
       result={res && (
         <div>
           <BigResult label="Net P&L" value={`${res.pnl>=0?"+":""}₨${fmtM(res.pnl)}`} sub={`ROI: ${fmt(res.pct)}% · Annualized: ${fmt(res.annualized)}%`} color={res.pnl>=0?"#16a34a":"#dc2626"} />
+          {/* Visual: capital vs proceeds */}
+          <div style={{ margin:"12px 0" }}>
+            <div style={{ fontSize:9,fontWeight:800,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6 }}>Capital vs Proceeds</div>
+            <div style={{ display:"flex",gap:8,height:36 }}>
+              <div style={{ flex: res.invested, background: NAVY+"cc", borderRadius:6, display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.8)" }}>Cost ₨{fmtM(res.invested)}</div>
+              <div style={{ flex: Math.max(0, res.proceeds - res.invested), background:"#16a34a", borderRadius:6, display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",minWidth: res.pnl > 0 ? 8 : 0 }}>{res.pnl > 0 ? `+₨${fmtM(res.pnl)}` : ""}</div>
+            </div>
+          </div>
+          {/* Returns breakdown donut */}
+          {res.divIncome > 0 && (
+            <>
+              <div style={{ fontSize:9,fontWeight:800,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:10 }}>Return Breakdown</div>
+              <DonutSVG segments={[{label:"Capital Gain",value:Math.max(0,res.capitalGain-res.invested),color:"#16a34a"},{label:"Dividend Income",value:res.divIncome,color:GOLD}]} size={110} />
+            </>
+          )}
           <Row label="Capital Invested" value={`₨${fmtM(res.invested)}`} />
-          <Row label="Total Proceeds (incl. div)" value={`₨${fmtM(res.proceeds)}`} />
+          <Row label="Capital Gain" value={`₨${fmtM(res.capitalGain - res.invested)}`} color="#16a34a" />
+          {res.divIncome > 0 && <Row label="Dividend Income" value={`₨${fmtM(res.divIncome)}`} color={GOLD} />}
+          <Row label="Total Proceeds" value={`₨${fmtM(res.proceeds)}`} />
           <Row label="Total ROI" value={`${fmt(res.pct)}%`} highlight color={res.pct>=0?"#16a34a":"#dc2626"} />
           <Row label="Annualized Return" value={`${fmt(res.annualized)}%`} color={res.annualized>=0?"#16a34a":"#dc2626"} />
         </div>
@@ -872,23 +1049,46 @@ function BrokerageCalc() {
   return (
     <SplitCalc
       inputs={
-        <InputGrid>
-          <Input label="Share Price (PKR)" value={price} onChange={setPrice} prefix="₨" />
-          <Input label="Quantity" value={qty} onChange={setQty} />
-          <FullCol><Sel label="Transaction Side" value={side} onChange={setSide} options={[{value:"buy",label:"Buy"},{value:"sell",label:"Sell"}]} /></FullCol>
-          <FullCol><CalcBtn onClick={calc} /></FullCol>
-        </InputGrid>
+        <div>
+          <StockSearch label="Search PSX Stock — auto-fill price" onSelect={q => setPrice(String(q.price))} />
+          <InputGrid>
+            <Input label="Share Price (PKR)" value={price} onChange={setPrice} prefix="₨" />
+            <Input label="Quantity" value={qty} onChange={setQty} />
+            <FullCol><Sel label="Transaction Side" value={side} onChange={setSide} options={[{value:"buy",label:"Buy"},{value:"sell",label:"Sell"}]} /></FullCol>
+            <FullCol><CalcBtn onClick={calc} /></FullCol>
+          </InputGrid>
+        </div>
       }
       result={res && (
         <div>
-          <BigResult label={side==="buy"?"Net Cost (incl. charges)":"Net Proceeds (after charges)"} value={`₨${fmtM(res.net)}`} sub={`Total charges: ₨${fmtM(res.total)}`} color={side==="buy"?"#dc2626":"#16a34a"} />
+          <BigResult label={side==="buy"?"Net Cost (incl. charges)":"Net Proceeds (after charges)"} value={`₨${fmtM(res.net)}`} sub={`Total charges: ₨${fmtM(res.total)} · ${fmt((res.total/res.gross)*100,3)}% of gross`} color={side==="buy"?"#dc2626":"#16a34a"} />
+          {/* Charges waterfall */}
+          <div style={{ fontSize:9,fontWeight:800,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:10,marginBottom:2 }}>Charges Breakdown</div>
+          <WaterfallBar segments={[
+            {label:"Commission",value:res.commission,color:"#dc2626"},
+            {label:"NCCPL",value:res.nccpl,color:"#f59e0b"},
+            {label:"CDC",value:res.cdc,color:"#8b5cf6"},
+            {label:"PSX Fee",value:res.psxFee,color:"#3b82f6"},
+            {label:"Sales Tax",value:res.salesTax,color:"#ec4899"},
+            ...(res.wht>0?[{label:"WHT",value:res.wht,color:"#ef4444"}]:[]),
+            {label:"Stamp",value:res.stamp,color:"#6b7280"},
+          ]} />
+          <DonutSVG size={110} segments={[
+            {label:"Commission",value:res.commission,color:"#dc2626"},
+            {label:"NCCPL",value:res.nccpl,color:"#f59e0b"},
+            {label:"CDC",value:res.cdc,color:"#8b5cf6"},
+            {label:"PSX Fee",value:res.psxFee,color:"#3b82f6"},
+            {label:"Sales Tax",value:res.salesTax,color:"#ec4899"},
+            ...(res.wht>0?[{label:"WHT",value:res.wht,color:"#ef4444"}]:[]),
+            {label:"Stamp",value:res.stamp,color:"#6b7280"},
+          ]} />
+          <Sec>Detail</Sec>
           <Row label="Gross Value" value={`₨${fmtM(res.gross)}`} />
-          <Sec>PSX Charges Breakdown</Sec>
           <Row label="Commission (0.15%)" value={`₨${fmtM(res.commission)}`} />
           <Row label="NCCPL (0.10%)" value={`₨${fmtM(res.nccpl)}`} />
           <Row label="CDC (0.02%)" value={`₨${fmtM(res.cdc)}`} />
           <Row label="PSX Fee (0.02%)" value={`₨${fmtM(res.psxFee)}`} />
-          <Row label="Sales Tax on Commission (17%)" value={`₨${fmtM(res.salesTax)}`} />
+          <Row label="Sales Tax on Commission" value={`₨${fmtM(res.salesTax)}`} />
           {res.wht>0&&<Row label="WHT on Sell (0.015%)" value={`₨${fmtM(res.wht)}`} />}
           <Row label="Stamp Duty (0.0015%)" value={`₨${fmtM(res.stamp)}`} />
           <Row label="Total Charges" value={`₨${fmtM(res.total)}`} highlight color="#dc2626" />
@@ -941,28 +1141,56 @@ function PositionSizing() {
   const [risk, setRisk] = useState("2");
   const [entry, setEntry] = useState("200");
   const [stop, setStop] = useState("185");
-  type R = { riskAmt: number; shares: number; posVal: number; posPct: number; rr: number };
+  type R = { riskAmt: number; shares: number; posVal: number; posPct: number; rr: number; target: number; stopLoss: number };
   const [res, setRes] = useState<R | null>(null);
   function calc() {
     const cap=nv(capital),rp=nv(risk)/100,ep=nv(entry),sl=nv(stop);
     const riskAmt=cap*rp,riskPerShare=Math.abs(ep-sl),shares=riskPerShare>0?Math.floor(riskAmt/riskPerShare):0;
     const posVal=shares*ep,posPct=cap>0?(posVal/cap)*100:0,target=ep+(ep-sl)*2,rr=ep>0?(target-ep)/(ep-sl):0;
-    setRes({riskAmt,shares,posVal,posPct,rr});
+    setRes({riskAmt,shares,posVal,posPct,rr,target,stopLoss:sl});
   }
   return (
     <SplitCalc
       inputs={
-        <InputGrid>
-          <FullCol><Input label="Portfolio Capital (PKR)" value={capital} onChange={setCapital} prefix="₨" /></FullCol>
-          <Input label="Risk per Trade (%)" value={risk} onChange={setRisk} prefix="%" />
-          <Input label="Entry Price (PKR)" value={entry} onChange={setEntry} prefix="₨" />
-          <FullCol><Input label="Stop Loss Price (PKR)" value={stop} onChange={setStop} prefix="₨" /></FullCol>
-          <FullCol><CalcBtn onClick={calc} /></FullCol>
-        </InputGrid>
+        <div>
+          <StockSearch label="Search PSX Stock — auto-fill entry price" onSelect={q => { setEntry(String(q.price)); setStop(String(+(q.price * 0.93).toFixed(2))); }} />
+          <InputGrid>
+            <FullCol><Input label="Portfolio Capital (PKR)" value={capital} onChange={setCapital} prefix="₨" /></FullCol>
+            <Input label="Risk per Trade (%)" value={risk} onChange={setRisk} prefix="%" />
+            <Input label="Entry Price (PKR)" value={entry} onChange={setEntry} prefix="₨" />
+            <FullCol><Input label="Stop Loss Price (PKR)" value={stop} onChange={setStop} prefix="₨" /></FullCol>
+            <FullCol><CalcBtn onClick={calc} /></FullCol>
+          </InputGrid>
+        </div>
       }
       result={res && (
         <div>
-          <BigResult label="Shares to Buy" value={res.shares.toLocaleString()} sub={`Position value: ₨${fmtM(res.posVal)} (${fmt(res.posPct)}% of capital)`} color={GOLD} />
+          <BigResult label="Shares to Buy" value={res.shares.toLocaleString()} sub={`Position: ₨${fmtM(res.posVal)} (${fmt(res.posPct)}% of capital)`} color={GOLD} />
+          {/* R:R visual price ladder */}
+          <div style={{ margin:"12px 0",padding:"12px",borderRadius:10,background:"rgba(0,0,0,0.03)",border:"1px solid var(--border)" }}>
+            <div style={{ fontSize:9,fontWeight:800,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8 }}>Price Ladder</div>
+            {[
+              {label:"Target (2R)",price:res.target,color:"#16a34a"},
+              {label:"Entry",price:nv(entry),color:GOLD},
+              {label:"Stop Loss",price:res.stopLoss,color:"#dc2626"},
+            ].map(pt=>(
+              <div key={pt.label} style={{ display:"flex",alignItems:"center",gap:10,padding:"5px 0",borderBottom:"1px solid var(--border)" }}>
+                <div style={{ width:8,height:8,borderRadius:"50%",background:pt.color,flexShrink:0 }} />
+                <span style={{ fontSize:11,color:"var(--text-muted)",minWidth:80 }}>{pt.label}</span>
+                <span style={{ fontSize:13,fontWeight:800,color:pt.color,fontVariantNumeric:"tabular-nums" }}>₨{fmt(pt.price)}</span>
+              </div>
+            ))}
+            <div style={{ marginTop:10,display:"flex",gap:8 }}>
+              <div style={{ flex:1,padding:"8px",borderRadius:8,background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.2)",textAlign:"center" }}>
+                <div style={{ fontSize:9,fontWeight:700,color:"#dc2626",textTransform:"uppercase" }}>Risk</div>
+                <div style={{ fontSize:14,fontWeight:900,color:"#dc2626" }}>₨{fmtM(res.riskAmt)}</div>
+              </div>
+              <div style={{ flex:1,padding:"8px",borderRadius:8,background:"rgba(22,163,74,0.08)",border:"1px solid rgba(22,163,74,0.2)",textAlign:"center" }}>
+                <div style={{ fontSize:9,fontWeight:700,color:"#16a34a",textTransform:"uppercase" }}>Reward (2R)</div>
+                <div style={{ fontSize:14,fontWeight:900,color:"#16a34a" }}>₨{fmtM(res.riskAmt*res.rr)}</div>
+              </div>
+            </div>
+          </div>
           <Row label="Max Risk Amount" value={`₨${fmtM(res.riskAmt)}`} />
           <Row label="Position Value" value={`₨${fmtM(res.posVal)}`} />
           <Row label="Portfolio Exposure" value={`${fmt(res.posPct)}%`} />
@@ -979,23 +1207,27 @@ function DividendYield() {
   const [annual, setAnnual] = useState("30");
   const [qty, setQty] = useState("500");
   const [taxRate, setTaxRate] = useState("15");
-  type R = { grossYield: number; netYield: number; annualIncome: number; netIncome: number; costBasis: number };
+  type R = { grossYield: number; netYield: number; annualIncome: number; netIncome: number; costBasis: number; whtDeducted: number };
   const [res, setRes] = useState<R | null>(null);
   function calc() {
     const p=nv(price),d=nv(annual),q=nv(qty),tr=nv(taxRate)/100;
     const grossYield=p>0?(d/p)*100:0,netDiv=d*(1-tr),netYield=p>0?(netDiv/p)*100:0;
-    setRes({grossYield,netYield,annualIncome:d*q,netIncome:netDiv*q,costBasis:p*q});
+    const annualIncome=d*q,whtDeducted=annualIncome*tr;
+    setRes({grossYield,netYield,annualIncome,netIncome:netDiv*q,costBasis:p*q,whtDeducted});
   }
   return (
     <SplitCalc
       inputs={
-        <InputGrid>
-          <Input label="Current Share Price (PKR)" value={price} onChange={setPrice} prefix="₨" />
-          <Input label="Annual Dividend per Share" value={annual} onChange={setAnnual} prefix="₨" />
-          <Input label="Shares Held" value={qty} onChange={setQty} />
-          <Input label="WHT on Dividends (%)" value={taxRate} onChange={setTaxRate} prefix="%" />
-          <FullCol><CalcBtn onClick={calc} /></FullCol>
-        </InputGrid>
+        <div>
+          <StockSearch label="Search PSX Stock — auto-fill price" onSelect={q => setPrice(String(q.price))} />
+          <InputGrid>
+            <Input label="Current Share Price (PKR)" value={price} onChange={setPrice} prefix="₨" />
+            <Input label="Annual Dividend per Share" value={annual} onChange={setAnnual} prefix="₨" />
+            <Input label="Shares Held" value={qty} onChange={setQty} />
+            <Input label="WHT on Dividends (%)" value={taxRate} onChange={setTaxRate} prefix="%" />
+            <FullCol><CalcBtn onClick={calc} /></FullCol>
+          </InputGrid>
+        </div>
       }
       result={res && (
         <div>
@@ -1005,12 +1237,21 @@ function DividendYield() {
               <div style={{ fontSize:20,fontWeight:900,color:"#16a34a" }}>{fmt(res.grossYield)}%</div>
             </div>
             <div style={{ borderRadius:10,padding:"12px",background:"rgba(212,151,26,0.08)",border:"1px solid rgba(212,151,26,0.2)",textAlign:"center" }}>
-              <div style={{ fontSize:9,fontWeight:700,color:GOLD,textTransform:"uppercase" }}>Net Yield</div>
+              <div style={{ fontSize:9,fontWeight:700,color:GOLD,textTransform:"uppercase" }}>Net Yield (after WHT)</div>
               <div style={{ fontSize:20,fontWeight:900,color:GOLD }}>{fmt(res.netYield)}%</div>
             </div>
           </div>
+          {/* Income breakdown donut */}
+          <DonutSVG size={110} segments={[
+            {label:"Net Income",value:res.netIncome,color:"#16a34a"},
+            {label:"WHT Deducted",value:res.whtDeducted,color:"#dc2626"},
+          ]} />
+          {/* 5-year income projection bar chart */}
+          <div style={{ fontSize:9,fontWeight:800,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:14,marginBottom:6 }}>5-Year Income Projection (3% div growth/yr)</div>
+          <BarSVG data={Array.from({length:5},(_,i)=>res.netIncome*Math.pow(1.03,i))} label="" />
           <Row label="Annual Gross Income" value={`₨${fmtM(res.annualIncome)}`} />
-          <Row label="Annual Net Income (after WHT)" value={`₨${fmtM(res.netIncome)}`} color="#16a34a" highlight />
+          <Row label="WHT Deducted" value={`-₨${fmtM(res.whtDeducted)}`} color="#dc2626" />
+          <Row label="Annual Net Income" value={`₨${fmtM(res.netIncome)}`} color="#16a34a" highlight />
           <Row label="Cost Basis" value={`₨${fmtM(res.costBasis)}`} />
         </div>
       )}
@@ -1035,12 +1276,15 @@ function PEValuation() {
   return (
     <SplitCalc
       inputs={
-        <InputGrid>
-          <FullCol><Input label="Earnings Per Share (EPS)" value={eps} onChange={setEps} prefix="₨" /></FullCol>
-          <Input label="Current P/E" value={curPE} onChange={setCurPE} />
-          <Input label="Current Market Price" value={curPrice} onChange={setCurPrice} prefix="₨" />
-          <FullCol><CalcBtn onClick={calc} /></FullCol>
-        </InputGrid>
+        <div>
+          <StockSearch label="Search PSX Stock — auto-fill market price" onSelect={q => setCurPrice(String(q.price))} />
+          <InputGrid>
+            <FullCol><Input label="Earnings Per Share (EPS)" value={eps} onChange={setEps} prefix="₨" /></FullCol>
+            <Input label="Current P/E" value={curPE} onChange={setCurPE} />
+            <Input label="Current Market Price" value={curPrice} onChange={setCurPrice} prefix="₨" />
+            <FullCol><CalcBtn onClick={calc} /></FullCol>
+          </InputGrid>
+        </div>
       }
       result={res && (
         <div style={{ borderRadius:10,overflow:"hidden",border:"1px solid var(--border)" }}>

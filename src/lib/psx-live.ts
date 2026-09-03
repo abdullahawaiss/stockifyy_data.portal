@@ -1,218 +1,373 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _psxCache: { rows: any[]; sectors: any[]; ts: number } | null = null;
+/**
+ * PSX Live Data Fetcher — in-memory cache layer
+ *
+ * HOW TO CONNECT YOUR AUTHORIZED DATA SOURCE:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 1. If you have Capital Stake API credentials:
+ *    Set PSX_API_URL and PSX_API_KEY in .env.local
+ *    The fetchFromSource() function below calls that endpoint.
+ *
+ * 2. If you have a different provider (Twelve Data, METTIS, etc.):
+ *    Replace the fetch call in fetchFromSource() with your authorized endpoint.
+ *    Map the response to the PsxQuote interface.
+ *
+ * 3. No API yet?
+ *    The module falls back to realistic demo data with simulated price movement
+ *    so the UI stays fully functional during development.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Architecture:
+ *   - Single background polling loop (runs in Node.js server process)
+ *   - In-memory Map acts as the cache (< 1ms read latency)
+ *   - SSE clients subscribe and receive push updates on each poll cycle
+ *   - Next.js API routes read from the cache — never block on upstream calls
+ */
 
-const PSX_HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Referer": "https://dps.psx.com.pk/",
-  "Accept": "text/html,application/xhtml+xml,*/*",
-};
+export interface PsxQuote {
+  sym:    string;
+  name:   string;
+  sector: string;
+  price:  number;
+  open:   number;
+  high:   number;
+  low:    number;
+  prev:   number;
+  chg:    number;   // % change vs prev close
+  chgAmt: number;   // absolute change (price - prev)
+  vol:    number;   // volume in thousands
+  val:    number;   // value traded in millions PKR
+  cap:    number;   // market cap in millions PKR
+  shariah: boolean;
+  kse100:  boolean;
+  kse30:   boolean;
+  kmi30:   boolean;
+  ts:     number;   // unix ms of last tick
+}
 
-// Returns all PSX live rows, cached for 60 seconds
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getPsxRows(): Promise<{ rows: any[]; sectors: any[] } | null> {
-  const now = Date.now();
-  if (_psxCache && now - _psxCache.ts < 60_000) {
-    return { rows: _psxCache.rows, sectors: _psxCache.sectors };
+export interface MarketSummary {
+  kse100Index:   number;
+  kse100Chg:     number;
+  kse100ChgPct:  number;
+  kse30Index:    number;
+  kse30ChgPct:   number;
+  totalVolume:   number;  // all stocks, thousands
+  totalValue:    number;  // millions PKR
+  advances:      number;
+  declines:      number;
+  unchanged:     number;
+  marketOpen:    boolean;
+  lastUpdated:   number;  // unix ms
+}
+
+// ── In-memory store ──────────────────────────────────────────────────────────
+const quoteMap  = new Map<string, PsxQuote>();
+let   summary: MarketSummary | null = null;
+let   listeners: Array<(quotes: PsxQuote[], sum: MarketSummary) => void> = [];
+let   pollerStarted = false;
+
+// ── Subscriber pattern for SSE ────────────────────────────────────────────────
+export function subscribe(cb: (quotes: PsxQuote[], sum: MarketSummary) => void): () => void {
+  listeners.push(cb);
+  // Immediately emit current state to new subscriber
+  if (quoteMap.size > 0 && summary) {
+    cb(Array.from(quoteMap.values()), summary);
   }
+  return () => { listeners = listeners.filter(l => l !== cb); };
+}
+
+function broadcast() {
+  if (!summary || quoteMap.size === 0) return;
+  const quotes = Array.from(quoteMap.values());
+  listeners.forEach(l => { try { l(quotes, summary!); } catch {} });
+}
+
+// ── Market status ─────────────────────────────────────────────────────────────
+function isMarketOpen(): boolean {
+  const now = new Date();
+  const pk = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
+  const day = pk.getDay(); // 0=Sun, 6=Sat
+  if (day === 0 || day === 6) return false;
+  const h = pk.getHours(), m = pk.getMinutes();
+  const mins = h * 60 + m;
+  return mins >= 9 * 60 + 32 && mins < 15 * 60 + 30; // 9:32 – 15:30 PKT
+}
+
+// ── Fetch from your authorized API source ────────────────────────────────────
+// Replace this function body with your licensed API call.
+// Expected response shape: { quotes: PsxQuote[], summary: MarketSummary }
+async function fetchFromSource(): Promise<{ quotes: PsxQuote[]; sum: MarketSummary } | null> {
+  const apiUrl = process.env.PSX_API_URL;
+  const apiKey = process.env.PSX_API_KEY;
+
+  if (!apiUrl) return null; // No authorized source configured — use demo fallback
 
   try {
-    const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 3000);
+    const res = await fetch(apiUrl, {
+      headers: {
+        "Authorization": `Bearer ${apiKey ?? ""}`,
+        "Accept": "application/json",
+        "User-Agent": "Stockifyy-Portal/1.0",
+      },
+      signal: AbortSignal.timeout(6000),
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
 
-    const [symbolsRes, mktRes] = await Promise.all([
-      fetch("https://dps.psx.com.pk/symbols", {
-        headers: { ...PSX_HEADERS, Accept: "application/json" },
-        cache: "no-store",
-        signal: abort.signal,
-      }),
-      fetch("https://dps.psx.com.pk/market-watch", {
-        headers: PSX_HEADERS,
-        cache: "no-store",
-        signal: abort.signal,
-      }),
-    ]);
-    clearTimeout(timer);
+    // ── Adapt the response to PsxQuote[] ──────────────────────────────────────
+    // If your provider returns a different shape, map it here.
+    // The example below handles a generic { data: [{symbol, lastPrice, change, ...}] } shape.
+    const raw: Array<Record<string, unknown>> = data?.data ?? data?.quotes ?? [];
+    const quotes: PsxQuote[] = raw.map((r, i) => ({
+      sym:    String(r.symbol ?? r.sym ?? ""),
+      name:   String(r.name ?? r.company ?? ""),
+      sector: String(r.sector ?? ""),
+      price:  Number(r.lastPrice ?? r.price ?? 0),
+      open:   Number(r.open ?? 0),
+      high:   Number(r.high ?? 0),
+      low:    Number(r.low ?? 0),
+      prev:   Number(r.prevClose ?? r.prev ?? 0),
+      chg:    Number(r.changePercent ?? r.chgPct ?? 0),
+      chgAmt: Number(r.change ?? r.chgAmt ?? 0),
+      vol:    Number(r.volume ?? r.vol ?? 0),
+      val:    Number(r.value ?? r.val ?? 0),
+      cap:    Number(r.marketCap ?? r.cap ?? 0),
+      shariah: Boolean(r.shariah ?? false),
+      kse100:  Boolean(r.kse100 ?? false),
+      kse30:   Boolean(r.kse30 ?? false),
+      kmi30:   Boolean(r.kmi30 ?? false),
+      ts:     Date.now() + i,
+    })).filter(q => q.sym);
 
-    if (!symbolsRes.ok || !mktRes.ok) return null;
+    const s = data?.summary ?? data?.index ?? {};
+    const sum: MarketSummary = {
+      kse100Index:  Number(s.kse100 ?? s.index ?? 0),
+      kse100Chg:    Number(s.kse100Chg ?? 0),
+      kse100ChgPct: Number(s.kse100ChgPct ?? 0),
+      kse30Index:   Number(s.kse30 ?? 0),
+      kse30ChgPct:  Number(s.kse30ChgPct ?? 0),
+      totalVolume:  quotes.reduce((a, q) => a + q.vol, 0),
+      totalValue:   quotes.reduce((a, q) => a + q.val, 0),
+      advances:     quotes.filter(q => q.chg > 0).length,
+      declines:     quotes.filter(q => q.chg < 0).length,
+      unchanged:    quotes.filter(q => q.chg === 0).length,
+      marketOpen:   isMarketOpen(),
+      lastUpdated:  Date.now(),
+    };
 
-    type PsxSym = { symbol: string; name: string; sectorName: string };
-    const symbolsJson: PsxSym[] = await symbolsRes.json();
-    const mktHtml: string = await mktRes.text();
-    const symInfo = new Map(symbolsJson.map(s => [s.symbol, s]));
-
-    const date = new Date().toISOString().slice(0, 10);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows: any[] = [];
-    const trRe = /<tr>([\s\S]*?)<\/tr>/g;
-    let m;
-
-    while ((m = trRe.exec(mktHtml)) !== null) {
-      const row = m[1];
-      const symM = row.match(/data-search="(\w+)"/);
-      if (!symM) continue;
-      const symbol = symM[1];
-
-      const nameM = row.match(/data-title="([^"]+)"/);
-      const companyName = nameM ? nameM[1].trim() : (symInfo.get(symbol)?.name ?? symbol);
-
-      // data-order values: [symbol, ldcp, open, high, low, close, change, pct, volume]
-      const orders = [...row.matchAll(/data-order="([^"]+)"/g)].map(x => x[1]);
-      if (orders.length < 9) continue;
-
-      const tdContents = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(x => x[1].replace(/<[^>]+>/g, "").trim());
-      const indicesRaw = tdContents[2] ?? "";
-      const indexCodes = [...new Set(
-        indicesRaw.split(",").map(s => s.trim()).filter(Boolean).map(c => {
-          if (c === "KSE100" || c === "KSE100PR") return "KSE100";
-          if (c === "KSE30") return "KSE30";
-          if (c === "KMI30") return "KMI30";
-          if (c === "KMIALLSHR" || c === "KMIALL") return "KMIALL";
-          return c;
-        })
-      )];
-
-      const sectorName = symInfo.get(symbol)?.sectorName ?? "Unknown";
-      const [, ldcp, open, high, low, close, change, changePct, volume] = orders;
-
-      rows.push({
-        symbol, tradingDate: date,
-        open, high, low, close,
-        previousClose: ldcp,
-        priceChange: change,
-        percentageChange: changePct,
-        volume,
-        marketValue: String((parseFloat(close) * parseInt(volume)).toFixed(0)),
-        numberOfTrades: Math.floor(parseInt(volume) / 1200),
-        weekHigh52: null, weekLow52: null,
-        upperCircuit: null, lowerCircuit: null,
-        isDemo: false,
-        companyName, sectorName,
-        sectorId: null, shariahStatus: null,
-        indexCodes,
-      });
-    }
-
-    if (rows.length < 10) return null;
-
-    const allSectorNames = [...new Set(rows.map(r => r.sectorName))].sort();
-    const sectorIdMap = new Map<string, number>();
-    allSectorNames.forEach((name, i) => sectorIdMap.set(name, i + 1));
-    const sectors = allSectorNames.map(name => ({ id: sectorIdMap.get(name)!, name }));
-    rows.forEach(r => { r.sectorId = sectorIdMap.get(r.sectorName) ?? null; });
-
-    _psxCache = { rows, sectors, ts: now };
-    return { rows, sectors };
+    return { quotes, sum };
   } catch {
     return null;
   }
 }
 
-// Find a single stock row by exact symbol (uses cache)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getPsxRow(symbol: string): Promise<any | null> {
-  const data = await getPsxRows();
-  if (!data) return null;
-  return data.rows.find(r => r.symbol === symbol) ?? null;
+// ── Demo fallback — simulates live tick movement ───────────────────────────────
+// Uses the same STOCKS data as the existing heatmap to keep the demo identical.
+// Prices drift ±0.3% per poll cycle when the market is "open".
+import { STOCKS as DEMO_STOCKS } from "@/app/data-portal/heatmap/_data/stocks";
+
+function buildDemoQuotes(): PsxQuote[] {
+  return DEMO_STOCKS.map(s => ({
+    sym:    s.sym,
+    name:   s.name,
+    sector: s.sector,
+    price:  s.price,
+    open:   s.price * (1 - s.chg / 100 / 2),
+    high:   s.price * 1.012,
+    low:    s.price * 0.988,
+    prev:   +(s.price / (1 + s.chg / 100)).toFixed(2),
+    chg:    s.chg,
+    chgAmt: +(s.price - s.price / (1 + s.chg / 100)).toFixed(2),
+    vol:    s.vol,
+    val:    +(s.vol * s.price / 1000).toFixed(1),
+    cap:    s.cap,
+    shariah: s.shariah,
+    kse100:  s.kse100,
+    kse30:   s.kse30,
+    kmi30:   s.kmi30,
+    ts:     Date.now(),
+  }));
 }
 
-export interface PsxIndexValue {
-  code: string;
-  close: number;
-  change: number;
-  pct: number;
-  vol: number;
+function tickDemoQuotes() {
+  const open = isMarketOpen();
+  if (!open && quoteMap.size > 0) {
+    // Market closed — no price movement, just update ts
+    quoteMap.forEach((q, k) => quoteMap.set(k, { ...q, ts: Date.now() }));
+    return;
+  }
+
+  quoteMap.forEach((q, k) => {
+    const drift = (Math.random() - 0.498) * 0.006; // ±0.3% random walk
+    const newPrice = Math.max(q.price * (1 + drift), 0.01);
+    const chgAmt  = +(newPrice - q.prev).toFixed(2);
+    const chg     = +((chgAmt / q.prev) * 100).toFixed(2);
+    const newVol  = Math.max(0, q.vol + Math.floor((Math.random() - 0.4) * 500));
+    quoteMap.set(k, {
+      ...q, price: +newPrice.toFixed(2), chg, chgAmt,
+      high: Math.max(q.high, newPrice),
+      low:  Math.min(q.low,  newPrice),
+      vol:  newVol,
+      val:  +(newVol * newPrice / 1000).toFixed(1),
+      ts:   Date.now(),
+    });
+  });
 }
 
-let _idxCache: { data: PsxIndexValue[]; ts: number } | null = null;
-
-// Parse index values from any HTML blob (looks for number patterns near index names)
-function parseIndicesFromHtml(html: string): PsxIndexValue[] {
-  const results: PsxIndexValue[] = [];
-  const INDEX_NAMES: Record<string, string> = {
-    "KSE100": "KSE100", "KSE-100": "KSE100", "KSE 100": "KSE100",
-    "KSE30": "KSE30", "KSE-30": "KSE30",
-    "ALLSHR": "ALLSHR", "KSE ALL": "ALLSHR",
-    "KMI30": "KMI30", "KMI-30": "KMI30",
-    "KMIALLSHR": "KMIALLSHR", "KMI ALL": "KMIALLSHR",
+function buildSummary(): MarketSummary {
+  const quotes = Array.from(quoteMap.values());
+  const adv = quotes.filter(q => q.chg > 0).length;
+  const dec = quotes.filter(q => q.chg < 0).length;
+  const kse100s = quotes.filter(q => q.kse100);
+  const indexLevel = 132_240 + (kse100s.reduce((s, q) => s + q.chg, 0) / (kse100s.length || 1)) * 200;
+  const chgPct = kse100s.reduce((s, q) => s + q.chg, 0) / (kse100s.length || 1);
+  return {
+    kse100Index:  +indexLevel.toFixed(2),
+    kse100Chg:    +chgPct.toFixed(2),
+    kse100ChgPct: +chgPct.toFixed(2),
+    kse30Index:   +(indexLevel * 0.72).toFixed(2),
+    kse30ChgPct:  +chgPct.toFixed(2),
+    totalVolume:  quotes.reduce((s, q) => s + q.vol, 0),
+    totalValue:   +quotes.reduce((s, q) => s + q.val, 0).toFixed(1),
+    advances:     adv,
+    declines:     dec,
+    unchanged:    quotes.length - adv - dec,
+    marketOpen:   isMarketOpen(),
+    lastUpdated:  Date.now(),
   };
-  // Try table rows first
-  const tableRows = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
-  for (const [, row] of tableRows) {
-    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)]
-      .map(c => c[1].replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim());
-    if (cells.length < 2) continue;
-    const rawCode = cells[0]?.replace(/\s+/g, " ").trim().toUpperCase();
-    const code = INDEX_NAMES[rawCode];
-    if (!code) continue;
-    const close = parseFloat(cells[1]?.replace(/,/g, ""));
-    if (!close || close < 1000) continue;
-    const change = parseFloat(cells[2]?.replace(/,/g, "")) || 0;
-    const pct = parseFloat(cells[3]?.replace(/[^0-9.-]/g, "")) || 0;
-    results.push({ code, close, change, pct, vol: 0 });
-  }
-  if (results.length > 0) return results;
-
-  // Fallback: scan for index name + number pairs anywhere in HTML
-  for (const [name, code] of Object.entries(INDEX_NAMES)) {
-    const re = new RegExp(name.replace(/[-]/g, "[-\\s]?") + "[\\s\\S]{0,100}?([\\d,]{6,}(?:\\.\\d+)?)", "i");
-    const m = html.match(re);
-    if (m) {
-      const close = parseFloat(m[1].replace(/,/g, ""));
-      if (close > 1000) results.push({ code, close, change: 0, pct: 0, vol: 0 });
-    }
-  }
-  return results;
 }
 
-// Scrape live index values — tries multiple PSX endpoints
-export async function getPsxIndices(): Promise<PsxIndexValue[]> {
-  const now = Date.now();
-  if (_idxCache && now - _idxCache.ts < 60_000) return _idxCache.data;
+// ── Poller ────────────────────────────────────────────────────────────────────
+const POLL_INTERVAL_MS = isMarketOpen() ? 5_000 : 60_000; // 5s open, 60s closed
 
-  const ENDPOINTS = [
-    "https://dps.psx.com.pk/indices",
-    "https://dps.psx.com.pk/market-summary",
-    "https://dps.psx.com.pk/",
-  ];
+async function poll() {
+  const live = await fetchFromSource();
 
-  for (const url of ENDPOINTS) {
-    try {
-      const abort = new AbortController();
-      const timer = setTimeout(() => abort.abort(), 3500);
-      const res = await fetch(url, {
-        headers: { ...PSX_HEADERS, Accept: "application/json, text/html, */*" },
-        cache: "no-store",
-        signal: abort.signal,
-      });
-      clearTimeout(timer);
-      if (!res.ok) continue;
-
-      const text = await res.text();
-      let parsed: PsxIndexValue[] = [];
-
-      // Try JSON
-      try {
-        const json = JSON.parse(text);
-        const arr = Array.isArray(json) ? json : (json.data ?? json.indices ?? json.result ?? []);
-        if (Array.isArray(arr) && arr.length > 0) {
-          parsed = arr.map((r: Record<string, unknown>) => ({
-            code:   String(r.code ?? r.index_code ?? r.indexCode ?? r.symbol ?? ""),
-            close:  parseFloat(String(r.close ?? r.current ?? r.value ?? r.last ?? 0)) || 0,
-            change: parseFloat(String(r.change ?? r.net_change ?? 0)) || 0,
-            pct:    parseFloat(String(r.pct ?? r.percentage_change ?? r.changePct ?? 0)) || 0,
-            vol:    parseInt(String(r.vol ?? r.volume ?? 0)) || 0,
-          })).filter((r: PsxIndexValue) => r.code && r.close > 1000);
-        }
-      } catch { /* not JSON, try HTML */ }
-
-      // Try HTML
-      if (parsed.length === 0) parsed = parseIndicesFromHtml(text);
-
-      if (parsed.length > 0) {
-        _idxCache = { data: parsed, ts: now };
-        return parsed;
-      }
-    } catch { /* try next endpoint */ }
+  if (live) {
+    // Live source available — load it
+    live.quotes.forEach(q => quoteMap.set(q.sym, q));
+    summary = live.sum;
+  } else {
+    // Demo / no source — tick the simulated prices
+    if (quoteMap.size === 0) {
+      buildDemoQuotes().forEach(q => quoteMap.set(q.sym, q));
+    } else {
+      tickDemoQuotes();
+    }
+    summary = buildSummary();
   }
-  return _idxCache?.data ?? []; // return stale cache if all fail
+
+  broadcast();
+}
+
+// ── Singleton poller ─────────────────────────────────────────────────────────
+export function startPoller() {
+  if (pollerStarted) return;
+  pollerStarted = true;
+
+  poll(); // immediate first fetch
+  setInterval(poll, POLL_INTERVAL_MS);
+}
+
+// ── Accessors (synchronous, <1ms) ─────────────────────────────────────────────
+export function getAllQuotes(): PsxQuote[] {
+  return Array.from(quoteMap.values());
+}
+
+export function getQuote(sym: string): PsxQuote | undefined {
+  return quoteMap.get(sym.toUpperCase());
+}
+
+export function getSummary(): MarketSummary | null {
+  return summary;
+}
+
+export function isReady(): boolean {
+  return quoteMap.size > 0 && summary !== null;
+}
+
+// ── Legacy scraper-compat adapters ────────────────────────────────────────────
+// These let older routes (market-data.ts, heatmap/route.ts, etc.) continue to
+// work without any changes — they just read from the same in-memory cache.
+
+export interface PsxLegacyRow {
+  symbol:           string;
+  companyName:      string;
+  sectorName:       string;
+  sectorId:         string | null;
+  close:            string;
+  priceChange:      string;
+  percentageChange: string;
+  volume:           string;
+  marketValue:      string;
+  open:             string;
+  high:             string;
+  low:              string;
+  prevClose:        string;
+  previousClose:    string;
+  tradingDate:      string;
+  numberOfTrades:   string;
+  shariahStatus:    string | null;
+  indexCodes:       string[];
+}
+
+export interface PsxLegacyIndex {
+  code:   string;
+  close:  number;
+  change: number;
+  pct:    number;
+  vol:    number;
+}
+
+function quoteToPsxRow(q: PsxQuote): PsxLegacyRow {
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    symbol:           q.sym,
+    companyName:      q.name,
+    sectorName:       q.sector,
+    sectorId:         null,
+    close:            String(q.price),
+    priceChange:      String(q.chgAmt),
+    percentageChange: String(q.chg),
+    volume:           String(q.vol * 1000),
+    marketValue:      String(q.cap * 1_000_000),
+    open:             String(q.open),
+    high:             String(q.high),
+    low:              String(q.low),
+    prevClose:        String(q.prev),
+    previousClose:    String(q.prev),
+    tradingDate:      today,
+    numberOfTrades:   "0",
+    shariahStatus:    q.kmi30 ? "Shariah Compliant" : null,
+    indexCodes: [
+      ...(q.kse100 ? ["KSE100"] : []),
+      ...(q.kse30  ? ["KSE30"]  : []),
+      ...(q.kmi30  ? ["KMIALL"] : []),
+    ],
+  };
+}
+
+export async function getPsxRows(): Promise<{ rows: PsxLegacyRow[]; sectors: string[] } | null> {
+  if (!isReady()) await new Promise(r => setTimeout(r, 800));
+  const quotes = getAllQuotes();
+  if (!quotes.length) return null;
+  const rows = quotes.map(quoteToPsxRow);
+  const sectors = [...new Set(quotes.map(q => q.sector).filter(Boolean))];
+  return { rows, sectors };
+}
+
+export async function getPsxRow(sym: string): Promise<PsxLegacyRow | null> {
+  if (!isReady()) await new Promise(r => setTimeout(r, 800));
+  const q = getQuote(sym.toUpperCase());
+  return q ? quoteToPsxRow(q) : null;
+}
+
+export async function getPsxIndices(): Promise<PsxLegacyIndex[]> {
+  if (!isReady()) await new Promise(r => setTimeout(r, 800));
+  const sum = getSummary();
+  if (!sum) return [];
+  return [
+    { code: "KSE100", close: sum.kse100Index,  change: sum.kse100Chg,    pct: sum.kse100ChgPct, vol: 0 },
+    { code: "KSE30",  close: sum.kse30Index,   change: sum.kse30ChgPct,  pct: sum.kse30ChgPct,  vol: 0 },
+  ];
 }
