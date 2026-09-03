@@ -44,46 +44,83 @@ const KSE100 = new Set(["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","PS
 const KSE30  = new Set(["OGDC","PPL","HBL","UBL","MCB","MEBL","ENGRO","LUCK","INDU","PSO","MARI","FFC","EFERT","HUBC","DGKC","NBP","ABL","BAFL","BWCL","SYS"]);
 
 const FUNDAMENTALS: Record<string, { eps: number; pe: number; dps: number | null; close: number; pct: number; volume: number }> = {
-  OGDC: { eps:29.40, pe:6.2,  dps:6.00,   close:181.50, pct:-0.66, volume:3_450_000 },
-  PPL:  { eps:16.50, pe:5.4,  dps:3.50,   close:89.30,  pct:-0.78, volume:1_890_000 },
-  HBL:  { eps:38.20, pe:4.6,  dps:14.00,  close:177.30, pct:1.03,  volume:2_100_000 },
-  UBL:  { eps:48.60, pe:4.8,  dps:28.00,  close:232.40, pct:0.91,  volume:980_000 },
-  MCB:  { eps:45.30, pe:5.0,  dps:36.00,  close:225.60, pct:-0.92, volume:540_000 },
-  MEBL: { eps:30.10, pe:7.3,  dps:29.50,  close:218.50, pct:0.83,  volume:760_000 },
-  ENGRO:{ eps:28.50, pe:10.0, dps:15.00,  close:285.40, pct:1.49,  volume:1_240_000 },
-  LUCK: { eps:120.0, pe:7.8,  dps:40.00,  close:932.00, pct:-0.90, volume:318_000 },
-  PSMC: { eps:110.0, pe:7.5,  dps:60.00,  close:830.00, pct:1.47,  volume:42_000 },
-  SYS:  { eps:58.20, pe:12.4, dps:30.00,  close:724.00, pct:1.26,  volume:320_000 },
-  TRG:  { eps:8.40,  pe:12.1, dps:null,   close:101.50, pct:1.50,  volume:1_900_000 },
-  PSO:  { eps:68.20, pe:5.0,  dps:30.00,  close:341.60, pct:-0.99, volume:670_000 },
-  MARI: { eps:310.0, pe:6.9,  dps:90.00,  close:2145.0, pct:1.06,  volume:98_000 },
-  FFC:  { eps:24.80, pe:5.6,  dps:18.00,  close:139.30, pct:-0.64, volume:870_000 },
-  EFERT:{ eps:12.10, pe:7.2,  dps:9.00,   close:87.60,  pct:0.69,  volume:1_100_000 },
-  HUBC: { eps:12.30, pe:8.8,  dps:8.00,   close:107.80, pct:0.75,  volume:2_300_000 },
-  DGKC: { eps:14.20, pe:6.9,  dps:5.00,   close:97.80,  pct:-0.81, volume:440_000 },
-  BWCL: { eps:62.40, pe:5.0,  dps:40.00,  close:312.00, pct:0.81,  volume:210_000 },
-  NBP:  { eps:7.80,  pe:5.5,  dps:4.00,   close:43.20,  pct:0.70,  volume:5_200_000 },
-  ABL:  { eps:29.07, pe:4.7,  dps:16.00,  close:136.70, pct:0.66,  volume:490_000 },
-  BAFL: { eps:8.92,  pe:6.1,  dps:8.50,   close:54.60,  pct:0.74,  volume:3_800_000 },
-  INDU: { eps:220.0, pe:7.7,  dps:175.00, close:1702.0, pct:1.07,  volume:65_000 },
-  NML:  { eps:22.40, pe:6.2,  dps:12.00,  close:138.00, pct:0.73,  volume:290_000 },
-  ICI:  { eps:95.40, pe:8.7,  dps:50.00,  close:832.00, pct:0.73,  volume:84_000 },
-  SEARL:{ eps:30.50, pe:7.5,  dps:15.00,  close:228.00, pct:0.88,  volume:560_000 },
-  SNGP: { eps:3.90,  pe:7.2,  dps:2.00,   close:28.10,  pct:1.44,  volume:7_200_000 },
-  FCCL: { eps:2.80,  pe:7.9,  dps:2.50,   close:22.10,  pct:0.91,  volume:4_100_000 },
-  MLCF: { eps:5.20,  pe:7.8,  dps:2.50,   close:40.80,  pct:-0.97, volume:2_800_000 },
-  PTC:  { eps:2.40,  pe:7.8,  dps:1.50,   close:18.80,  pct:-1.05, volume:6_500_000 },
-  MUGHAL:{ eps:9.80, pe:8.0,  dps:5.00,   close:78.50,  pct:0.90,  volume:950_000 },
-  ABOT: { eps:84.85, pe:11.2, dps:48.00,  close:950.0,  pct:0.55,  volume:45_000 },
-  ACPL: { eps:38.20, pe:7.4,  dps:30.00,  close:282.0,  pct:0.42,  volume:180_000 },
-  BAHL: { eps:30.10, pe:5.8,  dps:18.00,  close:174.0,  pct:0.69,  volume:320_000 },
-  AKBL: { eps:7.20,  pe:5.2,  dps:4.00,   close:37.50,  pct:0.54,  volume:2_100_000 },
-  FABL: { eps:10.80, pe:6.0,  dps:6.50,   close:65.00,  pct:0.77,  volume:1_400_000 },
-  POL:  { eps:88.0,  pe:6.5,  dps:60.00,  close:573.0,  pct:0.35,  volume:110_000 },
-  APL:  { eps:72.0,  pe:6.2,  dps:40.00,  close:447.0,  pct:0.45,  volume:130_000 },
-  FFBL: { eps:4.20,  pe:8.2,  dps:3.00,   close:34.50,  pct:0.58,  volume:1_800_000 },
-  FATIMA:{ eps:4.50, pe:7.7,  dps:3.00,   close:34.70,  pct:-0.57, volume:2_300_000 },
-  EPCL: { eps:4.80,  pe:8.0,  dps:3.50,   close:38.50,  pct:0.78,  volume:1_100_000 },
+  /* ── Banking ─────────────────────────────────────────────────── */
+  HBL:   { eps:38.20, pe:4.6,  dps:14.00,  close:177.30, pct:1.03,  volume:2_100_000 },
+  UBL:   { eps:48.60, pe:4.8,  dps:28.00,  close:232.40, pct:0.91,  volume:980_000 },
+  MCB:   { eps:45.30, pe:5.0,  dps:36.00,  close:225.60, pct:-0.92, volume:540_000 },
+  MEBL:  { eps:30.10, pe:7.3,  dps:29.50,  close:218.50, pct:0.83,  volume:760_000 },
+  NBP:   { eps:7.80,  pe:5.5,  dps:4.00,   close:43.20,  pct:0.70,  volume:5_200_000 },
+  ABL:   { eps:29.07, pe:4.7,  dps:16.00,  close:136.70, pct:0.66,  volume:490_000 },
+  BAFL:  { eps:8.92,  pe:6.1,  dps:8.50,   close:54.60,  pct:0.74,  volume:3_800_000 },
+  BAHL:  { eps:30.10, pe:5.8,  dps:18.00,  close:174.0,  pct:0.69,  volume:320_000 },
+  AKBL:  { eps:7.20,  pe:5.2,  dps:4.00,   close:37.50,  pct:0.54,  volume:2_100_000 },
+  FABL:  { eps:10.80, pe:6.0,  dps:6.50,   close:65.00,  pct:0.77,  volume:1_400_000 },
+  SILK:  { eps:2.10,  pe:8.5,  dps:1.50,   close:17.85,  pct:0.56,  volume:4_500_000 },
+  SNBL:  { eps:5.40,  pe:7.2,  dps:3.00,   close:38.90,  pct:0.72,  volume:1_200_000 },
+  JSBL:  { eps:3.80,  pe:6.9,  dps:2.00,   close:26.30,  pct:0.38,  volume:2_900_000 },
+  SMBL:  { eps:4.20,  pe:7.1,  dps:2.50,   close:29.90,  pct:0.67,  volume:1_800_000 },
+  BOP:   { eps:2.90,  pe:6.8,  dps:1.50,   close:19.70,  pct:0.51,  volume:6_100_000 },
+  BIPL:  { eps:3.50,  pe:7.4,  dps:2.00,   close:25.90,  pct:0.62,  volume:2_300_000 },
+  /* ── Oil & Gas E&P ───────────────────────────────────────────── */
+  OGDC:  { eps:29.40, pe:6.2,  dps:6.00,   close:181.50, pct:-0.66, volume:3_450_000 },
+  PPL:   { eps:16.50, pe:5.4,  dps:3.50,   close:89.30,  pct:-0.78, volume:1_890_000 },
+  MARI:  { eps:310.0, pe:6.9,  dps:90.00,  close:2145.0, pct:1.06,  volume:98_000 },
+  POL:   { eps:88.0,  pe:6.5,  dps:60.00,  close:573.0,  pct:0.35,  volume:110_000 },
+  /* ── Oil Marketing & Refineries ──────────────────────────────── */
+  PSO:   { eps:68.20, pe:5.0,  dps:30.00,  close:341.60, pct:-0.99, volume:670_000 },
+  APL:   { eps:72.0,  pe:6.2,  dps:40.00,  close:447.0,  pct:0.45,  volume:130_000 },
+  ATRL:  { eps:44.50, pe:7.1,  dps:20.00,  close:315.0,  pct:0.63,  volume:85_000 },
+  NRL:   { eps:38.20, pe:6.8,  dps:18.00,  close:260.0,  pct:0.46,  volume:72_000 },
+  /* ── Fertilizer ──────────────────────────────────────────────── */
+  FFC:   { eps:24.80, pe:5.6,  dps:18.00,  close:139.30, pct:-0.64, volume:870_000 },
+  EFERT: { eps:12.10, pe:7.2,  dps:9.00,   close:87.60,  pct:0.69,  volume:1_100_000 },
+  FFBL:  { eps:4.20,  pe:8.2,  dps:3.00,   close:34.50,  pct:0.58,  volume:1_800_000 },
+  FATIMA:{ eps:4.50,  pe:7.7,  dps:3.00,   close:34.70,  pct:-0.57, volume:2_300_000 },
+  ENGRO: { eps:28.50, pe:10.0, dps:15.00,  close:285.40, pct:1.49,  volume:1_240_000 },
+  /* ── Cement ──────────────────────────────────────────────────── */
+  LUCK:  { eps:120.0, pe:7.8,  dps:40.00,  close:932.00, pct:-0.90, volume:318_000 },
+  DGKC:  { eps:14.20, pe:6.9,  dps:5.00,   close:97.80,  pct:-0.81, volume:440_000 },
+  BWCL:  { eps:62.40, pe:5.0,  dps:40.00,  close:312.00, pct:0.81,  volume:210_000 },
+  FCCL:  { eps:2.80,  pe:7.9,  dps:2.50,   close:22.10,  pct:0.91,  volume:4_100_000 },
+  MLCF:  { eps:5.20,  pe:7.8,  dps:2.50,   close:40.80,  pct:-0.97, volume:2_800_000 },
+  ACPL:  { eps:38.20, pe:7.4,  dps:30.00,  close:282.0,  pct:0.42,  volume:180_000 },
+  PIOC:  { eps:16.80, pe:7.2,  dps:8.00,   close:121.0,  pct:0.66,  volume:380_000 },
+  KOHC:  { eps:28.40, pe:7.5,  dps:12.00,  close:213.0,  pct:0.74,  volume:240_000 },
+  CHCC:  { eps:22.10, pe:7.1,  dps:10.00,  close:157.0,  pct:0.48,  volume:290_000 },
+  /* ── Power ───────────────────────────────────────────────────── */
+  HUBC:  { eps:12.30, pe:8.8,  dps:8.00,   close:107.80, pct:0.75,  volume:2_300_000 },
+  /* ── Technology ──────────────────────────────────────────────── */
+  SYS:   { eps:58.20, pe:12.4, dps:30.00,  close:724.00, pct:1.26,  volume:320_000 },
+  TRG:   { eps:8.40,  pe:12.1, dps:null,   close:101.50, pct:1.50,  volume:1_900_000 },
+  AVN:   { eps:14.20, pe:11.8, dps:5.00,   close:167.0,  pct:0.84,  volume:620_000 },
+  NETSOL:{ eps:22.50, pe:10.5, dps:8.00,   close:236.0,  pct:0.93,  volume:480_000 },
+  /* ── Automobile ──────────────────────────────────────────────── */
+  PSMC:  { eps:110.0, pe:7.5,  dps:60.00,  close:830.00, pct:1.47,  volume:42_000 },
+  INDU:  { eps:220.0, pe:7.7,  dps:175.00, close:1702.0, pct:1.07,  volume:65_000 },
+  HCAR:  { eps:8.50,  pe:9.2,  dps:4.00,   close:78.20,  pct:0.77,  volume:740_000 },
+  GHNI:  { eps:6.20,  pe:8.8,  dps:3.00,   close:54.60,  pct:0.55,  volume:520_000 },
+  /* ── Pharma ──────────────────────────────────────────────────── */
+  ABOT:  { eps:84.85, pe:11.2, dps:48.00,  close:950.0,  pct:0.55,  volume:45_000 },
+  SEARL: { eps:30.50, pe:7.5,  dps:15.00,  close:228.00, pct:0.88,  volume:560_000 },
+  GLAXO: { eps:48.20, pe:9.8,  dps:30.00,  close:472.0,  pct:0.63,  volume:92_000 },
+  HINOON:{ eps:38.60, pe:10.2, dps:20.00,  close:394.0,  pct:0.71,  volume:78_000 },
+  /* ── Textile ─────────────────────────────────────────────────── */
+  NML:   { eps:22.40, pe:6.2,  dps:12.00,  close:138.00, pct:0.73,  volume:290_000 },
+  /* ── Chemicals & Polymers ────────────────────────────────────── */
+  ICI:   { eps:95.40, pe:8.7,  dps:50.00,  close:832.00, pct:0.73,  volume:84_000 },
+  EPCL:  { eps:4.80,  pe:8.0,  dps:3.50,   close:38.50,  pct:0.78,  volume:1_100_000 },
+  /* ── Engineering / Steel ─────────────────────────────────────── */
+  MUGHAL:{ eps:9.80,  pe:8.0,  dps:5.00,   close:78.50,  pct:0.90,  volume:950_000 },
+  ISL:   { eps:6.40,  pe:7.5,  dps:3.50,   close:48.00,  pct:0.63,  volume:1_400_000 },
+  ASTL:  { eps:5.20,  pe:8.1,  dps:3.00,   close:42.10,  pct:0.48,  volume:1_100_000 },
+  /* ── Telecom ─────────────────────────────────────────────────── */
+  PTC:   { eps:2.40,  pe:7.8,  dps:1.50,   close:18.80,  pct:-1.05, volume:6_500_000 },
+  SNGP:  { eps:3.90,  pe:7.2,  dps:2.00,   close:28.10,  pct:1.44,  volume:7_200_000 },
+  /* ── Misc / Conglomerates ────────────────────────────────────── */
+  KAPCO: { eps:9.80,  pe:7.6,  dps:7.00,   close:74.50,  pct:0.68,  volume:1_600_000 },
+  KEL:   { eps:0.58,  pe:9.4,  dps:null,   close:5.45,   pct:-0.91, volume:28_000_000 },
+  PAKT:  { eps:120.0, pe:12.1, dps:90.00,  close:1452.0, pct:0.83,  volume:18_000 },
+  NESTLE:{ eps:285.0, pe:14.2, dps:200.00, close:4050.0, pct:0.62,  volume:8_000 },
 };
 
 const SHARIAH_SET = new Set(["MEBL","FABL","BAHL","AKBL","SNBL","MCB","HUBC","EFERT","ENGRO","LUCK","MLCF","FCCL","BWCL","DGKC","MUGHAL","SYS","TRG","MARI","OGDC","PPL","SNGP","FFC","FFBL","FATIMA","NML","SEARL","INDU","PSMC","FCCL","ACPL","EPCL"]);
@@ -151,6 +188,7 @@ export default function PageClient() {
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [stockSearch, setStockSearch] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 25;
 
@@ -169,10 +207,14 @@ export default function PageClient() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, []);
 
-  useEffect(() => { setPage(1); }, [filters]);
+  useEffect(() => { setPage(1); }, [filters, stockSearch]);
 
   const filtered = useMemo(() => {
     return ALL_ROWS.filter(r => {
+      if (stockSearch) {
+        const q = stockSearch.toLowerCase();
+        if (!r.symbol.toLowerCase().includes(q) && !r.companyName.toLowerCase().includes(q)) return false;
+      }
       if (filters.sectors.length && !filters.sectors.includes(r.sectorName)) return false;
       if (filters.index === "KSE-100" && !KSE100.has(r.symbol)) return false;
       if (filters.index === "KSE-30" && !KSE30.has(r.symbol)) return false;
@@ -184,7 +226,7 @@ export default function PageClient() {
       if (r.close < filters.priceMin || r.close > filters.priceMax) return false;
       return true;
     });
-  }, [filters]);
+  }, [filters, stockSearch]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -220,47 +262,166 @@ export default function PageClient() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     const rows = sorted.slice(0, 200);
+    const dateStr = new Date().toLocaleDateString("en-PK", { day:"2-digit", month:"short", year:"numeric" });
+    const wmRows = Array.from({ length: 8 }, (_, i) =>
+      `<div style="display:flex;gap:120px;margin-bottom:80px;white-space:nowrap;">${Array(4).fill(`<span>STOCKIFYY · CONFIDENTIAL</span>`).join("")}</div>`
+    ).join("");
     const html = `<!DOCTYPE html><html><head><title>PSX Screener — Stockifyy</title><style>
-      body{font-family:sans-serif;font-size:11px;margin:20px}
-      h2{font-size:16px;margin-bottom:12px}
-      table{width:100%;border-collapse:collapse}
-      th{background:#07111F;color:#D4971A;padding:6px 10px;text-align:left;font-size:10px;text-transform:uppercase}
-      td{padding:5px 10px;border-bottom:1px solid #eee}
-      tr:nth-child(even){background:#f9f9f9}
-      .pos{color:#16a34a}.neg{color:#dc2626}
+      *{box-sizing:border-box}
+      body{font-family:Arial,sans-serif;font-size:11px;margin:0;padding:20px;color:#1a1a1a}
+      @page{margin:16mm 12mm}
+      /* ── Watermark ── */
+      .wm-wrap{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;display:flex;align-items:center;justify-content:center}
+      .wm-inner{transform:rotate(-35deg);opacity:0.055;color:#07111F;font-size:28px;font-weight:900;letter-spacing:0.08em;font-family:Arial,sans-serif;line-height:2.8;text-align:center;width:200%;margin-left:-50%}
+      /* ── Header ── */
+      .page-header{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:10px 0 10px;border-bottom:3px solid #07111F;margin-bottom:14px}
+      .logo-block{display:flex;align-items:center;gap:10px}
+      .logo-hex{width:32px;height:32px;background:#07111F;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center}
+      .logo-s{color:#D4971A;font-size:14px;font-weight:900;font-family:Arial,sans-serif}
+      .brand-name{font-size:18px;font-weight:900;color:#07111F;letter-spacing:-0.02em}
+      .brand-sub{font-size:8.5px;color:#888;letter-spacing:0.08em;text-transform:uppercase}
+      .header-right{text-align:right;font-size:10px;color:#666}
+      /* ── Table ── */
+      table{width:100%;border-collapse:collapse;position:relative;z-index:1}
+      th{background:#07111F;color:#D4971A;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.07em;font-weight:700}
+      th.r{text-align:right}
+      td{padding:5px 8px;border-bottom:1px solid #eee;font-size:10.5px;vertical-align:middle}
+      td.r{text-align:right;font-variant-numeric:tabular-nums}
+      tr:nth-child(even) td{background:#f7f8fa}
+      .sym{background:#07111F;color:#D4971A;font-weight:800;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block}
+      .pos{color:#16a34a;font-weight:700}.neg{color:#dc2626;font-weight:700}
+      .sh{background:#16a34a20;color:#16a34a;padding:1px 5px;border-radius:6px;font-weight:700;font-size:9px}
+      .sector-tag{background:#F1F5F9;color:#666;padding:1px 5px;border-radius:4px;font-size:9.5px}
+      /* ── Footer ── */
+      .page-footer{position:fixed;bottom:8mm;left:12mm;right:12mm;z-index:1;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ddd;padding-top:5px;font-size:8.5px;color:#aaa}
     </style></head><body>
-    <h2>PSX Screener — ${rows.length} results · Stockifyy · ${new Date().toLocaleDateString("en-PK")}</h2>
-    <table><thead><tr><th>Symbol</th><th>Company</th><th>Sector</th><th>Close</th><th>Chg%</th><th>Volume</th><th>P/E</th><th>DPS</th><th>Div Yield</th><th>Shariah</th></tr></thead><tbody>
-    ${rows.map(r => `<tr><td><b>${r.symbol}</b></td><td>${r.companyName}</td><td>${r.sectorName}</td><td>${fmtN(r.close)}</td><td class="${r.pct>=0?"pos":"neg"}">${r.pct>=0?"+":""}${fmtN(r.pct)}%</td><td>${fmtVol(r.volume)}</td><td>${fmtN(r.pe,1)}</td><td>${fmtN(r.dps)}</td><td>${r.divYield?fmtN(r.divYield)+"%":"—"}</td><td>${r.shariah?"☪":""}</td></tr>`).join("")}
-    </tbody></table></body></html>`;
+    <!-- Watermark -->
+    <div class="wm-wrap"><div class="wm-inner">${wmRows}</div></div>
+    <!-- Header -->
+    <div class="page-header">
+      <div class="logo-block">
+        <div class="logo-hex"><span class="logo-s">S</span></div>
+        <div><div class="brand-name">Stockifyy</div><div class="brand-sub">PSX Data Portal</div></div>
+      </div>
+      <div class="header-right">
+        <div style="font-size:13px;font-weight:700;color:#07111F">Stock Screener Report</div>
+        <div style="margin-top:2px">${rows.length} stocks · ${dateStr}</div>
+        <div style="margin-top:2px;color:#aaa">© Stockifyy · stockifyy.com</div>
+      </div>
+    </div>
+    <!-- Table -->
+    <table><thead><tr>
+      <th>Symbol</th><th>Company</th><th>Sector</th>
+      <th class="r">Close</th><th class="r">Chg%</th><th class="r">Volume</th>
+      <th class="r">P/E</th><th class="r">DPS</th><th class="r">Div Yield</th><th>Shariah</th>
+    </tr></thead><tbody>
+    ${rows.map(r => `<tr>
+      <td><span class="sym">${r.symbol}</span></td>
+      <td>${r.companyName}</td>
+      <td><span class="sector-tag">${r.sectorName.length>16?r.sectorName.slice(0,16)+"…":r.sectorName}</span></td>
+      <td class="r">${fmtN(r.close)}</td>
+      <td class="r ${r.pct>=0?"pos":"neg"}">${r.pct>=0?"+":""}${fmtN(r.pct)}%</td>
+      <td class="r">${fmtVol(r.volume)}</td>
+      <td class="r">${fmtN(r.pe,1)}</td>
+      <td class="r">${fmtN(r.dps)}</td>
+      <td class="r ${r.divYield?"pos":""}">${r.divYield?fmtN(r.divYield)+"%":"—"}</td>
+      <td>${r.shariah?'<span class="sh">☪ Shariah</span>':""}</td>
+    </tr>`).join("")}
+    </tbody></table>
+    <!-- Footer -->
+    <div class="page-footer">
+      <span>Stockifyy PSX Data Portal · stockifyy.com</span>
+      <span>Data for informational purposes only · Not financial advice</span>
+      <span>${dateStr}</span>
+    </div>
+    </body></html>`;
     printWindow.document.write(html); printWindow.document.close();
-    setTimeout(() => { printWindow.print(); }, 400);
+    setTimeout(() => { printWindow.print(); }, 500);
   }
 
   function exportPNG() {
     const rows = sorted.slice(0, 50);
-    const COLS = ["Symbol","Company","Sector","Close","Chg%","Volume","P/E","Div Yield"];
-    const CW = [70,160,120,65,60,70,50,70]; const ROW_H = 22, HEADER_H = 28, PAD = 8;
-    const totalW = CW.reduce((a,b)=>a+b,0)+PAD*2, totalH = HEADER_H + rows.length*ROW_H + PAD*2;
+    const COLS = ["Symbol","Company","Sector","Close","Chg%","Volume","P/E","DPS","Div Yield","Shariah"];
+    const CW = [72,150,110,62,62,68,48,55,68,54]; const ROW_H = 22, HEADER_H = 32, PAD = 10, BRAND_H = 36, FOOT_H = 26;
+    const totalW = CW.reduce((a,b)=>a+b,0)+PAD*2;
+    const totalH = BRAND_H + HEADER_H + rows.length*ROW_H + PAD*2 + FOOT_H;
     const canvas = document.createElement("canvas"); canvas.width = totalW*2; canvas.height = totalH*2;
     const ctx = canvas.getContext("2d")!; ctx.scale(2,2);
+
+    // Background
     ctx.fillStyle = "#F8F6F1"; ctx.fillRect(0,0,totalW,totalH);
-    ctx.fillStyle = "#07111F"; ctx.fillRect(0,0,totalW,HEADER_H+PAD);
-    ctx.font = "bold 9px sans-serif"; ctx.fillStyle = "#D4971A";
+
+    // Brand header bar
+    ctx.fillStyle = "#07111F"; ctx.fillRect(0,0,totalW,BRAND_H);
+    ctx.font = "bold 13px Arial"; ctx.fillStyle = "#D4971A";
+    ctx.fillText("Stockifyy", PAD+4, 22);
+    ctx.font = "9px Arial"; ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText("PSX Stock Screener · "+new Date().toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"}), PAD+4, 32);
+    ctx.font = "10px Arial"; ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillText(`${rows.length} stocks`, totalW-80, 22);
+
+    // Column headers
+    const hy = BRAND_H;
+    ctx.fillStyle = "#0c1d2e"; ctx.fillRect(0,hy,totalW,HEADER_H);
+    ctx.font = "bold 8px Arial"; ctx.fillStyle = "#D4971A";
     let x = PAD;
-    COLS.forEach((c,i) => { ctx.fillText(c, x+4, 20); x += CW[i]; });
+    COLS.forEach((c,i) => { ctx.fillText(c.toUpperCase(), x+4, hy+20); x += CW[i]; });
+
+    // Rows
     rows.forEach((r,ri) => {
-      const y = PAD + HEADER_H + ri*ROW_H;
+      const y = BRAND_H + HEADER_H + PAD + ri*ROW_H;
       if (ri%2===1) { ctx.fillStyle = "rgba(0,0,0,0.03)"; ctx.fillRect(0,y,totalW,ROW_H); }
-      ctx.font = "9px sans-serif"; x = PAD;
-      const vals = [r.symbol, r.companyName.slice(0,20), r.sectorName.slice(0,16), fmtN(r.close), (r.pct>=0?"+":"")+fmtN(r.pct)+"%", fmtVol(r.volume), fmtN(r.pe,1), r.divYield?fmtN(r.divYield)+"%":"—"];
-      vals.forEach((v,i) => {
-        ctx.fillStyle = i===4?(r.pct>=0?"#16a34a":"#dc2626"):(i===0?"#07111F":"#475569");
-        if (i===0) { ctx.font = "bold 9px sans-serif"; } else { ctx.font = "9px sans-serif"; }
-        ctx.fillText(v, x+4, y+14); x += CW[i];
+      // divider line
+      ctx.strokeStyle = "rgba(0,0,0,0.07)"; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(0,y+ROW_H); ctx.lineTo(totalW,y+ROW_H); ctx.stroke();
+
+      x = PAD;
+      const pColor = r.pct>=0?"#16a34a":"#dc2626";
+      const dyColor = r.divYield?"#16a34a":"#94a3b8";
+      const vals: [string,string,boolean][] = [
+        [r.symbol,"#07111F",true],
+        [r.companyName.slice(0,18),"#1e293b",false],
+        [r.sectorName.slice(0,13),"#64748b",false],
+        [fmtN(r.close),"#1e293b",true],
+        [(r.pct>=0?"+":"")+fmtN(r.pct)+"%",pColor,true],
+        [fmtVol(r.volume),"#475569",true],
+        [fmtN(r.pe,1),"#1e293b",true],
+        [fmtN(r.dps),"#1e293b",true],
+        [r.divYield?fmtN(r.divYield)+"%":"—",dyColor,true],
+        [r.shariah?"☪ Yes":"","#16a34a",false],
+      ];
+      vals.forEach(([v,c,bold],i) => {
+        ctx.font = (bold||i===0)?"bold 9px Arial":"9px Arial";
+        ctx.fillStyle = c;
+        ctx.fillText(v, x+4, y+14);
+        x += CW[i];
       });
     });
-    const link = document.createElement("a"); link.download = "psx-screener.png"; link.href = canvas.toDataURL("image/png"); link.click();
+
+    // Footer strip
+    const fy = BRAND_H + HEADER_H + PAD + rows.length*ROW_H;
+    ctx.fillStyle = "#07111F"; ctx.fillRect(0,fy,totalW,FOOT_H);
+    ctx.font = "8px Arial"; ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText("© Stockifyy · stockifyy.com · Data for informational purposes only · Not financial advice", PAD+4, fy+17);
+
+    // ── WATERMARK ── diagonal repeating text
+    ctx.save();
+    ctx.globalAlpha = 0.055;
+    ctx.fillStyle = "#07111F";
+    ctx.font = "bold 18px Arial";
+    ctx.translate(totalW/2, totalH/2);
+    ctx.rotate(-Math.PI/5);
+    const wStep = 200, hStep = 80;
+    for (let wy = -totalH; wy < totalH; wy += hStep) {
+      for (let wx = -totalW; wx < totalW; wx += wStep) {
+        ctx.fillText("STOCKIFYY", wx, wy);
+      }
+    }
+    ctx.restore();
+
+    const link = document.createElement("a");
+    link.download = `stockifyy-screener-${new Date().toISOString().slice(0,10)}.png`;
+    link.href = canvas.toDataURL("image/png"); link.click();
   }
 
   function saveScreen() {
@@ -305,6 +466,19 @@ export default function PageClient() {
               <span style={{ color: text }}>Stock </span><span style={{ color: "#D4971A" }}>Screener</span>
             </h1>
             <p style={{ fontSize: 13, color: muted, margin: "4px 0 0" }}>Filter and discover PSX listed stocks by fundamental & technical criteria</p>
+            {/* Stock search */}
+            <div style={{ marginTop: 10, position: "relative", maxWidth: 340 }}>
+              <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: muted, pointerEvents: "none" }}>🔍</span>
+              <input
+                value={stockSearch}
+                onChange={e => setStockSearch(e.target.value)}
+                placeholder="Search by symbol or company name…"
+                style={{ width: "100%", boxSizing: "border-box", paddingLeft: 34, paddingRight: stockSearch ? 32 : 12, paddingTop: 8, paddingBottom: 8, borderRadius: 10, border: `1.5px solid ${stockSearch ? gold : border}`, background: card, color: text, fontSize: 12.5, outline: "none", fontFamily: "inherit", transition: "border-color 0.15s" }}
+              />
+              {stockSearch && (
+                <button onClick={() => setStockSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: muted, fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+              )}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <span style={{ background: gold + "20", color: gold, fontWeight: 700, fontSize: 13, padding: "6px 14px", borderRadius: 20 }}>
