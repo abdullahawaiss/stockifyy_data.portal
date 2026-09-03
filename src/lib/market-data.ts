@@ -104,9 +104,24 @@ export async function getMarketSummary(): Promise<MarketSummary> {
     return cache(summary, now);
   } catch (err) {
     console.error(`[market-data] error (${Date.now() - t0}ms)`, err);
-    // Return stale cache rather than crashing
+    // Return stale cache if available
     if (_cache) return _cache.data;
-    throw err;
+    // No cache — try PSX live as last resort instead of crashing
+    try {
+      console.warn(`[market-data] DB unavailable, attempting full PSX fallback`);
+      const [live, psxIdx] = await Promise.all([getPsxRows(), getPsxIndices()]);
+      const liveRows = live ? live.rows.map(toRowFromPsx) : [];
+      const summary = build(liveRows, psxIdx, "live");
+      return cache(summary, now);
+    } catch (psxErr) {
+      console.error(`[market-data] PSX fallback also failed`, psxErr);
+      // Return an empty-but-valid summary so the route always returns 200
+      return {
+        indices: [], gainers: [], losers: [], volume: [],
+        breadth: { advances: 0, declines: 0, unchanged: 0, total: 0 },
+        sectors: [], updatedAt: new Date().toISOString(), source: "live" as const,
+      };
+    }
   }
 }
 
