@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 const NAVY = "#07111F";
 const GOLD = "#D4971A";
@@ -160,6 +160,26 @@ function LineAreaSVG({ data, color = GOLD, label = "" }: { data: number[]; color
 
 /* ─── split layout: inputs left, results right ────────────────────────────── */
 function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.ReactNode | null }) {
+  const [history, setHistory] = useState<{ time: string; snapshot: React.ReactNode }[]>([]);
+  const [tab, setTab] = useState<"result" | "history">("result");
+  const resultRef = useRef<React.ReactNode | null>(null);
+
+  useEffect(() => { resultRef.current = result; });
+
+  function handleInputClick(e: React.MouseEvent) {
+    const btn = (e.target as HTMLElement).closest("button");
+    if (btn && (btn.textContent?.includes("→") || btn.textContent?.includes("Test"))) {
+      setTimeout(() => {
+        const snap = resultRef.current;
+        if (snap !== null) {
+          const t = new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+          setHistory(h => [{ time: t, snapshot: snap }, ...h].slice(0, 6));
+          setTab("result");
+        }
+      }, 80);
+    }
+  }
+
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* LEFT — inputs panel */}
@@ -169,19 +189,47 @@ function SplitCalc({ inputs, result }: { inputs: React.ReactNode; result: React.
           <div style={{ width: 3, height: 14, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
           <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>Enter Values</span>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px", background: "var(--card-bg)" }}>
+        <div onClick={handleInputClick} style={{ flex: 1, overflowY: "auto", padding: "18px 20px", background: "var(--card-bg)" }}>
           {inputs}
         </div>
       </div>
       {/* RIGHT — results panel */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        {/* Panel header */}
-        <div style={{ background: "var(--light-bg,rgba(0,0,0,0.02))", padding: "11px 24px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0, borderBottom: "1px solid var(--border)" }}>
-          <div style={{ width: 3, height: 14, borderRadius: 2, background: "var(--text-muted)", flexShrink: 0 }} />
-          <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Results</span>
+        {/* Panel header with tabs */}
+        <div style={{ background: "var(--light-bg,rgba(0,0,0,0.02))", padding: "0 20px", display: "flex", alignItems: "stretch", flexShrink: 0, borderBottom: "1px solid var(--border)", height: 40 }}>
+          {(["result", "history"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              height: "100%", padding: "0 14px", border: "none", background: "transparent",
+              fontSize: 10, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
+              color: tab === t ? "var(--text-primary)" : "var(--text-muted)",
+              borderBottom: tab === t ? `2px solid ${GOLD}` : "2px solid transparent",
+            }}>
+              {t === "result" ? "Result" : `History${history.length > 0 ? ` (${history.length})` : ""}`}
+            </button>
+          ))}
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 24px", background: "var(--bg,var(--background))" }}>
-          {result ?? <NoResult />}
+          {tab === "result" ? (result ?? <NoResult />) : (
+            history.length === 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)", gap: 10, textAlign: "center", padding: "40px 20px" }}>
+                <div style={{ fontSize: 40, opacity: 0.25 }}>🕐</div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>Calculation history will appear here</div>
+                <div style={{ fontSize: 11, opacity: 0.6 }}>Run a calculation to start tracking</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {history.map((h, i) => (
+                  <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
+                    <div style={{ padding: "6px 14px", background: "var(--light-bg,rgba(0,0,0,0.03))", fontSize: 10, color: "var(--text-muted)", fontWeight: 700, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: i === 0 ? GOLD : "var(--border)", display: "inline-block" }} />
+                      {i === 0 ? "Latest" : `Earlier`} · {h.time}
+                    </div>
+                    <div style={{ padding: "12px 14px" }}>{h.snapshot}</div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
@@ -1205,30 +1253,30 @@ function StressTest() {
 }
 
 /* ─── Calculator Registry ─────────────────────────────────────────────────── */
-type CalcDef = { id: string; label: string; desc: string; category: string; icon: string; component: React.ReactNode };
+type CalcDef = { id: string; label: string; desc: string; category: string; icon: string; component: React.ComponentType };
 const CALCS: CalcDef[] = [
-  { id:"salary",       label:"Salary Tax",          desc:"FBR income tax with rebates for FY 2025-26 / 2026-27",              category:"general",    icon:"💼", component:<SalaryTax /> },
-  { id:"zakat",        label:"Zakat",               desc:"Annual zakat obligation based on Nisab threshold",                   category:"general",    icon:"🌙", component:<ZakatCalc /> },
-  { id:"apnaghar",     label:"Apna Ghar",           desc:"Home loan EMI with Year 11 rate reset impact",                      category:"general",    icon:"🏠", component:<ApnaGhar /> },
-  { id:"microfinance", label:"Microfinance Loan",   desc:"True annualized cost vs. bank facility",                            category:"general",    icon:"🏦", component:<MicroFinance /> },
-  { id:"exchange",     label:"Exchange Rate",        desc:"PKR cross-rates for USD, EUR, GBP, SAR, AED and more",              category:"general",    icon:"💱", component:<ExchangeRate /> },
-  { id:"cagr",         label:"CAGR",                desc:"Compound annual growth rate for any investment",                    category:"investment", icon:"📈", component:<CAGRCalc /> },
-  { id:"sip",          label:"SIP",                 desc:"Systematic investment plan returns with year-by-year table",        category:"investment", icon:"📅", component:<SIPCalc /> },
-  { id:"compounding",  label:"Compounding",          desc:"Portfolio growth with reinvested profits",                          category:"investment", icon:"♻️", component:<CompoundingCalc /> },
-  { id:"depreciation", label:"Depreciation",        desc:"Asset depreciation with inflation-adjusted real value",             category:"investment", icon:"📉", component:<DepreciationCalc /> },
-  { id:"roi",          label:"ROI",                 desc:"Return on investment in PKR over any holding period",               category:"investment", icon:"💰", component:<ROICalc /> },
-  { id:"drip",         label:"DRIP",                desc:"Dividend reinvestment — compounding shares & value over years",     category:"investment", icon:"🔁", component:<DRIPCalc /> },
-  { id:"stress",       label:"Stress Test 🆕",       desc:"Portfolio performance across bull, bear & crash scenarios",         category:"investment", icon:"🧪", component:<StressTest /> },
-  { id:"brokerage",    label:"Brokerage / Charges", desc:"PSX commission, NCCPL, CDC, sales tax & WHT breakdown",             category:"trading",    icon:"📋", component:<BrokerageCalc /> },
-  { id:"margin",       label:"Margin",              desc:"Leveraged exposure, financing cost & margin call level",            category:"trading",    icon:"⚖️", component:<MarginCalc /> },
-  { id:"position",     label:"Position Sizing",     desc:"Optimal share quantity based on risk % and stop loss",              category:"trading",    icon:"🎯", component:<PositionSizing /> },
-  { id:"drawdown",     label:"Drawdown",            desc:"Max portfolio loss from peak & time to full recovery",              category:"trading",    icon:"📊", component:<DrawdownCalc /> },
-  { id:"dcf",          label:"DCF Valuation",       desc:"Intrinsic value via discounted cash flow analysis",                 category:"valuation",  icon:"🔬", component:<DCFCalc /> },
-  { id:"peg",          label:"Peter Lynch PEG",     desc:"Fair value using EPS growth + dividend yield method",               category:"valuation",  icon:"🦅", component:<PeterLynch /> },
-  { id:"pe",           label:"P/E Valuation",       desc:"Fair value at 10 different P/E multiples with buy/sell signals",    category:"valuation",  icon:"🔢", component:<PEValuation /> },
-  { id:"dividend",     label:"Dividend Yield",      desc:"Gross & net yield after 15% WHT with income projection",           category:"valuation",  icon:"💵", component:<DividendYield /> },
-  { id:"rights",       label:"Rights Issue",        desc:"TERP, new shares and net gain from a rights offering",             category:"corporate",  icon:"📜", component:<RightsIssue /> },
-  { id:"ipo",          label:"IPO Allotment",       desc:"Expected allotment and listing gain based on oversubscription",     category:"corporate",  icon:"🚀", component:<IPOAllotment /> },
+  { id:"salary",       label:"Salary Tax",          desc:"FBR income tax with rebates for FY 2025-26 / 2026-27",              category:"general",    icon:"💼", component:SalaryTax },
+  { id:"zakat",        label:"Zakat",               desc:"Annual zakat obligation based on Nisab threshold",                   category:"general",    icon:"🌙", component:ZakatCalc },
+  { id:"apnaghar",     label:"Apna Ghar",           desc:"Home loan EMI with Year 11 rate reset impact",                      category:"general",    icon:"🏠", component:ApnaGhar },
+  { id:"microfinance", label:"Microfinance Loan",   desc:"True annualized cost vs. bank facility",                            category:"general",    icon:"🏦", component:MicroFinance },
+  { id:"exchange",     label:"Exchange Rate",        desc:"PKR cross-rates for USD, EUR, GBP, SAR, AED and more",              category:"general",    icon:"💱", component:ExchangeRate },
+  { id:"cagr",         label:"CAGR",                desc:"Compound annual growth rate for any investment",                    category:"investment", icon:"📈", component:CAGRCalc },
+  { id:"sip",          label:"SIP",                 desc:"Systematic investment plan returns with year-by-year table",        category:"investment", icon:"📅", component:SIPCalc },
+  { id:"compounding",  label:"Compounding",          desc:"Portfolio growth with reinvested profits",                          category:"investment", icon:"♻️", component:CompoundingCalc },
+  { id:"depreciation", label:"Depreciation",        desc:"Asset depreciation with inflation-adjusted real value",             category:"investment", icon:"📉", component:DepreciationCalc },
+  { id:"roi",          label:"ROI",                 desc:"Return on investment in PKR over any holding period",               category:"investment", icon:"💰", component:ROICalc },
+  { id:"drip",         label:"DRIP",                desc:"Dividend reinvestment — compounding shares & value over years",     category:"investment", icon:"🔁", component:DRIPCalc },
+  { id:"stress",       label:"Stress Test 🆕",       desc:"Portfolio performance across bull, bear & crash scenarios",         category:"investment", icon:"🧪", component:StressTest },
+  { id:"brokerage",    label:"Brokerage / Charges", desc:"PSX commission, NCCPL, CDC, sales tax & WHT breakdown",             category:"trading",    icon:"📋", component:BrokerageCalc },
+  { id:"margin",       label:"Margin",              desc:"Leveraged exposure, financing cost & margin call level",            category:"trading",    icon:"⚖️", component:MarginCalc },
+  { id:"position",     label:"Position Sizing",     desc:"Optimal share quantity based on risk % and stop loss",              category:"trading",    icon:"🎯", component:PositionSizing },
+  { id:"drawdown",     label:"Drawdown",            desc:"Max portfolio loss from peak & time to full recovery",              category:"trading",    icon:"📊", component:DrawdownCalc },
+  { id:"dcf",          label:"DCF Valuation",       desc:"Intrinsic value via discounted cash flow analysis",                 category:"valuation",  icon:"🔬", component:DCFCalc },
+  { id:"peg",          label:"Peter Lynch PEG",     desc:"Fair value using EPS growth + dividend yield method",               category:"valuation",  icon:"🦅", component:PeterLynch },
+  { id:"pe",           label:"P/E Valuation",       desc:"Fair value at 10 different P/E multiples with buy/sell signals",    category:"valuation",  icon:"🔢", component:PEValuation },
+  { id:"dividend",     label:"Dividend Yield",      desc:"Gross & net yield after 15% WHT with income projection",           category:"valuation",  icon:"💵", component:DividendYield },
+  { id:"rights",       label:"Rights Issue",        desc:"TERP, new shares and net gain from a rights offering",             category:"corporate",  icon:"📜", component:RightsIssue },
+  { id:"ipo",          label:"IPO Allotment",       desc:"Expected allotment and listing gain based on oversubscription",     category:"corporate",  icon:"🚀", component:IPOAllotment },
 ];
 
 const CAT_META: Record<string,{label:string;color:string;icon:string}> = {
@@ -1247,6 +1295,7 @@ export default function ToolsClient() {
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [calcSearch, setCalcSearch] = useState("");
+  const [resetKey, setResetKey] = useState(0);
 
   // Grid search (main page)
   const gridFiltered = useMemo(() => {
@@ -1264,7 +1313,7 @@ export default function ToolsClient() {
 
   const current = useMemo(() => CALCS.find(c => c.id === selected) ?? null, [selected]);
 
-  function openCalc(id: string) { setSelected(id); setCalcSearch(""); }
+  function openCalc(id: string) { setSelected(id); setCalcSearch(""); setResetKey(0); }
   function backToGrid() { setSelected(null); setCalcSearch(""); }
 
   /* ── CALCULATOR VIEW ─────────────────────────────────────────────────────── */
@@ -1305,6 +1354,14 @@ export default function ToolsClient() {
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{current.desc}</div>
           </div>
 
+          {/* Reset button */}
+          <button onClick={() => setResetKey(k => k + 1)}
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "7px 14px", color: "rgba(255,255,255,0.75)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", flexShrink: 0, transition: "all 0.15s", whiteSpace: "nowrap" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(220,38,38,0.18)"; e.currentTarget.style.borderColor = "rgba(220,38,38,0.4)"; e.currentTarget.style.color = "#fca5a5"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}>
+            ↺ Reset
+          </button>
+
           {/* Search bar to switch calculator */}
           <div style={{ position: "relative", flexShrink: 0, width: 260 }}>
             <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "rgba(255,255,255,0.30)", pointerEvents: "none" }}>🔍</span>
@@ -1342,7 +1399,7 @@ export default function ToolsClient() {
 
         {/* ── Calculator content — full width, no sidebar ── */}
         <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-          {current.component}
+          <current.component key={resetKey} />
         </div>
       </div>
     );

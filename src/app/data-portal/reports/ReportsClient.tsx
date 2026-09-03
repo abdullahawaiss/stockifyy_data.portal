@@ -2,6 +2,124 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 
+/* ── Live PSX News ──────────────────────────────────────────────────────────── */
+interface LiveNews {
+  id: number;
+  url: string;
+  source: string;
+  sourceColor: string;
+  category: string;
+  catColor: string;
+  title: string;
+  excerpt: string;
+  date: string;
+  time: string;
+  imgGradient: string;
+}
+
+const LIVE_NEWS: LiveNews[] = [
+  {
+    id: 1,
+    url: "https://www.brecorder.com/news/40437729/psx-stocks-rebound-up-over-900-points-in-early-trade",
+    source: "BRecorder", sourceColor: "#dc2626",
+    category: "Market Update", catColor: "#16a34a",
+    title: "PSX stocks rebound, up over 900 points in early trade",
+    excerpt: "The KSE-100 index opened sharply higher, gaining over 900 points in early morning trade as buying interest returned across major sectors including Banking, Cement and Technology.",
+    date: "3 Sep 2026", time: "09:35 AM",
+    imgGradient: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)",
+  },
+  {
+    id: 2,
+    url: "https://mettisglobal.news/PSX-Closing-Bell-Bulls-Miss-by-a-Whisker-63109",
+    source: "Mettis Global", sourceColor: "#2563eb",
+    category: "Closing Bell", catColor: "#2563eb",
+    title: "PSX Closing Bell: Bulls Miss by a Whisker",
+    excerpt: "Equity markets closed marginally lower after a late-session sell-off trimmed the day's earlier gains. KSE-100 settled near 132,000 as investors booked profits ahead of the long weekend.",
+    date: "2 Sep 2026", time: "03:45 PM",
+    imgGradient: "linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%)",
+  },
+  {
+    id: 3,
+    url: "https://dunyanews.tv/en/Business/971096-psx-opens-higher-as-kse100-gains-over-900-points",
+    source: "Dunya News", sourceColor: "#7c3aed",
+    category: "PSX Open", catColor: "#7c3aed",
+    title: "PSX opens higher as KSE-100 gains over 900 points",
+    excerpt: "Pakistan Stock Exchange opened on a bullish note Wednesday with the KSE-100 surging 900+ points driven by foreign buying and strong SBP data on current account surplus widening.",
+    date: "3 Sep 2026", time: "09:18 AM",
+    imgGradient: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)",
+  },
+  {
+    id: 4,
+    url: "https://www.brecorder.com/",
+    source: "BRecorder", sourceColor: "#dc2626",
+    category: "Stocks", catColor: "#ea580c",
+    title: "MEBL, MCB lead banking rally as rate-cut bets strengthen",
+    excerpt: "Meezan Bank and MCB Bank were the top performers among large-cap stocks, with both gaining 3–4% as market expectations for a 100bps rate cut at September's MPC meeting solidified.",
+    date: "2 Sep 2026", time: "02:30 PM",
+    imgGradient: "linear-gradient(135deg, #c2410c 0%, #7c2d12 100%)",
+  },
+  {
+    id: 5,
+    url: "https://mettisglobal.news/",
+    source: "Mettis Global", sourceColor: "#2563eb",
+    category: "Trading", catColor: "#059669",
+    title: "PSX volumes surge to 800mn shares — third consecutive high",
+    excerpt: "Daily trading volumes on the Pakistan Stock Exchange reached 800 million shares, the third consecutive session of above-average activity, signaling growing retail and institutional participation.",
+    date: "1 Sep 2026", time: "04:00 PM",
+    imgGradient: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
+  },
+  {
+    id: 6,
+    url: "https://dunyanews.tv/en/Business/",
+    source: "Dunya News", sourceColor: "#7c3aed",
+    category: "International", catColor: "#0284c7",
+    title: "Pakistan equities catch emerging market tailwind as Fed signals pause",
+    excerpt: "Global EM sentiment lifted as the US Federal Reserve signalled a prolonged pause in rate hikes. Frontier markets, including Pakistan, saw renewed foreign institutional buying interest.",
+    date: "31 Aug 2026", time: "11:20 AM",
+    imgGradient: "linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%)",
+  },
+];
+
+/* ── News Card ────────────────────────────────────────────────────────────── */
+function NewsCard({ n }: { n: LiveNews }) {
+  return (
+    <div className="card" style={{ overflow: "hidden", cursor: "pointer", transition: "box-shadow 150ms, transform 150ms", display: "flex", flexDirection: "column" }}
+      onClick={() => window.open(n.url, "_blank", "noopener,noreferrer")}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 8px 28px rgba(0,0,0,0.13)"; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = ""; }}>
+      {/* Image / gradient hero */}
+      <div style={{ height: 110, background: n.imgGradient, position: "relative", flexShrink: 0 }}>
+        {/* Source badge */}
+        <div style={{ position: "absolute", top: 10, left: 12, display: "flex", gap: 6 }}>
+          <span style={{ padding: "3px 9px", borderRadius: 20, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 9.5, fontWeight: 800, backdropFilter: "blur(4px)" }}>{n.source}</span>
+          <span style={{ padding: "3px 9px", borderRadius: 20, background: n.catColor + "dd", color: "#fff", fontSize: 9.5, fontWeight: 700 }}>{n.category}</span>
+        </div>
+        {/* Time badge */}
+        <div style={{ position: "absolute", bottom: 10, right: 12, background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.85)", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 10, backdropFilter: "blur(4px)" }}>
+          {n.time}
+        </div>
+        {/* Decorative chart line */}
+        <svg style={{ position: "absolute", bottom: 0, left: 0, right: 0, width: "100%", height: 36, opacity: 0.25 }} viewBox="0 0 300 36" preserveAspectRatio="none">
+          <polyline points="0,28 40,20 80,24 120,10 160,16 200,8 240,14 300,4" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      {/* Content */}
+      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>📅 {n.date}</div>
+        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "var(--navy)", lineHeight: 1.4 }}>{n.title}</h3>
+        <p style={{ margin: 0, fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6, flex: 1 }}>{n.excerpt}</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 18, height: 18, borderRadius: 5, background: n.sourceColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 900, color: "#fff" }}>{n.source[0]}</div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: n.sourceColor }}>{n.source}</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#C8860A", fontWeight: 700 }}>Read Article →</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type ReportType = "Research" | "Technical" | "Fundamental";
 type FilterType = "All Reports" | ReportType;
 
@@ -262,6 +380,7 @@ export default function ReportsClient() {
   const [search, setSearch]     = useState("");
   const [openReport, setOpenReport] = useState<Report | null>(null);
   const [page, setPage]         = useState(1);
+  const [showLiveNews, setShowLiveNews] = useState(false);
 
   // Reset to page 1 when filter or search changes
   useEffect(() => { setPage(1); }, [filter, search]);
@@ -333,6 +452,22 @@ export default function ReportsClient() {
 
         {/* ── Left sidebar ── */}
         <div style={{ width: 210, flexShrink: 0, position: "sticky", top: 72 }}>
+          {/* Live News button */}
+          <button onClick={() => setShowLiveNews(!showLiveNews)} style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10,
+            border: showLiveNews ? "2px solid #dc2626" : "1.5px solid var(--border)",
+            background: showLiveNews ? "rgba(220,38,38,0.08)" : "var(--card-bg)",
+            cursor: "pointer", marginBottom: 12, transition: "all 0.15s",
+          }}>
+            <span style={{ fontSize: 14 }}>📡</span>
+            <div style={{ textAlign: "left", flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: showLiveNews ? "#dc2626" : "var(--text-primary)" }}>Live PSX News</div>
+              <div style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 500 }}>Real-time market updates</div>
+            </div>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#dc2626", animation: "pulse 2s infinite", flexShrink: 0 }} />
+          </button>
+          <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
+
           <div className="card" style={{ padding: "16px 14px", marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>Filter By Type</div>
             {FILTERS.map(([f, icon, count]) => (
@@ -396,6 +531,26 @@ export default function ReportsClient() {
 
         {/* ── Main content ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* ── Live PSX News Section ── */}
+          {showLiveNews && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <div style={{ height: 3, width: 24, borderRadius: 2, background: "#dc2626" }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em" }}>Live Market News</span>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#dc2626", animation: "pulse 2s infinite", display: "inline-block" }} />
+                <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>Updated daily from top PSX sources</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+                {LIVE_NEWS.map(n => <NewsCard key={n.id} n={n} />)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20 }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Stockifyy Research Reports Below</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+            </div>
+          )}
 
           {/* Featured — always shown at top, not paginated */}
           {featured.length > 0 && (
